@@ -29,6 +29,16 @@ concrete. You bridge the Thinker's *what/why* and the Engineer's *how*.
    `docs/features/TEMPLATE.md`. Give it the next free number (above the current max across
    `BACKLOG.md`, `BACKLOG_HISTORY.md`, and `docs/features/`).
 
+   For any feature that involves a visible screen or UI component, visual design is **part of the
+   spec** — not a follow-up. Read `docs/concept.md` (Aesthetic Direction) and any existing color
+   decisions before writing, then include in the Design detail section:
+   - A wireframe (ASCII diagram or inline SVG) showing the layout.
+   - Any new named color tokens (e.g. `--room-enemy: #7a1a1a`), matched to the established palette.
+   - Typography and sizing notes for new text elements.
+
+   The Thinker may supply aesthetic mood notes or palette sketches in `IDEAS.md` — treat these the
+   same as mechanical ideas: raw material to challenge and sharpen, not instructions to transcribe.
+
 4. **Add or update the backlog entry** in `BACKLOG.md`. A fully-specced item is `READY`; a captured
    but unspecced one stays `NEEDS SPEC` with a note on what's blocking the spec.
 
@@ -44,7 +54,8 @@ anything. At minimum (see the template):
 - **Acceptance criteria** — a numbered list of concrete, testable statements. This is the contract.
 - **Scope / non-goals** — what is explicitly *not* part of this item.
 - **Dependencies** — other features or decisions this relies on.
-- **Design detail** — data shapes, interfaces, states, and edge cases. Interfaces yes; full code no.
+- **Design detail** — data shapes, interfaces, states, screens, and edge cases. Interfaces yes; full code no.
+- **Visual design** *(UI-facing features only)* — layout wireframe, new color tokens, typography/sizing. The Engineer should not have to invent these.
 - **Open questions** — anything the manager still needs to decide (an item with blocking open
   questions is `NEEDS SPEC`, not `READY`).
 

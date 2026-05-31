@@ -35,6 +35,33 @@ are welcome; full implementation code is not — that's the Engineer's call.
 - **Behaviour:** …
 - **Edge cases:** …
 
+## Visual design
+
+*Include this section for any feature with a visible screen or UI component. Remove it for purely
+logic/data features.*
+
+**Layout wireframe**
+
+```
+┌──────────────────────────────┐
+│  (ASCII or describe the       │
+│   layout of key elements)     │
+└──────────────────────────────┘
+```
+
+**Color tokens**
+
+New named tokens introduced by this feature. Extend the palette established in `docs/concept.md`;
+don't invent new values without a rationale.
+
+| Token | Value | Used for |
+|---|---|---|
+| … | … | … |
+
+**Typography / sizing**
+
+Note any new font sizes, weights, or spacing that differ from what already exists on screen.
+
 ## Open questions
 
 Anything the manager still needs to decide. **An item with blocking open questions stays
