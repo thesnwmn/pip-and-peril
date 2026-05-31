@@ -142,6 +142,48 @@ Players spend a currency (e.g. "shiny scraps") earned during runs to upgrade the
 
 The game should feel like dungeon exploration — dark stone, a sense of danger, the texture of a tabletop RPG. The mouse protagonist softens this: there's warmth and character, but it shouldn't tip into pure cute. The dice are central to the feel of the game but how they are presented visually is still open.
 
+### Established palette (from POCs)
+
+The POCs have settled on a working palette that should be treated as the baseline:
+
+| Token | Value | Role |
+|---|---|---|
+| `--bg` | `#0d0d1a` | Canvas / page background |
+| `--surface` | `#14142a` | Card and panel backgrounds |
+| `--surface-raised` | `#1c1c36` | Hover / active panels |
+| `--border` | `#2a1f15` | Subtle borders |
+| `--text-primary` | `#e8d5b0` | Main body text |
+| `--text-muted` | `#8b7355` | Secondary text, labels |
+| `--gold` | `#c8941e` | Accent — titles, highlights, CTAs |
+| `--room-enemy` | `#7a1a1a` | Enemy room border / tint |
+| `--room-shop` | `#7a6a00` | Shop room border / tint |
+| `--room-npc` | `#1a2a7a` | NPC room border / tint |
+| `--room-item` | `#1a6a2a` | Item room border / tint |
+| `--room-boss` | `#3a0a0a` | Boss room border / tint |
+| `--room-corridor` | `#2a2a3a` | Corridor border / tint |
+
+Die colours (Red `#7a1a1a`, Blue `#1a2a7a`, Green `#1a6a2a`, Yellow `#7a6a00`) align with the
+room-type palette deliberately — same dice as the same stat family.
+
+### Open question — game art assets
+
+The approach for sprite and tile art is **undecided**. This decision needs to be made before or
+during the Tile Map Core (003) and Game Bootstrap (002) features. The options are:
+
+- **Geometric / canvas-drawn** — tiles and characters drawn entirely with canvas primitives
+  (rectangles, arcs, paths). No external assets; fully code-driven. Fastest to iterate; limited
+  expressiveness.
+- **AI-generated images** — sprites and tiles produced by an image-generation tool and committed
+  as PNGs. Richer visuals; introduces an asset pipeline and external dependency; style
+  consistency requires care.
+- **Hand-crafted pixel art** — produced by a human artist outside this pipeline and committed as
+  assets. Highest quality ceiling; requires a separate production step.
+- **Hybrid** — geometric art for early features, with the option to swap in real sprites later
+  (treat art as a skin layer over the logic).
+
+The Designer should flag this as an open question in any feature spec that requires tile or
+character art, and not commit to a visual approach until the manager has decided.
+
 ---
 
 ## Proof of Concepts
