@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390, initial-scale=1.0, user-scalable=no">
+  <title>POC 5 — Room Selection</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d0d1a;
+      color: #e8d5b0;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 12px;
+      gap: 10px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 360px;
+    }
+    header h2 { font-size: 13px; opacity: 0.55; letter-spacing: 2px; text-transform: uppercase; }
+    header a   { color: #c8941e; text-decoration: none; font-size: 12px; opacity: 0.7; }
+
+    canvas { display: block; cursor: pointer; border-radius: 6px; }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      width: 360px;
+      justify-content: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: #6b5a45;
+    }
+    .legend-swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 3px;
+      border: 2px solid;
+      flex-shrink: 0;
+    }
+
+    #choices {
+      display: flex;
+      gap: 8px;
+      width: 360px;
+      min-height: 70px;
+      align-items: stretch;
+    }
+    .choice-btn {
+      flex: 1;
+      padding: 10px 6px 8px;
+      border-radius: 10px;
+      border: 2px solid;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: filter 0.1s, transform 0.1s;
+      font-family: monospace;
+    }
+    .choice-btn:hover  { filter: brightness(1.3); transform: translateY(-2px); }
+    .choice-btn:active { transform: translateY(0); }
+    .choice-icon  { font-size: 24px; line-height: 1; }
+    .choice-label { font-size: 10px; letter-spacing: 0.06em; font-weight: bold; text-transform: uppercase; }
+    .no-choice {
+      width: 100%;
+      text-align: center;
+      font-size: 12px;
+      opacity: 0.4;
+      padding: 16px;
+    }
+
+    #log {
+      width: 360px;
+      background: #0a0a16;
+      border: 1px solid #181830;
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 72px;
+    }
+    .log-entry       { font-size: 11px; line-height: 1.45; }
+    .log-normal      { color: #6b5a45; }
+    .log-system      { color: #c8941e; }
+    .log-enemy       { color: #ff8070; }
+    .log-boss        { color: #ff4040; font-weight: bold; }
+    .log-shop        { color: #f0c060; }
+    .log-npc         { color: #70b8f0; }
+    .log-item        { color: #60d080; }
+    .log-chest       { color: #f0a060; }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      width: 360px;
+      justify-content: space-between;
+    }
+    #depth-info { font-size: 12px; color: #6b5a45; }
+    #depth-info span { color: #c8941e; }
+    .btn {
+      padding: 8px 18px;
+      background: #c8941e;
+      color: #0d0d1a;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: monospace;
+      letter-spacing: 0.05em;
+    }
+    .btn:hover { background: #e0a830; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="../../">← Back</a>
+    <h2>POC 5 — Room Selection</h2>
+    <span></span>
+  </header>
+
+  <canvas id="c"></canvas>
+  <div class="legend" id="legend"></div>
+  <div id="choices"></div>
+  <div id="log"></div>
+  <div class="controls">
+    <div id="depth-info">Floor <span id="depth-val">0</span> / <span id="depth-max">0</span></div>
+    <button class="btn" id="new-btn">New Dungeon</button>
+  </div>
+
+  <script>
+    // ── Room type registry ──────────────────────────────────────────────
+    const R = { HIDDEN:0, CORRIDOR:1, ENEMY:2, SHOP:3, NPC:4, ITEM:5, CHEST:6, BOSS:7, START:8 };
+
+    const DEF = {
+      [R.CORRIDOR]: { label:'Corridor', icon:'·',  border:'#556677', bg:'#0e1620', text:'#8899aa' },
+      [R.ENEMY]:    { label:'Enemy',    icon:'⚔',  border:'#c0392b', bg:'#1e0808', text:'#ff8070' },
+      [R.SHOP]:     { label:'Shop',     icon:'⚖',  border:'#c8941e', bg:'#1c1400', text:'#f0c060' },
+      [R.NPC]:      { label:'NPC',      icon:'◎',  border:'#2980b9', bg:'#081420', text:'#70b8f0' },
+      [R.ITEM]:     { label:'Item',     icon:'✦',  border:'#27ae60', bg:'#081408', text:'#60d080' },
+      [R.CHEST]:    { label:'Chest',    icon:'⊞',  border:'#e67e22', bg:'#1c0e00', text:'#f0a060' },
+      [R.BOSS]:     { label:'Boss',     icon:'☠',  border:'#8e1010', bg:'#160000', text:'#ff4040' },
+      [R.START]:    { label:'Start',    icon:'▼',  border:'#60c080', bg:'#081408', text:'#90e090' },
+    };
+
+    // ── Encounter flavour ───────────────────────────────────────────────
+    const ENCOUNTER = {
+      [R.CORRIDOR]: ['A quiet passage...','Dusty corridors, nothing stirs.','Cobwebs and silence.','Empty — and a little eerie.'],
+      [R.ENEMY]:    ['A dungeon rat leaps from the shadows!','An enemy bars your way!','Something snarls in the dark.','You hear claws on stone.'],
+      [R.SHOP]:     ['A merchant grins at your coin pouch.','Goods for sale — if you can pay.','The shopkeeper nods warily.','Torchlight glints off strange wares.'],
+      [R.NPC]:      ['A wounded adventurer slumps against the wall.','A stranger whispers a warning.','Someone cowers in the corner.','A robed figure stares in silence.'],
+      [R.ITEM]:     ['Something glints in the rubble.','A discarded tool — still useful.','You spot an object half-buried in dust.','Left behind by a previous delver.'],
+      [R.CHEST]:    ['A locked chest. Worth the risk?','Gold light spills from the lid.','Could be trapped...','Heavy iron lock, but the hinges look weak.'],
+      [R.BOSS]:     ['THE FLOOR SHAKES. Something ancient stirs.','A BOSS lurks here. There is no retreat.'],
+    };
+
+    const SURPRISE = {
+      [R.ENEMY]:  ['Wait — it bolts on sight of you.','The enemy was dead already.'],
+      [R.SHOP]:   ['"Sold out," the merchant mutters. Nothing here.','Shelves are bare. Someone beat you to it.'],
+      [R.CHEST]:  ['Empty. Someone got here first.','A decoy — just rocks inside.'],
+      [R.NPC]:    ['They say nothing. Just point deeper down.'],
+      [R.ITEM]:   ['Broken beyond use.','Cursed — you leave it well alone.'],
+    };
+
+    const LOG_CLS = {
+      [R.CORRIDOR]:'normal', [R.ENEMY]:'enemy', [R.SHOP]:'shop',
+      [R.NPC]:'npc', [R.ITEM]:'item', [R.CHEST]:'chest', [R.BOSS]:'boss',
+    };
+
+    // ── Grid dimensions ─────────────────────────────────────────────────
+    const COLS = 5;
+    const ROWS = 10;   // row 0 = boss floor, row ROWS-1 = start
+
+    const TS  = 50;    // tile size px
+    const GAP = 5;     // gap between tiles
+    const PAD = 15;    // canvas padding
+
+    const CW = COLS * TS + (COLS - 1) * GAP + PAD * 2;
+    const CH = ROWS * TS + (ROWS - 1) * GAP + PAD * 2;
+
+    const canvas = document.getElementById('c');
+    const ctx    = canvas.getContext('2d');
+    canvas.width  = CW;
+    canvas.height = CH;
+
+    // ── State ───────────────────────────────────────────────────────────
+    let grid = [];       // grid[row][col] = { type, state }
+    // state: 'hidden' | 'offered' | 'current' | 'visited'
+    let playerRow, playerCol, depth, gameOver, offeredCols, eventLog;
+
+    // ── Generation pools (weighted by dungeon depth) ────────────────────
+    const POOL = {
+      easy: [R.CORRIDOR,R.CORRIDOR,R.ENEMY,R.ENEMY,R.ITEM,R.SHOP,R.NPC,R.CHEST],
+      mid:  [R.CORRIDOR,R.ENEMY,R.ENEMY,R.ENEMY,R.ITEM,R.CHEST,R.SHOP,R.NPC],
+      hard: [R.ENEMY,R.ENEMY,R.ENEMY,R.CHEST,R.ITEM,R.SHOP,R.CORRIDOR],
+    };
+
+    function poolFor(row) {
+      if (row >= 7) return POOL.easy;
+      if (row >= 4) return POOL.mid;
+      return POOL.hard;
+    }
+
+    function pick(arr)   { return arr[Math.floor(Math.random() * arr.length)]; }
+    function shuffle(a)  { for (let i=a.length-1;i>0;i--){const j=0|Math.random()*(i+1);[a[i],a[j]]=[a[j],a[i]];}return a; }
+    function tx(c)       { return PAD + c * (TS + GAP); }
+    function ty(r)       { return PAD + r * (TS + GAP); }
+
+    // ── Generate ────────────────────────────────────────────────────────
+    function generate() {
+      grid = [];
+      for (let r = 0; r < ROWS; r++) {
+        grid[r] = [];
+        for (let c = 0; c < COLS; c++) {
+          let type;
+          if      (r === 0)        type = R.BOSS;
+          else if (r === ROWS - 1) type = R.START;
+          else                     type = pick(poolFor(r));
+          grid[r][c] = { type, state: 'hidden' };
+        }
+      }
+
+      playerRow   = ROWS - 1;
+      playerCol   = Math.floor(COLS / 2);
+      depth       = 0;
+      gameOver    = false;
+      offeredCols = [];
+      eventLog    = [];
+
+      grid[playerRow][playerCol].state = 'current';
+      offerNextRow();
+
+      document.getElementById('depth-val').textContent = depth;
+      document.getElementById('depth-max').textContent = ROWS - 1;
+      addLog('[Start] Pip descends into the dungeon...', 'system');
+      render();
+    }
+
+    function offerNextRow() {
+      const nextRow = playerRow - 1;
+      if (nextRow < 0) return;
+      offeredCols = shuffle([0, 1, 2, 3, 4]).slice(0, 3).sort((a, b) => a - b);
+      for (const c of offeredCols) grid[nextRow][c].state = 'offered';
+    }
+
+    // ── Choose ──────────────────────────────────────────────────────────
+    function chooseRoom(col) {
+      if (gameOver) return;
+      const nextRow = playerRow - 1;
+      if (nextRow < 0 || !offeredCols.includes(col)) return;
+
+      grid[playerRow][playerCol].state = 'visited';
+
+      // Hide unchosen offered tiles in that row
+      for (const c of offeredCols) {
+        if (c !== col) grid[nextRow][c].state = 'hidden';
+      }
+
+      playerRow = nextRow;
+      playerCol = col;
+      grid[playerRow][playerCol].state = 'current';
+      depth++;
+      offeredCols = [];
+
+      document.getElementById('depth-val').textContent = depth;
+
+      const type = grid[playerRow][playerCol].type;
+      resolveEncounter(type);
+
+      if (type === R.BOSS) {
+        gameOver = true;
+        render();
+        return;
+      }
+
+      offerNextRow();
+      render();
+    }
+
+    function resolveEncounter(type) {
+      const msgs = ENCOUNTER[type] || ['You enter the room.'];
+      let msg    = pick(msgs);
+
+      const surprises = SURPRISE[type];
+      if (surprises && Math.random() < 0.2) msg += ' ' + pick(surprises);
+
+      const label = DEF[type] ? DEF[type].label : 'Room';
+      addLog(`[${label}] ${msg}`, LOG_CLS[type] || 'normal');
+    }
+
+    function addLog(msg, cls = 'normal') {
+      eventLog.unshift({ msg, cls });
+      if (eventLog.length > 5) eventLog.pop();
+      const el = document.getElementById('log');
+      el.innerHTML = eventLog.map((e, i) =>
+        `<div class="log-entry log-${e.cls}" style="opacity:${(1 - i * 0.2).toFixed(2)}">${e.msg}</div>`
+      ).join('');
+    }
+
+    // ── Render ──────────────────────────────────────────────────────────
+    function rr(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y,   x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function drawTile(row, col) {
+      const cell = grid[row][col];
+      const x = tx(col), y = ty(row), s = TS, br = 7;
+
+      if (cell.state === 'hidden') {
+        rr(x, y, s, s, br);
+        ctx.fillStyle = '#0c0c1e';
+        ctx.fill();
+        ctx.strokeStyle = '#191930';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.fillStyle = '#222244';
+        ctx.font = `${Math.floor(s * 0.28)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('?', x + s / 2, y + s / 2);
+        return;
+      }
+
+      const d = DEF[cell.type];
+      if (!d) return;
+
+      const visited = cell.state === 'visited';
+      const offered = cell.state === 'offered';
+      const current = cell.state === 'current';
+
+      // Outer glow for offered tiles
+      if (offered) {
+        rr(x - 4, y - 4, s + 8, s + 8, br + 4);
+        ctx.fillStyle = d.border + '22';
+        ctx.fill();
+      }
+
+      // Background
+      rr(x, y, s, s, br);
+      ctx.fillStyle = visited ? '#0f0f20' : d.bg;
+      ctx.fill();
+
+      // Border
+      ctx.strokeStyle = visited ? '#22224a' : d.border;
+      ctx.lineWidth   = (offered || current) ? 2.5 : 1.5;
+      ctx.stroke();
+
+      // Icon
+      ctx.fillStyle    = visited ? '#2a2a50' : d.text;
+      ctx.font         = `${Math.floor(s * 0.38)}px serif`;
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(d.icon, x + s / 2, y + s / 2);
+
+      // Current position dot (Pip indicator)
+      if (current) {
+        ctx.fillStyle = '#f5e6c8';
+        ctx.beginPath();
+        ctx.arc(x + s / 2, y + s - 9, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Visited path connector — small dot in centre
+      if (visited) {
+        ctx.fillStyle = '#3a3a60';
+        ctx.beginPath();
+        ctx.arc(x + s / 2, y + s / 2, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function render() {
+      ctx.fillStyle = '#0d0d1a';
+      ctx.fillRect(0, 0, CW, CH);
+
+      // Draw path lines connecting visited tiles
+      ctx.strokeStyle = '#2a2a50';
+      ctx.lineWidth   = 1.5;
+      let lastVisited = null;
+      for (let r = ROWS - 1; r >= 0; r--) {
+        for (let c = 0; c < COLS; c++) {
+          const cell = grid[r][c];
+          if (cell.state === 'visited' || cell.state === 'current') {
+            const cx = tx(c) + TS / 2, cy = ty(r) + TS / 2;
+            if (lastVisited) {
+              ctx.beginPath();
+              ctx.moveTo(lastVisited.x, lastVisited.y);
+              ctx.lineTo(cx, cy);
+              ctx.stroke();
+            }
+            lastVisited = { x: cx, y: cy };
+          }
+        }
+      }
+
+      for (let r = 0; r < ROWS; r++)
+        for (let c = 0; c < COLS; c++)
+          drawTile(r, c);
+
+      renderChoices();
+    }
+
+    function renderChoices() {
+      const panel   = document.getElementById('choices');
+      const nextRow = playerRow - 1;
+
+      if (gameOver) {
+        panel.innerHTML = `<div class="no-choice" style="color:#ff4040">☠ The Boss awaits… (next: combat)</div>`;
+        return;
+      }
+
+      if (nextRow < 0 || offeredCols.length === 0) {
+        panel.innerHTML = '<div class="no-choice">No path forward.</div>';
+        return;
+      }
+
+      panel.innerHTML = '';
+      for (const c of offeredCols) {
+        const cell = grid[nextRow][c];
+        const d    = DEF[cell.type];
+        if (!d) continue;
+        const btn  = document.createElement('button');
+        btn.className        = 'choice-btn';
+        btn.style.borderColor = d.border;
+        btn.style.background  = d.bg;
+        btn.innerHTML = `
+          <span class="choice-icon"  style="color:${d.text}">${d.icon}</span>
+          <span class="choice-label" style="color:${d.text}">${d.label}</span>
+        `;
+        btn.addEventListener('click', () => chooseRoom(c));
+        panel.appendChild(btn);
+      }
+    }
+
+    // ── Legend ──────────────────────────────────────────────────────────
+    function buildLegend() {
+      const el = document.getElementById('legend');
+      const types = [R.ENEMY, R.BOSS, R.SHOP, R.NPC, R.ITEM, R.CHEST, R.CORRIDOR];
+      el.innerHTML = types.map(t => {
+        const d = DEF[t];
+        return `<div class="legend-item">
+          <div class="legend-swatch" style="border-color:${d.border};background:${d.bg}"></div>
+          ${d.label}
+        </div>`;
+      }).join('');
+    }
+
+    // ── Input ───────────────────────────────────────────────────────────
+    canvas.addEventListener('click', e => {
+      if (gameOver) return;
+      const rect  = canvas.getBoundingClientRect();
+      const scale = CW / rect.width;
+      const mx    = (e.clientX - rect.left) * scale;
+      const my    = (e.clientY - rect.top)  * scale;
+      const nextRow = playerRow - 1;
+      if (nextRow < 0) return;
+      for (const c of offeredCols) {
+        if (mx >= tx(c) && mx < tx(c) + TS && my >= ty(nextRow) && my < ty(nextRow) + TS) {
+          chooseRoom(c);
+          return;
+        }
+      }
+    });
+
+    document.getElementById('new-btn').addEventListener('click', generate);
+
+    // ── Init ────────────────────────────────────────────────────────────
+    buildLegend();
+    generate();
+  </script>
+</body>
+</html>
