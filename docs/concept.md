@@ -2,29 +2,55 @@
 
 > *Fortune Favors the Small*
 
-A web-based, portrait-oriented roguelike dungeon crawler starring **Pip**, a mouse explorer. Dice-driven, turn-based, with procedural tile-based dungeon exploration.
+A web-based, portrait-oriented roguelike dungeon crawler starring **Pip**, a mouse explorer. Dice-driven, turn-based, with tile-based dungeon exploration.
 
 ---
 
 ## Concept Summary
 
-The player controls Pip, a small mouse descending into procedurally generated dungeons. The dungeon is revealed tile-by-tile as Pip moves. Combat, puzzles, traps, and interactions are resolved through a **coloured dice pool system**, where pips (dots) are spent like a resource each turn. Between runs, the player upgrades their dice pool and unlocks passive skills.
+The player controls Pip, a small mouse descending into procedurally generated dungeons. The dungeon is built tile-by-tile as Pip moves through it — each step forward reveals the next room. Combat, puzzles, traps, and interactions are resolved through a **coloured dice pool system**, where pips (dots) are spent like a resource each turn. Between runs, the player upgrades their dice pool and unlocks passive skills.
 
 ---
 
 ## Core Pillars
 
-- **Portrait/mobile-first** web layout
-- **Top-down tile map** with fog-of-war revealed by movement
+- **Portrait/mobile-first** layout
+- **Tile-based dungeon** built room by room through player choice
 - **Turn-based** resolution — player rolls dice, then spends pips on actions
 - **Roguelike** — permadeath, procedural maps, meta-progression between runs
-- **Whimsical tone** — *Redwall* meets *Hades*; charming surface, tense underneath
+- **Tone** — dungeon exploration with the feeling of D&D; the mouse gives it a fuzzy, whimsical edge but the underlying tension is real
+
+---
+
+## Game States
+
+The game has two primary states.
+
+### Navigation
+
+The player is on the main dungeon map. They pick a direction from the exits available on their current tile. If the tile in that direction hasn't been placed yet, they choose from three offered room types before moving.
+
+Moving into a room may **trigger an encounter**:
+
+- **Forced** — the player must engage (e.g. an enemy blocks the room, a trap fires)
+- **Optional** — the player can choose to interact or pass through (e.g. a shop, an NPC to talk to, an unlocked chest)
+
+Corridors are safe passthrough with no encounter. The player can always backtrack through already-visited tiles.
+
+### Encounter / Combat
+
+A separate turn-based state triggered by entering a room. The player rolls their dice pool and spends pips on actions to resolve the encounter.
+
+- **Combat** (enemy rooms, boss rooms) — attack, dodge, and special actions until one side is defeated
+- **Non-combat encounters** (shops, NPCs, traps, puzzles) — these use the same dice mechanic but are flavoured differently. A shop is a menu. An NPC might be a short sequence of checks or questions. A trap might be a single agility check.
+
+The encounter resolves and the player returns to navigation.
 
 ---
 
 ## The Dice Pool System
 
-Each stat is represented by a **coloured die type**. At the start of each turn, the player rolls their entire pool. The resulting pips are spent on actions.
+Each stat is represented by a **coloured die type**. At the start of each encounter turn, the player rolls their entire pool. The resulting pips are spent on actions.
 
 | Colour | Stat | Example Uses |
 |--------|------|--------------|
@@ -34,21 +60,67 @@ Each stat is represented by a **coloured die type**. At the start of each turn, 
 | 🟡 Yellow | Luck | Wild card, bonus pips, rerolls |
 | 🟣 Purple | Magic | Arcane abilities (later expansion) |
 
-**Turn flow:**
-1. Player moves Pip (may reveal new tiles)
-2. An event or enemy is triggered
-3. Player rolls their full dice pool
-4. Player spends pips on available actions to resolve the event
+---
+
+## Dungeon Navigation
+
+The dungeon is a **grid of tiles**. Tiles are not pre-generated and then explored — they are **chosen as Pip moves**, giving the player agency over what they face.
+
+### How movement works
+
+1. **Pick a direction.** Pip's current tile has a set of exits (N/S/E/W) shown as physical openings in the walls. The player taps an adjacent tile to choose a direction. Only valid exits are available.
+
+2. **Pick a room type** (if that tile is unknown). Three room tiles are offered as choices. Each is shown as a rendered tile with its exits and a colour-coded border indicating the encounter type. The player picks one.
+
+3. **Pip moves.** The chosen tile is placed on the map and Pip steps into it. Any encounter triggers. Repeat.
+
+If the adjacent tile has already been placed (backtracking), Pip simply moves there — no choice needed.
+
+### Tile exit layout
+
+Each tile has between one and four exits, shown as wall openings. The player can read the exit type at a glance:
+
+| Layout | Exits | Notes |
+|--------|-------|-------|
+| Dead end | 1 | Only the entrance — forces backtrack |
+| Straight | 2 (opposite) | Corridor passing through |
+| Corner | 2 (adjacent) | Turns 90° |
+| T-junction | 3 | Branch point |
+| Crossroads | 4 | Full intersection |
+
+Exit configurations for offered tiles are constrained by adjacent already-placed tiles, so doorways always align across the map.
+
+### The map view
+
+A viewport centred on Pip. Explored tiles show their full tile art. Unexplored tiles are dark — gold arrows appear on any reachable adjacent tile to indicate available moves.
+
+> **Note:** Tile size, viewport dimensions, and grid counts in POC 5 are not final — they are sized for prototyping. The navigation mechanic is the thing to preserve.
 
 ---
 
-## Dungeon Exploration
+## Room Types
 
-- Map starts hidden (fog of war)
-- Moving into an unknown tile **flips and reveals** it
-- Tile types: corridors, rooms, traps, enemies, loot, puzzles, exits
-- Some tiles require a pip cost to enter safely (e.g. dark passage costs 2 🔵)
-- **Pip's small size is a mechanic** — certain narrow passages are only accessible to him, providing shortcuts or secret areas
+Each room type has a distinct **colour-coded border** and tints the room's wall and floor. Rooms can occasionally surprise — a Shop might be sold out, a Chest empty, an Enemy already dead.
+
+| Type | Colour | Encounter |
+|------|--------|-----------|
+| Corridor | Steel grey | Safe passthrough, no encounter |
+| Enemy | Red | Combat — forced |
+| Shop | Gold | Merchant menu — optional |
+| NPC | Blue | Dialogue, checks, hints — optional |
+| Item | Green | Equipment or consumable — auto-collect or examine |
+| Chest | Amber | Loot — may be locked or trapped |
+| Boss | Dark crimson | Combat — forced, ends the floor |
+
+---
+
+## Dungeon Structure
+
+A floor ends when an **end trigger** is reached. The most common is a **Boss room**, but other triggers are possible — a particular depth, a specific tile combination, an NPC quest resolution, or a timed pressure mechanic. Boss rooms are the primary end trigger but not the only one.
+
+The depth of the dungeon affects what room types appear — shallower floors skew toward corridors, shops, and NPCs; deeper floors skew toward enemies, chests, and end triggers.
+
+**Pip's small size is a mechanic** — certain narrow passages are only accessible to him, providing shortcuts or secret areas that larger enemies cannot follow.
 
 ---
 
@@ -68,59 +140,25 @@ Players spend a currency (e.g. "shiny scraps") earned during runs to upgrade the
 
 ## Aesthetic Direction
 
-- **Visual style:** Cosy hand-drawn or pixel art; warm dungeon tones
-- **Dice aesthetic:** Carved wooden blocks or acorn-shaped dice
-- **HUD:** Pip's satchel at the bottom of the screen holds the dice tray and stats
-- **Animation:** Pip cups and tosses dice with tiny paws during the roll phase
-- **Tone:** Warm and characterful — Pip has expressions, reacts to events
+The game should feel like dungeon exploration — dark stone, a sense of danger, the texture of a tabletop RPG. The mouse protagonist softens this: there's warmth and character, but it shouldn't tip into pure cute. The dice are central to the feel of the game but how they are presented visually is still open.
 
 ---
 
-## Requested POCs (Proof of Concepts)
+## Proof of Concepts
 
-The following POCs are requested for the repo. Each should be self-contained and runnable:
+Each POC is self-contained in its own folder under `/poc/`.
 
 ### POC 1 — Tile Map Renderer
-- Top-down grid rendered in a portrait canvas (e.g. 9×16 ratio)
-- Fog-of-war: tiles start hidden, reveal on player movement
-- Tile types: floor, wall, door, unexplored
-- Pip character token that can move with arrow keys / WASD
-- No game logic needed — just rendering and movement
+Top-down grid rendered in a portrait canvas. Fog-of-war: tiles start hidden, reveal on player movement. Pip character token moves with arrow keys / WASD.
 
 ### POC 2 — Dice Pool Roller
-- Display a set of coloured dice (Red, Blue, Green, Yellow)
-- Roll button animates and reveals pip values per die
-- Pips are displayed as spendable tokens
-- Clicking an action button deducts the appropriate pip cost
-- Show "insufficient pips" state if not enough
+Coloured dice (Red, Blue, Green, Yellow) with animated roll. Pips displayed as spendable tokens. Action buttons deduct pip costs; shows insufficient-pips state.
 
 ### POC 3 — Dungeon Tile Generator
-- Procedural map generation (BSP or room-corridor approach)
-- Output a 2D array of tile types
-- Render on a canvas with the tile map renderer from POC 1
-- Place Pip at a start tile, mark an exit tile
+Procedural BSP map generation rendered on canvas. Pip placed at start tile, exit tile marked. Fog-of-war integrated.
 
 ### POC 4 — Combat Resolution
-- A simple enemy encounter screen
-- Player rolls dice, chooses to spend 🔴 to attack or 🟢 to dodge
-- Enemy has HP, player has HP
-- Resolve one round, show result, loop until resolved
-- No animation needed — just logic and basic UI
+Enemy encounter screen. Player rolls dice, spends 🔴 to attack or 🟢 to dodge. HP bars, battle log, win/lose state.
 
----
-
-## Tech Suggestions
-
-- **Framework:** Vanilla JS or React (your preference)
-- **Canvas vs DOM:** Either works for the tile map; canvas recommended for the dungeon renderer
-- **No backend needed** for POCs — all client-side
-- **Portrait layout:** Target ~390×844px (iPhone 14 viewport) as base
-
----
-
-## Notes for Claude Code
-
-- Keep each POC in its own folder (e.g. `/poc/tilemap`, `/poc/dice`, etc.)
-- Use simple, readable code — these are proofs of concept, not production
-- Add a root `index.html` that links to each POC for easy browser testing
-- The dice colour system is central — make sure colours are consistent across POCs
+### POC 5 — Room Selection
+Direction-first navigation on a tile map. Pip stands on a tile with visible exits. Player taps a direction; three room-type choices are offered as rendered tile cards. Chosen tile is placed and Pip moves there. Demonstrates: tile exit layout, room type colour coding, map viewport following Pip, map consistency (doorways align across adjacent tiles).
