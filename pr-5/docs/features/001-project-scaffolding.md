@@ -21,14 +21,18 @@ workflow every subsequent feature depends on.
    code required).
 4. `npm run test` runs Vitest and exits with at least one passing test and zero failures.
 5. `npm run typecheck` runs `tsc --noEmit` and exits with zero errors.
-6. Opening `http://localhost:5173/poc/tilemap/` (and each other POC path) in the dev server
-   serves the existing POC HTML unchanged.
-7. After `npm run build`, the same POC paths are present in `dist/poc/` and work as static HTML.
-8. The GitHub Pages deploy workflow (`deploy-pages.yml`) is updated to deploy from `dist/` rather
+6. Opening `http://localhost:5173/poc/` shows a POC index page listing all five POCs with working
+   links. This is the existing root `index.html` moved to `public/poc/index.html` with its
+   internal links adjusted from `poc/tilemap/` → `tilemap/` etc.
+7. Opening `http://localhost:5173/poc/tilemap/` (and each other POC path) serves the existing POC
+   HTML unchanged.
+8. After `npm run build`, `/poc/` and all POC sub-paths are present in `dist/poc/` and work as
+   static HTML.
+9. The GitHub Pages deploy workflow (`deploy-pages.yml`) is updated to deploy from `dist/` rather
    than the repo root, so the game and POCs are served correctly on merge to `main`.
-9. `CLAUDE.md` Commands section is updated with the five commands (`dev`, `build`, `test`,
-   `typecheck`, and the static-server fallback).
-10. A decision record is added to `DECISION_REGISTER.md` superseding D3, recording the choice of
+10. `CLAUDE.md` Commands section is updated with the five commands (`dev`, `build`, `test`,
+    `typecheck`, and the static-server fallback).
+11. A decision record is added to `DECISION_REGISTER.md` superseding D3, recording the choice of
     Vite + TypeScript + Vitest and the rationale.
 
 ## Scope / non-goals
@@ -61,35 +65,40 @@ Revisit if asset management becomes complex.
 ```
 /
 ├── src/
-│   ├── main.ts          ← Vite entry point; creates canvas, draws placeholder text
-│   └── main.test.ts     ← example Vitest test (tests a trivial utility)
-├── poc/                 ← existing POC HTML, untouched
+│   ├── main.ts              ← Vite entry point; creates canvas, draws placeholder text
+│   └── main.test.ts         ← example Vitest test (tests a trivial utility)
 ├── public/
-│   └── poc/             ← symlink or copy of ../poc/ so Vite serves POCs at /poc/
-├── index.html           ← Vite's HTML entry point (replaces the old landing page)
-├── vite.config.ts       ← Vite + Vitest configuration
-├── tsconfig.json        ← strict TypeScript config targeting ES2022 / DOM
+│   └── poc/
+│       ├── index.html       ← POC landing page (was root index.html; links adjusted)
+│       ├── tilemap/         ← POC 1, moved from poc/tilemap/
+│       ├── dice/            ← POC 2, moved from poc/dice/
+│       ├── dungeon/         ← POC 3, moved from poc/dungeon/
+│       ├── combat/          ← POC 4, moved from poc/combat/
+│       └── rooms/           ← POC 5, moved from poc/rooms/
+├── index.html               ← Vite's HTML entry point (the game; new file)
+├── vite.config.ts           ← Vite + Vitest configuration
+├── tsconfig.json            ← strict TypeScript config targeting ES2022 / DOM
 └── package.json
 ```
 
-The old root `index.html` (POC landing page) is **retired** — the game `index.html` takes its
-place. The POC landing page links are no longer needed once real features ship; if the manager
-wants them preserved, they can be committed to `public/poc-index.html` for reference.
+The existing `poc/` folder at the repo root is moved to `public/poc/` via `git mv` — no code
+changes to the POC files, only the landing page's internal links adjusted (strip the `poc/`
+prefix since it is now served from `/poc/` itself). The game's new `index.html` (Vite entry)
+takes over the root.
 
 ### `vite.config.ts` key settings
 
 ```ts
 // outline only — Engineer fills in the real config
 export default defineConfig({
-  publicDir: 'poc',        // serve poc/ folder at /poc/ in dev and copy to dist/poc/
+  // publicDir defaults to 'public' — no override needed
   build: { outDir: 'dist' },
   test: { environment: 'jsdom' }
 })
 ```
 
-> `publicDir: 'poc'` copies the `poc/` folder contents to the root of `dist/`. To keep them
-> under `/poc/` in `dist/`, the Engineer may need to wrap with a plugin or use a different
-> approach (e.g. `vite-plugin-static-copy`). Either solution satisfies criterion 7.
+Vite's default `publicDir: 'public'` copies everything in `public/` to `dist/` as-is, so
+`public/poc/` becomes `dist/poc/` automatically. No plugin required.
 
 ### `tsconfig.json` key settings
 
