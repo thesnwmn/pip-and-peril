@@ -15,9 +15,8 @@ promoted into a feature. When an idea becomes a feature, note the feature number
 **Inspiration:** [what sparked this, if anything]
 
 One to three sentences: what it is, why it might be good, and any obvious risk or open question.
-
-**Acceptance criteria (sketch):**
-- A short, testable statement of what "done" would feel like for the player.
+Optionally a rough shape (interface, screen, or data sketch) — but no acceptance criteria and no
+code; the Designer writes those.
 ```
 
 ---

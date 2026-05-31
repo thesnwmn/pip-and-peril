@@ -42,8 +42,8 @@ session, and read that role's file in `docs/agent/roles/` before acting.
 
 The roles form a pipeline: the **Thinker** explores direction and feeds ideas to the **Designer**,
 who specs them into backlog items; the **Planner** orders the backlog; the **Engineer** builds the
-top item (triggering the **Reviewer** before any PR); and the **Documenter** records the decisions
-and knowledge that result.
+top item (triggering the **Reviewer** before any PR); the **Debugger** fixes what breaks; and the
+**Documenter** records the decisions and knowledge that result.
 
 ## Roles
 
@@ -52,9 +52,10 @@ and knowledge that result.
 | **Thinker** | Manager wants to explore direction, design, flow, style, or generate new ideas | opus | `docs/agent/roles/THINKER.md` |
 | **Designer** | Manager wants an idea turned into a backlog-ready feature spec | opus | `docs/agent/roles/DESIGNER.md` |
 | **Planner** | Manager wants the backlog reviewed, prioritised, or reordered | sonnet | `docs/agent/roles/PLANNER.md` |
-| **Engineer** | Manager wants a backlog item implemented | sonnet | `docs/agent/roles/ENGINEER.md` |
-| **Reviewer** | Run inline by the Engineer before every PR; or a standalone review on request | sonnet | `docs/agent/roles/REVIEWER.md` |
-| **Documenter** | Manager wants decisions/knowledge captured after a change | haiku | `docs/agent/roles/DOCUMENTER.md` |
+| **Engineer** | Manager wants a backlog item implemented | haiku | `docs/agent/roles/ENGINEER.md` |
+| **Reviewer** | Run inline by the Engineer before every PR; or a standalone review on request | haiku | `docs/agent/roles/REVIEWER.md` |
+| **Debugger** | Manager reports something is broken | haiku | `docs/agent/roles/DEBUGGER.md` |
+| **Documenter** | Manager wants decisions/knowledge captured after a change | sonnet | `docs/agent/roles/DOCUMENTER.md` |
 
 Suggested models are a starting recommendation, not a rule — the manager may override per session.
 
@@ -90,4 +91,4 @@ directly**. The manager merges after Reviewer approval.
 - Otherwise branch as: `feature/NNN-short-description` or `fix/short-description`.
 - Prefer standard `git` commands (via Bash) for commits, pushes, branches, diffs and logs. Use
   GitHub MCP tools only for things git cannot do (opening PRs, reading review comments).
-- The **Engineer must run the Reviewer inline and pass** before opening a PR.
+- The **Engineer and Debugger must run the Reviewer inline and pass** before opening a PR.

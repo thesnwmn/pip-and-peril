@@ -24,7 +24,7 @@ with `python3 -m http.server`.
 ## How this repo is built
 
 Pip & Peril is developed with an **agentic harness**: a human manager directs the work, and Claude
-takes on a defined role per session — Thinker, Designer, Planner, Engineer, Reviewer, or
+takes on a defined role per session — Thinker, Designer, Planner, Engineer, Reviewer, Debugger, or
 Documenter. The harness, roles, and document structure are described in
 [`CLAUDE.md`](CLAUDE.md).
 
