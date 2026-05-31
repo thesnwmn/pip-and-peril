@@ -2,7 +2,7 @@
 
 > *Fortune Favors the Small*
 
-A portrait-oriented roguelike dungeon crawler starring **Pip**, a mouse explorer. Dice-driven, turn-based, with tile-based dungeon exploration.
+A web-based, portrait-oriented roguelike dungeon crawler starring **Pip**, a mouse explorer. Dice-driven, turn-based, with tile-based dungeon exploration.
 
 ---
 
