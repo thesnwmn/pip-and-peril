@@ -55,7 +55,7 @@ top item (triggering the **Reviewer** before any PR); the **Debugger** fixes wha
 | **Engineer** | Manager wants a backlog item implemented | haiku | `docs/agent/roles/ENGINEER.md` |
 | **Reviewer** | Run inline by the Engineer before every PR; or a standalone review on request | haiku | `docs/agent/roles/REVIEWER.md` |
 | **Debugger** | Manager reports something is broken | haiku | `docs/agent/roles/DEBUGGER.md` |
-| **Documenter** | Manager wants decisions/knowledge captured after a change | sonnet | `docs/agent/roles/DOCUMENTER.md` |
+| **Documenter** | Manager wants decisions/knowledge captured after a change | haiku | `docs/agent/roles/DOCUMENTER.md` |
 
 Suggested models are a starting recommendation, not a rule — the manager may override per session.
 
