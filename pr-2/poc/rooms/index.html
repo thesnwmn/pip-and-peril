@@ -26,63 +26,68 @@
     header h2 { font-size: 13px; opacity: 0.55; letter-spacing: 2px; text-transform: uppercase; }
     header a   { color: #c8941e; text-decoration: none; font-size: 12px; opacity: 0.7; }
 
-    canvas { display: block; cursor: pointer; border-radius: 6px; }
+    canvas { display: block; border: 1px solid #181830; border-radius: 4px; }
 
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      width: 360px;
-      justify-content: center;
-    }
-    .legend-item {
-      display: flex;
-      align-items: center;
+    /* Direction compass */
+    .compass {
+      display: grid;
+      grid-template-columns: 50px 50px 50px;
+      grid-template-rows: 50px 50px 50px;
       gap: 4px;
-      font-size: 10px;
-      color: #6b5a45;
     }
-    .legend-swatch {
-      width: 11px;
-      height: 11px;
-      border-radius: 3px;
-      border: 2px solid;
-      flex-shrink: 0;
+    .dir-btn {
+      width: 50px; height: 50px;
+      background: #14142a;
+      border: 1px solid #2a2a50;
+      border-radius: 8px;
+      color: #e8d5b0;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .dir-btn:not(:disabled):hover { background: #1e1e3e; border-color: #c8941e; }
+    .dir-btn:disabled { opacity: 0.12; cursor: default; }
+    .dir-center {
+      width: 50px; height: 50px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: #3a3a60;
     }
 
-    #choices {
+    /* Room choice cards */
+    .choice-row {
       display: flex;
       gap: 8px;
       width: 360px;
-      min-height: 70px;
-      align-items: stretch;
     }
-    .choice-btn {
+    .choice-card {
       flex: 1;
-      padding: 10px 6px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 4px 6px;
       border-radius: 10px;
       border: 2px solid;
       background: transparent;
       cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
       transition: filter 0.1s, transform 0.1s;
       font-family: monospace;
     }
-    .choice-btn:hover  { filter: brightness(1.3); transform: translateY(-2px); }
-    .choice-btn:active { transform: translateY(0); }
-    .choice-icon  { font-size: 24px; line-height: 1; }
-    .choice-label { font-size: 10px; letter-spacing: 0.06em; font-weight: bold; text-transform: uppercase; }
-    .no-choice {
-      width: 100%;
+    .choice-card:hover  { filter: brightness(1.3); transform: translateY(-2px); }
+    .choice-card:active { transform: translateY(0); }
+    .choice-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; font-weight: bold; }
+
+    /* Hint bar */
+    #hint {
+      font-size: 11px;
+      color: #4a3a28;
+      min-height: 16px;
       text-align: center;
-      font-size: 12px;
-      opacity: 0.4;
-      padding: 16px;
+      width: 360px;
     }
 
+    /* Event log */
     #log {
       width: 360px;
       background: #0a0a16;
@@ -91,38 +96,34 @@
       padding: 8px 10px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      min-height: 72px;
+      gap: 3px;
+      min-height: 62px;
     }
-    .log-entry       { font-size: 11px; line-height: 1.45; }
-    .log-normal      { color: #6b5a45; }
-    .log-system      { color: #c8941e; }
-    .log-enemy       { color: #ff8070; }
-    .log-boss        { color: #ff4040; font-weight: bold; }
-    .log-shop        { color: #f0c060; }
-    .log-npc         { color: #70b8f0; }
-    .log-item        { color: #60d080; }
-    .log-chest       { color: #f0a060; }
+    .log-entry  { font-size: 11px; line-height: 1.45; }
+    .log-normal { color: #6b5a45; }
+    .log-system { color: #c8941e; }
+    .log-enemy  { color: #ff8070; }
+    .log-boss   { color: #ff4040; font-weight: bold; }
+    .log-shop   { color: #f0c060; }
+    .log-npc    { color: #70b8f0; }
+    .log-item   { color: #60d080; }
+    .log-chest  { color: #f0a060; }
 
+    /* Bottom controls */
     .controls {
       display: flex;
-      gap: 10px;
       align-items: center;
-      width: 360px;
       justify-content: space-between;
+      width: 360px;
     }
-    #depth-info { font-size: 12px; color: #6b5a45; }
-    #depth-info span { color: #c8941e; }
+    #step-info { font-size: 12px; color: #6b5a45; }
+    #step-info span { color: #c8941e; }
     .btn {
       padding: 8px 18px;
-      background: #c8941e;
-      color: #0d0d1a;
-      border: none;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: bold;
-      cursor: pointer;
-      font-family: monospace;
+      background: #c8941e; color: #0d0d1a;
+      border: none; border-radius: 8px;
+      font-size: 12px; font-weight: bold;
+      cursor: pointer; font-family: monospace;
       letter-spacing: 0.05em;
     }
     .btn:hover { background: #e0a830; }
@@ -136,363 +137,410 @@
   </header>
 
   <canvas id="c"></canvas>
-  <div class="legend" id="legend"></div>
-  <div id="choices"></div>
+  <div id="hint"></div>
+  <div id="panel"></div>
   <div id="log"></div>
   <div class="controls">
-    <div id="depth-info">Floor <span id="depth-val">0</span> / <span id="depth-max">0</span></div>
+    <div id="step-info">Steps: <span id="steps">0</span></div>
     <button class="btn" id="new-btn">New Dungeon</button>
   </div>
 
   <script>
-    // ── Room type registry ──────────────────────────────────────────────
-    const R = { HIDDEN:0, CORRIDOR:1, ENEMY:2, SHOP:3, NPC:4, ITEM:5, CHEST:6, BOSS:7, START:8 };
+    // ── Direction constants ──────────────────────────────────────────────
+    const N = 1, E = 2, S = 4, W = 8;
+    const DIR_LIST  = [N, E, S, W];
+    const OPP       = { [N]:S, [S]:N, [E]:W, [W]:E };
+    const DDELTA    = { [N]:[0,-1], [E]:[1,0], [S]:[0,1], [W]:[-1,0] };
+    const DARROW    = { [N]:'↑', [E]:'→', [S]:'↓', [W]:'←' };
 
-    const DEF = {
-      [R.CORRIDOR]: { label:'Corridor', icon:'·',  border:'#556677', bg:'#0e1620', text:'#8899aa' },
-      [R.ENEMY]:    { label:'Enemy',    icon:'⚔',  border:'#c0392b', bg:'#1e0808', text:'#ff8070' },
-      [R.SHOP]:     { label:'Shop',     icon:'⚖',  border:'#c8941e', bg:'#1c1400', text:'#f0c060' },
-      [R.NPC]:      { label:'NPC',      icon:'◎',  border:'#2980b9', bg:'#081420', text:'#70b8f0' },
-      [R.ITEM]:     { label:'Item',     icon:'✦',  border:'#27ae60', bg:'#081408', text:'#60d080' },
-      [R.CHEST]:    { label:'Chest',    icon:'⊞',  border:'#e67e22', bg:'#1c0e00', text:'#f0a060' },
-      [R.BOSS]:     { label:'Boss',     icon:'☠',  border:'#8e1010', bg:'#160000', text:'#ff4040' },
-      [R.START]:    { label:'Start',    icon:'▼',  border:'#60c080', bg:'#081408', text:'#90e090' },
+    // ── Room types ───────────────────────────────────────────────────────
+    const RT = { START:0, CORRIDOR:1, ENEMY:2, SHOP:3, NPC:4, ITEM:5, CHEST:6, BOSS:7 };
+
+    const RDEF = {
+      [RT.START]:    { label:'Start',    icon:'▼', wall:'#060e06', bg:'#0a1a0a', text:'#90e090', border:'#60c080', lc:'system'  },
+      [RT.CORRIDOR]: { label:'Corridor', icon:'·', wall:'#090e14', bg:'#0e1620', text:'#8899aa', border:'#445566', lc:'normal'  },
+      [RT.ENEMY]:    { label:'Enemy',    icon:'⚔', wall:'#120404', bg:'#200808', text:'#ff8070', border:'#c0392b', lc:'enemy'   },
+      [RT.SHOP]:     { label:'Shop',     icon:'⚖', wall:'#0e0a00', bg:'#1c1400', text:'#f0c060', border:'#c8941e', lc:'shop'    },
+      [RT.NPC]:      { label:'NPC',      icon:'◎', wall:'#040a10', bg:'#081420', text:'#70b8f0', border:'#2980b9', lc:'npc'     },
+      [RT.ITEM]:     { label:'Item',     icon:'✦', wall:'#040a04', bg:'#081408', text:'#60d080', border:'#27ae60', lc:'item'    },
+      [RT.CHEST]:    { label:'Chest',    icon:'⊞', wall:'#0e0800', bg:'#1c1000', text:'#f0a060', border:'#e67e22', lc:'chest'   },
+      [RT.BOSS]:     { label:'Boss',     icon:'☠', wall:'#0b0000', bg:'#160000', text:'#ff4040', border:'#8e1010', lc:'boss'    },
     };
 
-    // ── Encounter flavour ───────────────────────────────────────────────
-    const ENCOUNTER = {
-      [R.CORRIDOR]: ['A quiet passage...','Dusty corridors, nothing stirs.','Cobwebs and silence.','Empty — and a little eerie.'],
-      [R.ENEMY]:    ['A dungeon rat leaps from the shadows!','An enemy bars your way!','Something snarls in the dark.','You hear claws on stone.'],
-      [R.SHOP]:     ['A merchant grins at your coin pouch.','Goods for sale — if you can pay.','The shopkeeper nods warily.','Torchlight glints off strange wares.'],
-      [R.NPC]:      ['A wounded adventurer slumps against the wall.','A stranger whispers a warning.','Someone cowers in the corner.','A robed figure stares in silence.'],
-      [R.ITEM]:     ['Something glints in the rubble.','A discarded tool — still useful.','You spot an object half-buried in dust.','Left behind by a previous delver.'],
-      [R.CHEST]:    ['A locked chest. Worth the risk?','Gold light spills from the lid.','Could be trapped...','Heavy iron lock, but the hinges look weak.'],
-      [R.BOSS]:     ['THE FLOOR SHAKES. Something ancient stirs.','A BOSS lurks here. There is no retreat.'],
-    };
+    // ── All valid exit bitmask configurations ────────────────────────────
+    const ALL_EXITS = [
+      // Dead ends
+      N, E, S, W,
+      // Straight corridors
+      N|S, E|W,
+      // Corners
+      N|E, N|W, S|E, S|W,
+      // T-junctions
+      N|E|S, N|W|S, E|S|W, N|E|W,
+      // Crossroads
+      N|E|S|W,
+    ];
 
+    // ── Room pools by depth ──────────────────────────────────────────────
+    const POOLS = [
+      [RT.CORRIDOR,RT.CORRIDOR,RT.ENEMY,RT.SHOP,RT.NPC,RT.ITEM,RT.CHEST],
+      [RT.CORRIDOR,RT.ENEMY,RT.ENEMY,RT.SHOP,RT.CHEST,RT.NPC,RT.ITEM],
+      [RT.ENEMY,RT.ENEMY,RT.ENEMY,RT.CHEST,RT.ITEM,RT.SHOP,RT.BOSS],
+    ];
+    function poolFor(d) { return d <= 2 ? POOLS[0] : d <= 4 ? POOLS[1] : POOLS[2]; }
+
+    // ── Flavour text ──────────────────────────────────────────────────────
+    const MSGS = {
+      [RT.CORRIDOR]: ['A quiet passage — nothing stirs.','Dusty corridors, cobwebs and silence.','The torchlight wavers. No danger lurks.'],
+      [RT.ENEMY]:    ['A dungeon rat leaps from the shadows!','An enemy bars your way!','Something snarls in the dark.','Claws scrape on stone.'],
+      [RT.SHOP]:     ['A merchant eyes your coin pouch.','Strange wares gleam in the torchlight.','The shopkeeper nods warily.'],
+      [RT.NPC]:      ['A wounded adventurer slumps against the wall.','A stranger whispers a warning.','A robed figure stares at you.'],
+      [RT.ITEM]:     ['Something glints in the rubble.','A discarded tool — still useful.','Left behind by a previous delver.'],
+      [RT.CHEST]:    ['A locked chest. Worth the risk?','Gold light spills from the lid.','Heavy iron lock, weak hinges.'],
+      [RT.BOSS]:     ['THE FLOOR SHAKES. Something ancient stirs.','A BOSS blocks the way. No retreat.'],
+    };
     const SURPRISE = {
-      [R.ENEMY]:  ['Wait — it bolts on sight of you.','The enemy was dead already.'],
-      [R.SHOP]:   ['"Sold out," the merchant mutters. Nothing here.','Shelves are bare. Someone beat you to it.'],
-      [R.CHEST]:  ['Empty. Someone got here first.','A decoy — just rocks inside.'],
-      [R.NPC]:    ['They say nothing. Just point deeper down.'],
-      [R.ITEM]:   ['Broken beyond use.','Cursed — you leave it well alone.'],
+      [RT.ENEMY]: ['Wait — it bolts on sight.','The enemy was dead already.'],
+      [RT.SHOP]:  ['"Sold out," the merchant mutters.','Bare shelves. Someone beat you here.'],
+      [RT.CHEST]: ['Empty. Someone got here first.','A decoy — just rocks inside.'],
+      [RT.NPC]:   ['They say nothing. Just point deeper.'],
+      [RT.ITEM]:  ['Broken beyond use.','Cursed. You leave it well alone.'],
     };
 
-    const LOG_CLS = {
-      [R.CORRIDOR]:'normal', [R.ENEMY]:'enemy', [R.SHOP]:'shop',
-      [R.NPC]:'npc', [R.ITEM]:'item', [R.CHEST]:'chest', [R.BOSS]:'boss',
-    };
-
-    // ── Grid dimensions ─────────────────────────────────────────────────
-    const COLS = 5;
-    const ROWS = 10;   // row 0 = boss floor, row ROWS-1 = start
-
-    const TS  = 50;    // tile size px
-    const GAP = 5;     // gap between tiles
-    const PAD = 15;    // canvas padding
-
-    const CW = COLS * TS + (COLS - 1) * GAP + PAD * 2;
-    const CH = ROWS * TS + (ROWS - 1) * GAP + PAD * 2;
+    // ── Grid & canvas setup ───────────────────────────────────────────────
+    const MSIZE = 11;
+    const MID   = 5;
+    const TS    = 30;   // tile size
+    const TGAP  = 2;    // gap between tiles
+    const TPAD  = 9;    // canvas padding
+    const CW    = MSIZE * TS + (MSIZE - 1) * TGAP + TPAD * 2;
 
     const canvas = document.getElementById('c');
     const ctx    = canvas.getContext('2d');
-    canvas.width  = CW;
-    canvas.height = CH;
+    canvas.width = canvas.height = CW;
 
-    // ── State ───────────────────────────────────────────────────────────
-    let grid = [];       // grid[row][col] = { type, state }
-    // state: 'hidden' | 'offered' | 'current' | 'visited'
-    let playerRow, playerCol, depth, gameOver, offeredCols, eventLog;
+    // ── State ─────────────────────────────────────────────────────────────
+    let grid, px, py, stepCount, uiState, pendingDir, offerings, eventLog;
+    // uiState: 'pick-dir' | 'pick-room'
 
-    // ── Generation pools (weighted by dungeon depth) ────────────────────
-    const POOL = {
-      easy: [R.CORRIDOR,R.CORRIDOR,R.ENEMY,R.ENEMY,R.ITEM,R.SHOP,R.NPC,R.CHEST],
-      mid:  [R.CORRIDOR,R.ENEMY,R.ENEMY,R.ENEMY,R.ITEM,R.CHEST,R.SHOP,R.NPC],
-      hard: [R.ENEMY,R.ENEMY,R.ENEMY,R.CHEST,R.ITEM,R.SHOP,R.CORRIDOR],
-    };
+    // ── Utility ───────────────────────────────────────────────────────────
+    const pick    = a => a[0|Math.random()*a.length];
+    const shuffle = a => { const b=[...a]; for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}return b; };
+    const inBounds = (x,y) => x>=0 && x<MSIZE && y>=0 && y<MSIZE;
+    const getCell  = (x,y) => (grid[y]??[])[x]??null;
+    const setCell  = (x,y,c) => { if(grid[y]) grid[y][x]=c; };
+    const txPos    = c => TPAD + c*(TS+TGAP);
+    const tyPos    = r => TPAD + r*(TS+TGAP);
+    const dist     = (x,y) => Math.max(Math.abs(x-MID), Math.abs(y-MID));
 
-    function poolFor(row) {
-      if (row >= 7) return POOL.easy;
-      if (row >= 4) return POOL.mid;
-      return POOL.hard;
-    }
+    // ── Tile renderer (shared for map + mini previews) ────────────────────
+    function drawTileCtx(c, type, exits, x, y, s, opts = {}) {
+      const def = RDEF[type];
+      const wt  = Math.round(s * 0.22);  // wall thickness
+      const cw  = Math.round(s * 0.37);  // corridor opening width
+      const co  = Math.round((s - cw) / 2); // corridor offset
 
-    function pick(arr)   { return arr[Math.floor(Math.random() * arr.length)]; }
-    function shuffle(a)  { for (let i=a.length-1;i>0;i--){const j=0|Math.random()*(i+1);[a[i],a[j]]=[a[j],a[i]];}return a; }
-    function tx(c)       { return PAD + c * (TS + GAP); }
-    function ty(r)       { return PAD + r * (TS + GAP); }
+      // Wall fill
+      c.fillStyle = opts.dim ? '#0b0b1a' : def.wall;
+      c.fillRect(x, y, s, s);
 
-    // ── Generate ────────────────────────────────────────────────────────
-    function generate() {
-      grid = [];
-      for (let r = 0; r < ROWS; r++) {
-        grid[r] = [];
-        for (let c = 0; c < COLS; c++) {
-          let type;
-          if      (r === 0)        type = R.BOSS;
-          else if (r === ROWS - 1) type = R.START;
-          else                     type = pick(poolFor(r));
-          grid[r][c] = { type, state: 'hidden' };
-        }
+      // Floor area
+      c.fillStyle = opts.dim ? '#111126' : def.bg;
+      c.fillRect(x+wt, y+wt, s-wt*2, s-wt*2);
+
+      // Exit corridors (punch through walls)
+      c.fillStyle = opts.dim ? '#111126' : def.bg;
+      if (exits & N) c.fillRect(x+co,   y,      cw, wt);
+      if (exits & S) c.fillRect(x+co,   y+s-wt, cw, wt);
+      if (exits & E) c.fillRect(x+s-wt, y+co,   wt, cw);
+      if (exits & W) c.fillRect(x,      y+co,   wt, cw);
+
+      // Room icon
+      c.fillStyle    = opts.dim ? '#2a2a50' : def.text;
+      c.font         = `${Math.round(s * 0.33)}px serif`;
+      c.textAlign    = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(def.icon, x + s/2, y + s/2 + 1);
+
+      // Typed border (for choice cards on map)
+      if (opts.border) {
+        c.strokeStyle = def.border;
+        c.lineWidth   = 1.5;
+        c.strokeRect(x + 1, y + 1, s - 2, s - 2);
       }
 
-      playerRow   = ROWS - 1;
-      playerCol   = Math.floor(COLS / 2);
-      depth       = 0;
-      gameOver    = false;
-      offeredCols = [];
-      eventLog    = [];
+      // Current position — draw Pip
+      if (opts.current) {
+        const cx = x + s/2;
+        const cy = y + s/2;
+        const r  = Math.max(4, s * 0.26);
 
-      grid[playerRow][playerCol].state = 'current';
-      offerNextRow();
+        c.fillStyle = '#f5e6c8';
+        c.beginPath(); c.arc(cx, cy+1, r, 0, Math.PI*2); c.fill();
 
-      document.getElementById('depth-val').textContent = depth;
-      document.getElementById('depth-max').textContent = ROWS - 1;
-      addLog('[Start] Pip descends into the dungeon...', 'system');
-      render();
-    }
+        const er = r * 0.4;
+        c.fillStyle = '#e0c8a0';
+        c.beginPath(); c.arc(cx-r*.55, cy-r*.7, er, 0, Math.PI*2); c.fill();
+        c.beginPath(); c.arc(cx+r*.55, cy-r*.7, er, 0, Math.PI*2); c.fill();
 
-    function offerNextRow() {
-      const nextRow = playerRow - 1;
-      if (nextRow < 0) return;
-      offeredCols = shuffle([0, 1, 2, 3, 4]).slice(0, 3).sort((a, b) => a - b);
-      for (const c of offeredCols) grid[nextRow][c].state = 'offered';
-    }
+        c.fillStyle = '#3d2b1f';
+        c.beginPath(); c.arc(cx+r*.28, cy-r*.05, r*.16, 0, Math.PI*2); c.fill();
 
-    // ── Choose ──────────────────────────────────────────────────────────
-    function chooseRoom(col) {
-      if (gameOver) return;
-      const nextRow = playerRow - 1;
-      if (nextRow < 0 || !offeredCols.includes(col)) return;
-
-      grid[playerRow][playerCol].state = 'visited';
-
-      // Hide unchosen offered tiles in that row
-      for (const c of offeredCols) {
-        if (c !== col) grid[nextRow][c].state = 'hidden';
+        c.fillStyle = '#c87060';
+        c.beginPath(); c.arc(cx+r*.48, cy+r*.3, r*.13, 0, Math.PI*2); c.fill();
       }
 
-      playerRow = nextRow;
-      playerCol = col;
-      grid[playerRow][playerCol].state = 'current';
-      depth++;
-      offeredCols = [];
-
-      document.getElementById('depth-val').textContent = depth;
-
-      const type = grid[playerRow][playerCol].type;
-      resolveEncounter(type);
-
-      if (type === R.BOSS) {
-        gameOver = true;
-        render();
-        return;
-      }
-
-      offerNextRow();
-      render();
-    }
-
-    function resolveEncounter(type) {
-      const msgs = ENCOUNTER[type] || ['You enter the room.'];
-      let msg    = pick(msgs);
-
-      const surprises = SURPRISE[type];
-      if (surprises && Math.random() < 0.2) msg += ' ' + pick(surprises);
-
-      const label = DEF[type] ? DEF[type].label : 'Room';
-      addLog(`[${label}] ${msg}`, LOG_CLS[type] || 'normal');
-    }
-
-    function addLog(msg, cls = 'normal') {
-      eventLog.unshift({ msg, cls });
-      if (eventLog.length > 5) eventLog.pop();
-      const el = document.getElementById('log');
-      el.innerHTML = eventLog.map((e, i) =>
-        `<div class="log-entry log-${e.cls}" style="opacity:${(1 - i * 0.2).toFixed(2)}">${e.msg}</div>`
-      ).join('');
-    }
-
-    // ── Render ──────────────────────────────────────────────────────────
-    function rr(x, y, w, h, r) {
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.lineTo(x + w - r, y);
-      ctx.quadraticCurveTo(x + w, y,   x + w, y + r);
-      ctx.lineTo(x + w, y + h - r);
-      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-      ctx.lineTo(x + r, y + h);
-      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-      ctx.lineTo(x, y + r);
-      ctx.quadraticCurveTo(x, y, x + r, y);
-      ctx.closePath();
-    }
-
-    function drawTile(row, col) {
-      const cell = grid[row][col];
-      const x = tx(col), y = ty(row), s = TS, br = 7;
-
-      if (cell.state === 'hidden') {
-        rr(x, y, s, s, br);
-        ctx.fillStyle = '#0c0c1e';
-        ctx.fill();
-        ctx.strokeStyle = '#191930';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.fillStyle = '#222244';
-        ctx.font = `${Math.floor(s * 0.28)}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('?', x + s / 2, y + s / 2);
-        return;
-      }
-
-      const d = DEF[cell.type];
-      if (!d) return;
-
-      const visited = cell.state === 'visited';
-      const offered = cell.state === 'offered';
-      const current = cell.state === 'current';
-
-      // Outer glow for offered tiles
-      if (offered) {
-        rr(x - 4, y - 4, s + 8, s + 8, br + 4);
-        ctx.fillStyle = d.border + '22';
-        ctx.fill();
-      }
-
-      // Background
-      rr(x, y, s, s, br);
-      ctx.fillStyle = visited ? '#0f0f20' : d.bg;
-      ctx.fill();
-
-      // Border
-      ctx.strokeStyle = visited ? '#22224a' : d.border;
-      ctx.lineWidth   = (offered || current) ? 2.5 : 1.5;
-      ctx.stroke();
-
-      // Icon
-      ctx.fillStyle    = visited ? '#2a2a50' : d.text;
-      ctx.font         = `${Math.floor(s * 0.38)}px serif`;
-      ctx.textAlign    = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(d.icon, x + s / 2, y + s / 2);
-
-      // Current position dot (Pip indicator)
-      if (current) {
-        ctx.fillStyle = '#f5e6c8';
-        ctx.beginPath();
-        ctx.arc(x + s / 2, y + s - 9, 3.5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Visited path connector — small dot in centre
-      if (visited) {
-        ctx.fillStyle = '#3a3a60';
-        ctx.beginPath();
-        ctx.arc(x + s / 2, y + s / 2, 2, 0, Math.PI * 2);
-        ctx.fill();
+      // Highlight for current tile (golden border)
+      if (opts.current) {
+        c.strokeStyle = '#c8941e';
+        c.lineWidth   = 1.5;
+        c.strokeRect(x + 1, y + 1, s - 2, s - 2);
       }
     }
 
+    // ── Main canvas render ────────────────────────────────────────────────
     function render() {
       ctx.fillStyle = '#0d0d1a';
-      ctx.fillRect(0, 0, CW, CH);
+      ctx.fillRect(0, 0, CW, CW);
 
-      // Draw path lines connecting visited tiles
-      ctx.strokeStyle = '#2a2a50';
-      ctx.lineWidth   = 1.5;
-      let lastVisited = null;
-      for (let r = ROWS - 1; r >= 0; r--) {
-        for (let c = 0; c < COLS; c++) {
-          const cell = grid[r][c];
-          if (cell.state === 'visited' || cell.state === 'current') {
-            const cx = tx(c) + TS / 2, cy = ty(r) + TS / 2;
-            if (lastVisited) {
-              ctx.beginPath();
-              ctx.moveTo(lastVisited.x, lastVisited.y);
-              ctx.lineTo(cx, cy);
-              ctx.stroke();
-            }
-            lastVisited = { x: cx, y: cy };
+      for (let r = 0; r < MSIZE; r++) {
+        for (let c = 0; c < MSIZE; c++) {
+          const cell = getCell(c, r);
+          const x = txPos(c), y = tyPos(r);
+
+          if (!cell) {
+            // Unknown — dark placeholder
+            ctx.fillStyle = '#0c0c1c';
+            ctx.fillRect(x, y, TS, TS);
+            ctx.fillStyle = '#1a1a36';
+            ctx.font         = `${Math.floor(TS*.28)}px monospace`;
+            ctx.textAlign    = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('?', x+TS/2, y+TS/2);
+          } else {
+            const isCurrent = c === px && r === py;
+            drawTileCtx(ctx, cell.type, cell.exits, x, y, TS, {
+              current: isCurrent,
+              dim:     !isCurrent,
+              border:  !isCurrent,
+            });
           }
         }
       }
 
-      for (let r = 0; r < ROWS; r++)
-        for (let c = 0; c < COLS; c++)
-          drawTile(r, c);
-
-      renderChoices();
+      renderPanel();
     }
 
-    function renderChoices() {
-      const panel   = document.getElementById('choices');
-      const nextRow = playerRow - 1;
+    // ── Constraint-aware exit config list ─────────────────────────────────
+    function validExitConfigs(nx, ny, entryDir) {
+      let forced   = entryDir;
+      let forbidden = 0;
 
-      if (gameOver) {
-        panel.innerHTML = `<div class="no-choice" style="color:#ff4040">☠ The Boss awaits… (next: combat)</div>`;
-        return;
+      for (const d of DIR_LIST) {
+        const [dx, dy] = DDELTA[d];
+        const ax = nx+dx, ay = ny+dy;
+        if (!inBounds(ax, ay)) { forbidden |= d; continue; }
+        const adj = getCell(ax, ay);
+        if (!adj) continue;
+        if (adj.exits & OPP[d]) forced    |= d;
+        else                    forbidden |= d;
       }
 
-      if (nextRow < 0 || offeredCols.length === 0) {
-        panel.innerHTML = '<div class="no-choice">No path forward.</div>';
-        return;
-      }
+      const valid = ALL_EXITS.filter(c => (c & forced)===forced && (c & forbidden)===0);
+      // Ensure we have at least one option
+      if (valid.length === 0) valid.push(forced);
+      return valid;
+    }
 
+    // ── Generate 3 offerings ──────────────────────────────────────────────
+    function generateOfferings(nx, ny, entryDir) {
+      const d      = dist(nx, ny);
+      const types  = shuffle([...new Set(poolFor(d))]).slice(0, 3);
+      while (types.length < 3) types.push(pick(poolFor(d)));
+
+      const cfgs   = shuffle(validExitConfigs(nx, ny, entryDir));
+      while (cfgs.length < 3) cfgs.push(cfgs[cfgs.length-1]);
+
+      return types.map((type, i) => ({ type, exits: cfgs[i] }));
+    }
+
+    // ── UI panel (direction picker or room choices) ───────────────────────
+    function availableDirs() {
+      const cell = getCell(px, py);
+      if (!cell) return [];
+      return DIR_LIST.filter(d => {
+        if (!(cell.exits & d)) return false;
+        const [dx, dy] = DDELTA[d];
+        const nx = px+dx, ny = py+dy;
+        if (!inBounds(nx, ny)) return false;
+        const adj = getCell(nx, ny);
+        return !adj || !!(adj.exits & OPP[d]);
+      });
+    }
+
+    function renderPanel() {
+      const panel = document.getElementById('panel');
+      const hint  = document.getElementById('hint');
       panel.innerHTML = '';
-      for (const c of offeredCols) {
-        const cell = grid[nextRow][c];
-        const d    = DEF[cell.type];
-        if (!d) continue;
-        const btn  = document.createElement('button');
-        btn.className        = 'choice-btn';
-        btn.style.borderColor = d.border;
-        btn.style.background  = d.bg;
-        btn.innerHTML = `
-          <span class="choice-icon"  style="color:${d.text}">${d.icon}</span>
-          <span class="choice-label" style="color:${d.text}">${d.label}</span>
-        `;
-        btn.addEventListener('click', () => chooseRoom(c));
-        panel.appendChild(btn);
-      }
-    }
 
-    // ── Legend ──────────────────────────────────────────────────────────
-    function buildLegend() {
-      const el = document.getElementById('legend');
-      const types = [R.ENEMY, R.BOSS, R.SHOP, R.NPC, R.ITEM, R.CHEST, R.CORRIDOR];
-      el.innerHTML = types.map(t => {
-        const d = DEF[t];
-        return `<div class="legend-item">
-          <div class="legend-swatch" style="border-color:${d.border};background:${d.bg}"></div>
-          ${d.label}
-        </div>`;
-      }).join('');
-    }
+      if (uiState === 'pick-dir') {
+        const avail = availableDirs();
+        hint.textContent = avail.length ? 'Choose a direction' : 'No exits — dead end';
 
-    // ── Input ───────────────────────────────────────────────────────────
-    canvas.addEventListener('click', e => {
-      if (gameOver) return;
-      const rect  = canvas.getBoundingClientRect();
-      const scale = CW / rect.width;
-      const mx    = (e.clientX - rect.left) * scale;
-      const my    = (e.clientY - rect.top)  * scale;
-      const nextRow = playerRow - 1;
-      if (nextRow < 0) return;
-      for (const c of offeredCols) {
-        if (mx >= tx(c) && mx < tx(c) + TS && my >= ty(nextRow) && my < ty(nextRow) + TS) {
-          chooseRoom(c);
-          return;
+        const compass = document.createElement('div');
+        compass.className = 'compass';
+
+        const slots = [
+          null,  N,    null,
+          W,     null, E,
+          null,  S,    null,
+        ];
+        for (const d of slots) {
+          if (d === null) {
+            const gap = document.createElement('div');
+            gap.className = 'dir-center';
+            compass.appendChild(gap);
+          } else {
+            const btn = document.createElement('button');
+            btn.className = 'dir-btn';
+            btn.textContent = DARROW[d];
+            if (!avail.includes(d)) btn.disabled = true;
+            else btn.addEventListener('click', () => pickDirection(d));
+            compass.appendChild(btn);
+          }
         }
+        panel.appendChild(compass);
+
+      } else if (uiState === 'pick-room') {
+        hint.textContent = 'Choose a room to place';
+        const row = document.createElement('div');
+        row.className = 'choice-row';
+
+        offerings.forEach((o, i) => {
+          const def  = RDEF[o.type];
+          const card = document.createElement('button');
+          card.className        = 'choice-card';
+          card.style.borderColor = def.border;
+          card.style.background  = def.bg;
+
+          // Mini tile preview
+          const mc   = document.createElement('canvas');
+          mc.width = mc.height = 60;
+          const mctx = mc.getContext('2d');
+          mctx.fillStyle = '#0d0d1a';
+          mctx.fillRect(0, 0, 60, 60);
+          drawTileCtx(mctx, o.type, o.exits, 5, 5, 50, { border: true });
+          card.appendChild(mc);
+
+          const lbl = document.createElement('span');
+          lbl.className = 'choice-label';
+          lbl.style.color = def.text;
+          lbl.textContent = def.label;
+          card.appendChild(lbl);
+
+          card.addEventListener('click', () => placeRoom(i));
+          row.appendChild(card);
+        });
+        panel.appendChild(row);
       }
+    }
+
+    // ── Direction selected ────────────────────────────────────────────────
+    function pickDirection(dir) {
+      if (uiState !== 'pick-dir') return;
+      const [dx, dy] = DDELTA[dir];
+      const nx = px+dx, ny = py+dy;
+      const existing = getCell(nx, ny);
+
+      if (existing) {
+        px = nx; py = ny; stepCount++;
+        document.getElementById('steps').textContent = stepCount;
+        addLog(`[Move] Back to ${RDEF[existing.type].label}.`, 'normal');
+        render();
+        return;
+      }
+
+      pendingDir = dir;
+      offerings  = generateOfferings(nx, ny, OPP[dir]);
+      uiState    = 'pick-room';
+      render();
+    }
+
+    // ── Room chosen ───────────────────────────────────────────────────────
+    function placeRoom(idx) {
+      if (uiState !== 'pick-room' || pendingDir === null) return;
+      const o = offerings[idx];
+      const [dx, dy] = DDELTA[pendingDir];
+      const nx = px+dx, ny = py+dy;
+
+      setCell(nx, ny, { type: o.type, exits: o.exits });
+      px = nx; py = ny; stepCount++;
+      document.getElementById('steps').textContent = stepCount;
+
+      logEncounter(o.type);
+
+      pendingDir = null;
+      offerings  = [];
+      uiState    = 'pick-dir';
+      render();
+    }
+
+    // ── Log ───────────────────────────────────────────────────────────────
+    function addLog(msg, cls = 'normal') {
+      eventLog.unshift({ msg, cls });
+      if (eventLog.length > 5) eventLog.pop();
+      document.getElementById('log').innerHTML =
+        eventLog.map((e, i) =>
+          `<div class="log-entry log-${e.cls}" style="opacity:${(1-i*.2).toFixed(2)}">${e.msg}</div>`
+        ).join('');
+    }
+
+    function logEncounter(type) {
+      if (type === RT.START) return;
+      const def     = RDEF[type];
+      const msgs    = MSGS[type] || ['You enter the room.'];
+      let   msg     = pick(msgs);
+      const sur     = SURPRISE[type];
+      if (sur && Math.random() < 0.2) msg += ' ' + pick(sur);
+      addLog(`[${def.label}] ${msg}`, def.lc);
+    }
+
+    // ── Keyboard ──────────────────────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (uiState !== 'pick-dir') return;
+      const map = {
+        ArrowUp:'N', w:'N', W:'N',
+        ArrowDown:'S', s:'S', S:'S',
+        ArrowLeft:'W', a:'W', A:'W',
+        ArrowRight:'E', d:'E', D:'E',
+      };
+      const k = map[e.key];
+      if (!k) return;
+      e.preventDefault();
+      const d = { N, E, S, W }[k];
+      if (availableDirs().includes(d)) pickDirection(d);
     });
 
-    document.getElementById('new-btn').addEventListener('click', generate);
+    // ── Init ──────────────────────────────────────────────────────────────
+    function init() {
+      grid       = Array.from({ length: MSIZE }, () => Array(MSIZE).fill(null));
+      px         = MID; py = MID;
+      stepCount  = 0;
+      uiState    = 'pick-dir';
+      pendingDir = null;
+      offerings  = [];
+      eventLog   = [];
 
-    // ── Init ────────────────────────────────────────────────────────────
-    buildLegend();
-    generate();
+      setCell(MID, MID, { type: RT.START, exits: N|E|S|W });
+
+      document.getElementById('steps').textContent = 0;
+      document.getElementById('log').innerHTML = '';
+      addLog('[Start] Pip descends into the dungeon...', 'system');
+      render();
+    }
+
+    document.getElementById('new-btn').addEventListener('click', init);
+    init();
   </script>
 </body>
 </html>
