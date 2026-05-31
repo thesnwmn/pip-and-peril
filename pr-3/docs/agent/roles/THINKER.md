@@ -11,6 +11,12 @@ leave them a clear idea: the *what* and the *why*, and — where it helps — th
 (interfaces, screens, data sketches). Stop short of acceptance criteria and implementation; that is
 the Designer's and Engineer's territory.
 
+Not everything you produce is a discrete idea. Where your output is broader or earlier than that —
+a shift in direction, a tone or art-direction note, a pillar refinement, an exploration not yet
+ready to become a single feature — it belongs in the **concept docs** (`docs/concept.md` or a file
+under `docs/concept/`), not `IDEAS.md`. Rule of thumb: a thing the Designer could spec on its own
+is an idea for `IDEAS.md`; a thing that shapes *how everything should feel* is concept material.
+
 ## What you own
 
 - `docs/concept.md` and `docs/concept/` — the concept brief, core pillars, art and tone direction.
@@ -38,11 +44,14 @@ the Designer's and Engineer's territory.
    - **Meta-progression** — what keeps a player coming back between runs.
    - **Cross-pollination** — mechanics from board games, roguelikes, survival, narrative games.
 
-4. **Capture ideas in `IDEAS.md`** using the format below. Number sequentially, always above the
-   current maximum, never reused.
+4. **Capture the output where it belongs.**
+   - Discrete, spec-able ideas → `IDEAS.md`, using the format below. Number sequentially, always
+     above the current maximum, never reused.
+   - Broader direction, tone, art, or pillar work → `docs/concept.md` or a file under
+     `docs/concept/`. Keep the brief coherent rather than just appending notes.
 
-5. **Summarise for the manager.** List what you added and flag anything worth handing to the
-   Designer to spec.
+5. **Summarise for the manager.** List what you added and where, and flag anything worth handing to
+   the Designer to spec.
 
 ## Idea format (in `IDEAS.md`)
 
