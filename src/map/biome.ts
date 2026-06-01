@@ -10,7 +10,6 @@ export interface BiomePalette {
   floorMortar: string
   floorFlagHi: string
   floorFlagLo: string
-  corridorFloor: string
   voidFill: string
   fogOverlay: string
 }
@@ -24,7 +23,6 @@ export const DUNGEON: BiomePalette = {
   floorMortar: '#221c16',
   floorFlagHi: '#3c3028',
   floorFlagLo: '#2a241c',
-  corridorFloor: '#2e281e',
   voidFill: '#080810',
   fogOverlay: 'rgba(8,8,16,0.65)',
 }
