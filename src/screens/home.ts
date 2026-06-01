@@ -79,6 +79,13 @@ export function createHome(transitionTo: (screen: string) => void): ScreenContro
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText('START RUN', LOGICAL_W / 2, BUTTON_Y + BUTTON_H / 2)
+
+    // Debug: show what screen is active
+    ctx.font = '10px system-ui'
+    ctx.fillStyle = colors.textMuted
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    ctx.fillText('[HOME]', 5, 5)
   }
 
   function handleClick(x: number, y: number): void {

@@ -33,6 +33,13 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     ctx.textAlign = 'left'
     ctx.textBaseline = 'middle'
     ctx.fillText('← Quit Run', BACK_LINK_X, BACK_LINK_Y + BACK_LINK_H / 2)
+
+    // Debug: show what screen is active
+    ctx.font = '10px system-ui'
+    ctx.fillStyle = colors.textMuted
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    ctx.fillText('[GAME]', 5, 5)
   }
 
   function handleClick(x: number, y: number): void {
