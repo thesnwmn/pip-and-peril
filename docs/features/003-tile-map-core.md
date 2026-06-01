@@ -9,8 +9,9 @@
 Establishes the tile-map data model and canvas renderer that all navigation and gameplay features
 will build on. Provides a `TileCell` type (room type + exit bitmask), a sparse `GameMap` grid
 (cells are null until placed by the player), and `FogState` per grid position. The renderer draws
-a 5×7-tile viewport centred on a given position, using the **Dungeon biome**: staggered stone
-brickwork for walls, flagstone floors with per-stone tonal variation, and room-type accent overlays.
+a 5×5-tile viewport centred on a given position, using the **Dungeon biome**: staggered stone
+brickwork for walls, flagstone floors with per-stone tonal variation, and a thin floor-edge marker
+in the room-type accent colour (with exit gaps) that leaves the dungeon stone aesthetic intact.
 A `BiomePalette` type is introduced so future biomes (cave, jungle, town) are a palette swap, not
 a code change. The Game screen is updated to render a hardcoded test map rather than a blank canvas.
 
@@ -29,7 +30,7 @@ a code change. The Game screen is updated to render a hardcoded test map rather 
    | 'item' | 'chest' | 'boss'`.
 6. A `BiomePalette` interface is defined (colours for wall/floor/corridor/void/fog). A single
    `DUNGEON` constant implements it. No other biomes are required in this feature.
-7. A `drawMap(ctx, map, fog, viewCenter, biome)` function renders the 5×7-tile viewport at the
+7. A `drawMap(ctx, map, fog, viewCenter, biome)` function renders the 5×5-tile viewport at the
    correct canvas position (see Layout below). `viewCenter` is a `GridPos`
    (`{ col: number; row: number }`).
 8. **Wall rendering (Dungeon biome):** staggered brick bond — horizontal mortar courses every ~6 px,
@@ -44,9 +45,11 @@ a code change. The Game screen is updated to render a hardcoded test map rather 
     through with a floor-coloured rectangle. Corridor width is `38%` of tile size; positioned
     centred on the tile edge. Adjacent tiles whose exits align will produce a seamless passage
     across the tile boundary.
-11. **Room-type accent:** after drawing walls and floor, a semi-transparent colour overlay is
-    composited over the entire tile for non-corridor, non-start rooms. Overlay values are defined
-    as constants (see Color tokens below). Corridors and start rooms receive no overlay.
+11. **Room-type floor-edge marker:** after drawing walls and floor (and before fog), a 1.5 px
+    coloured stroke traces the perimeter of the inner floor rectangle for non-corridor, non-start
+    rooms. Where an exit exists on a given side, a gap of width `cw` centered on the tile midpoint
+    is left in the stroke for that side — reinforcing the exit layout visually. Corridors and start
+    rooms receive no marker. Marker colours are defined as constants (see Color tokens below).
 12. **Fog states:**
     - `'hidden'`: fill with `DUNGEON.voidFill`; no tile art.
     - `'seen'`: draw full tile art, then composite `DUNGEON.fogOverlay` on top.
@@ -138,11 +141,11 @@ export interface BiomePalette {
 export const DUNGEON: BiomePalette = { … }   // values in Color tokens below
 ```
 
-### Room accent overlays
+### Room floor-edge markers
 
-Stored alongside the biome, keyed by `RoomType`. Applied after the wall/floor draw as a
-`ctx.fillStyle = accentColor; ctx.fillRect(tile bounds)` pass. Corridors and start have no
-overlay entry (skip the pass entirely).
+Stored in a `ROOM_ACCENTS` map keyed by `RoomType`, as solid hex strings. Applied as a 1.5 px
+stroke tracing the inner floor perimeter with exit gaps (see tile drawing Step 6). Corridors and
+start have no entry in `ROOM_ACCENTS` — the step is skipped for them entirely.
 
 ### Renderer
 
@@ -159,8 +162,8 @@ export function drawMap(
 ```
 
 Implementation notes:
-- Compute the top-left map cell from `viewCenter` and the viewport constants (5 wide, 7 tall).
-- For each of the 35 viewport slots, call an internal `drawCell(ctx, cell, fogState, col, row, biome)`
+- Compute the top-left map cell from `viewCenter` and the viewport constants (5 wide, 5 tall).
+- For each of the 25 viewport slots, call an internal `drawCell(ctx, cell, fogState, col, row, biome)`
   helper that handles the full drawing stack for one tile.
 - `drawCell` is not exported (internal), but should be unit-testable via a canvas mock if needed.
 - After all tiles are drawn, if the view-centre cell's fog is `'visible'`, call `drawPip(ctx,
@@ -206,11 +209,30 @@ Floor inner dim: fi = s − wt × 2
   - East: `fillRect(px + s − wt, py + co, wt + 1, cw)` with `biome.corridorFloor`
   - West: `fillRect(px, py + co, wt + 1, cw)` with `biome.corridorFloor`
 
-**Step 6 — room accent overlay** (skip for corridor / start):
-- Look up `rgba(…)` for the cell's `roomType`.
-- `ctx.fillStyle = accent; ctx.fillRect(px, py, s, s)`.
+**Step 6 — floor-edge marker** (skip for `'corridor'` and `'start'`):
+- Look up the solid hex marker colour for `cell.roomType` from `ROOM_ACCENTS`.
+- Set `ctx.strokeStyle = markerColor`, `ctx.lineWidth = 1.5`.
+- Draw the four sides of the inner floor perimeter as individual line segments, with gaps where
+  exits are punched. For each side, the gap is `cw` wide, centered on the tile midpoint:
 
-**Step 7 — fog overlay** (skip for 'visible'):
+  ```
+  North (y = py+wt):
+    no N exit → line from (px+wt, py+wt) to (px+wt+fi, py+wt)
+    N exit    → line (px+wt, py+wt)→(px+co, py+wt)  +  line (px+co+cw, py+wt)→(px+wt+fi, py+wt)
+
+  South (y = py+wt+fi): same x logic, driven by S exit
+
+  West (x = px+wt):
+    no W exit → line from (px+wt, py+wt) to (px+wt, py+wt+fi)
+    W exit    → line (px+wt, py+wt)→(px+wt, py+co)  +  line (px+wt, py+co+cw)→(px+wt, py+wt+fi)
+
+  East (x = px+wt+fi): same y logic, driven by E exit
+  ```
+
+  The four corner points are always included in both adjacent sides, so corner marks remain even
+  when exits are present — giving a consistent anchor at each room corner.
+
+**Step 7 — fog overlay** (skip for `'visible'`):
 - If `'seen'`: `ctx.fillStyle = biome.fogOverlay; ctx.fillRect(px, py, s, s)`.
 - If `'hidden'` or cell is null: `fillRect(px, py, s, s)` with `biome.voidFill`, then draw faint
   brick hint (2–3 horizontal lines at `biome.wallCourse` with global alpha 0.18).
@@ -276,22 +298,20 @@ src/
 ┌──────────────────────────────┐  390 × 844 logical px
 │ ← Quit Run          y=16–48  │  existing back link (unchanged from 002)
 ├──────────────────────────────┤  y = 50  ← map top edge
-│ ░░░░░ │░░░░░│░░░░░│░░░░░│░░░│  row 0  (hidden tiles = void)
-│ ░░░░░ │▓▓▓▓▓│▓▓▓▓▓│░░░░░│░░░│  row 1  (seen tiles = art + fog)
-│ ░░░░░ │▓▓▓▓▓│▓▓▓▓▓│░░░░░│░░░│  row 2
-│ ░░░░░ │▓▓▓▓▓│▓▓▓▓▓│░░░░░│░░░│  row 3  (centre row = Pip here)
-│ ░░░░░ │▓▓▓▓▓│█PIP█│▓▓▓▓▓│░░░│
-│ ░░░░░ │▓▓▓▓▓│▓▓▓▓▓│░░░░░│░░░│  rows 4–6
-│ ░░░░░ │░░░░░│░░░░░│░░░░░│░░░│
-├──────────────────────────────┤  y = 526 ← map bottom edge
+│ ░░░░░│░░░░░│░░░░░│░░░░░│░░░░░│  row 0  (hidden = void)
+│ ░░░░░│▓▓▓▓▓│▓▓▓▓▓│▓▓▓▓▓│░░░░░│  row 1  (seen = art + fog)
+│ ░░░░░│▓▓▓▓▓│█PIP█│▓▓▓▓▓│░░░░░│  row 2  (centre — Pip here)
+│ ░░░░░│▓▓▓▓▓│▓▓▓▓▓│▓▓▓▓▓│░░░░░│  row 3  (seen)
+│ ░░░░░│░░░░░│░░░░░│░░░░░│░░░░░│  row 4  (hidden)
+├──────────────────────────────┤  y = 420 ← map bottom edge
 │                              │
-│   [future dice / action UI]  │  318 px remaining
+│   [future dice / action UI]  │  424 px remaining
 │                              │
 └──────────────────────────────┘
 
-Map area: x=25, y=50, w=340, h=476
-Tile size: 68 px  ·  5 cols × 7 rows  ·  no gaps
-Pip is always at viewport column 2, row 3 (0-indexed centre)
+Map area: x=10, y=50, w=370, h=370
+Tile size: 74 px  ·  5 cols × 5 rows  ·  no gaps
+Pip is always at viewport column 2, row 2 (0-indexed centre)
 ```
 
 ### Color tokens
@@ -315,20 +335,22 @@ require CSS custom properties — they are canvas draw values only.
 | `voidFill` | `#080810` | Hidden/unknown cells and out-of-bounds |
 | `fogOverlay` | `rgba(8,8,16,0.65)` | 'seen' tile overlay |
 
-#### Room accent overlays (added to `src/colors.ts`)
+#### Room floor-edge marker colours (added to `src/colors.ts`)
 
-These extend the existing palette and match the room-type border values from `docs/concept.md`.
+Solid hex values used as the stroke colour for the floor-edge marker. These use the brighter
+"border" values from POC 5 (not the darker concept.md room-type tones) so the 1.5 px stroke reads
+clearly against dark dungeon stone. No rgba — the marker is a stroke, not a fill.
 
-| Constant | Hex accent | rgba overlay | Room |
-|---|---|---|---|
-| `roomEnemy` | `#7a1a1a` | `rgba(122,26,26,0.28)` | Enemy tile tint |
-| `roomShop` | `#7a6a00` | `rgba(122,106,0,0.22)` | Shop tile tint |
-| `roomNpc` | `#1a2a7a` | `rgba(26,42,122,0.22)` | NPC tile tint |
-| `roomItem` | `#1a6a2a` | `rgba(26,106,42,0.18)` | Item tile tint |
-| `roomChest` | `#c87820` | `rgba(120,72,0,0.22)` | Chest tile tint |
-| `roomBoss` | `#3a0a0a` | `rgba(122,10,10,0.42)` | Boss tile tint |
-| `roomStart` | — | no overlay | Start tile |
-| `roomCorridor` | — | no overlay | Corridor tile |
+| Constant | Hex | Room |
+|---|---|---|
+| `roomEnemy` | `#c0392b` | Enemy floor-edge marker |
+| `roomShop` | `#c8941e` | Shop floor-edge marker (reuses existing `gold`) |
+| `roomNpc` | `#2980b9` | NPC floor-edge marker |
+| `roomItem` | `#27ae60` | Item floor-edge marker |
+| `roomChest` | `#e67e22` | Chest floor-edge marker |
+| `roomBoss` | `#8e1010` | Boss floor-edge marker |
+| `roomStart` | — | No marker |
+| `roomCorridor` | — | No marker |
 
 #### Pip token colors (already in POC — formalise in `src/colors.ts`)
 
@@ -342,19 +364,19 @@ These extend the existing palette and match the room-type border values from `do
 
 ### Tile drawing proportions
 
-All values are ratios of `TILE_SIZE` (68 px). The Engineer should define these as derived
+All values are ratios of `TILE_SIZE` (74 px). The Engineer should define these as derived
 constants so changing `TILE_SIZE` automatically adjusts everything.
 
-| Part | Formula | Value at 68 px |
+| Part | Formula | Value at 74 px |
 |---|---|---|
-| Wall thickness (`wt`) | `round(s × 0.20)` | 14 px |
-| Corridor width (`cw`) | `round(s × 0.38)` | 26 px |
-| Corridor offset (`co`) | `round((s − cw) / 2)` | 21 px |
-| Floor inner dim (`fi`) | `s − wt × 2` | 40 px |
-| Flagstone cell (`fs`) | `floor(fi / 3)` | 13 px |
+| Wall thickness (`wt`) | `round(s × 0.20)` | 15 px |
+| Corridor width (`cw`) | `round(s × 0.38)` | 28 px |
+| Corridor offset (`co`) | `round((s − cw) / 2)` | 23 px |
+| Floor inner dim (`fi`) | `s − wt × 2` | 44 px |
+| Flagstone cell (`fs`) | `floor(fi / 3)` | 14 px |
 | Brick course height | `6 px` (fixed) | 6 px |
-| Brick joint spacing | `round(s / 3)` | 23 px |
-| Brick joint offset (odd) | `round(s / 6)` | 11 px |
+| Brick joint spacing | `round(s / 3)` | 25 px |
+| Brick joint offset (odd) | `round(s / 6)` | 12 px |
 
 ### Typography / sizing
 
@@ -390,6 +412,20 @@ provides sufficient breathing room.
 POC 1 and POC 5 draw only horizontal bands (stone courses). Adding staggered vertical joints
 produces genuine brick bond — it reads immediately as masonry rather than just "dark stripes." The
 extra draw calls are minimal (a handful of 1×6 px rectangles per tile).
+
+**Why floor-edge marker instead of full-tile tint:**
+A semi-transparent colour overlay on the whole tile washes the dungeon stone palette — enemy rooms
+go slightly red, shop rooms slightly gold — degrading the brick and flagstone detail. The floor-edge
+marker puts the room-type colour exactly where it's informative (at the wall-to-floor transition,
+which is the room's "threshold") without touching the wall surface or the flagstone colours. The
+exit gaps in the marker are a bonus: they reinforce the exit layout independently of the wall
+punch-through, making each tile easier to read at a glance.
+
+**Why 5×5 at 74 px over 5×7 at 68 px:**
+5×5 is the natural shape for a centred-on-Pip viewport: Pip sits at the true centre with 2 tiles
+visible in every direction. The square viewport suits portrait canvas better than a rectangle that
+crowds the dice/action UI area. At 74 px the brick courses (6 px) and each flagstone cell (14 px)
+are comfortably legible without the tile feeling like a full-screen room.
 
 **Why per-stone flagstone variation:**
 A 3×3 flagstone grid where all nine flags are the same colour reads as a single square with a
