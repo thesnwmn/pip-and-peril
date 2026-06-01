@@ -22,12 +22,7 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-### 007 · Build Stamp
-
-Inject a short Git SHA at build time and surface it as a subtle label on the Main Menu screen and
-a console log on startup. Makes it trivial to confirm which exact commit is running in any deployed
-environment (including PR previews).
-See `docs/features/007-build-stamp.md` for the full spec.
+_(none)_
 
 ---
 

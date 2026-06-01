@@ -16,6 +16,16 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 007 · Build Stamp
+
+**Shipped:** 2026-06-01 · **PR:** (pending) · **Spec:** [docs/features/history/007-build-stamp.md](docs/features/history/007-build-stamp.md)
+
+Inject a short Git SHA at build time and surface it as a subtle label on the Main Menu screen and
+a console log on startup. Makes it trivial to confirm which exact commit is running in any deployed
+environment (including PR previews).
+
+---
+
 ### 002 · Game Bootstrap
 
 **Shipped:** 2026-06-01 · **PR:** (pending) · **Spec:** [docs/features/history/002-game-bootstrap.md](docs/features/history/002-game-bootstrap.md)

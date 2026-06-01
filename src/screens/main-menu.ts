@@ -1,4 +1,5 @@
 import { colors } from '../colors'
+import { BUILD_ID } from '../build-id'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
@@ -62,6 +63,12 @@ export function createMainMenu(transitionTo: (screen: string) => void): ScreenCo
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText('NEW GAME', LOGICAL_W / 2, BUTTON_Y + BUTTON_H / 2)
+
+    ctx.font = '10px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.textMuted
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'bottom'
+    ctx.fillText('build: ' + BUILD_ID.slice(0, 7), LOGICAL_W - 8, LOGICAL_H - 10)
   }
 
   function handleClick(x: number, y: number): void {
