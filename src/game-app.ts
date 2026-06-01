@@ -77,6 +77,7 @@ export class GameApp {
   }
 
   public start(): void {
+    console.log(`🎮 Pip & Peril [Build ${new Date().toISOString().slice(0, 10)}]`)
     console.log(`Canvas physical dimensions: ${this.canvas.width}x${this.canvas.height}`)
     console.log(`Canvas CSS dimensions: ${this.canvas.style.width}x${this.canvas.style.height}`)
     console.log(`Device pixel ratio: ${this.dpr}`)
