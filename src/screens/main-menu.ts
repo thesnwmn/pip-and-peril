@@ -28,9 +28,12 @@ export function createMainMenu(transitionTo: (screen: string) => void): ScreenCo
   }
 
   function draw(ctx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
-    ctx.clearRect(0, 0, LOGICAL_W, LOGICAL_H)
+    // Save transform state and reset to clear entire physical canvas
+    ctx.save()
+    ctx.resetTransform()
     ctx.fillStyle = colors.bg
-    ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+    ctx.restore()
 
     ctx.font = 'bold 48px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.gold
@@ -46,7 +49,6 @@ export function createMainMenu(transitionTo: (screen: string) => void): ScreenCo
 
     const buttonFill = isMouseDevice && hoveredElement === 'new-game' ? colors.surfaceRaised : colors.surface
     ctx.fillStyle = buttonFill
-    console.log(`Main Menu: drawing button rect at (${BUTTON_X}, ${BUTTON_Y}) ${BUTTON_W}x${BUTTON_H}`)
     ctx.fillRect(BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H)
 
     ctx.strokeStyle = colors.gold

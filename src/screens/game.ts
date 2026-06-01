@@ -23,9 +23,12 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   }
 
   function draw(ctx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
-    ctx.clearRect(0, 0, LOGICAL_W, LOGICAL_H)
+    // Save transform state and reset to clear entire physical canvas
+    ctx.save()
+    ctx.resetTransform()
     ctx.fillStyle = colors.bg
-    ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+    ctx.restore()
 
     ctx.font = '12px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = isMouseDevice && hoveredElement === 'back' ? colors.textPrimary : colors.textMuted
