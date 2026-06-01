@@ -16,6 +16,13 @@ export class GameApp {
   private dpr: number
 
   constructor() {
+    console.log(`GameApp constructor called`)
+    const existingCanvas = document.querySelector('canvas')
+    if (existingCanvas) {
+      console.warn(`Warning: canvas element already exists in DOM, removing it`)
+      existingCanvas.remove()
+    }
+
     this.dpr = window.devicePixelRatio ?? 1
 
     this.canvas = document.createElement('canvas')
