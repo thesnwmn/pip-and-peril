@@ -22,13 +22,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-### 002 · Game Bootstrap
-
-Three-screen state machine (Main Menu → Home → Game) with HTML/CSS menus and a canvas + RAF loop
-shell for the game screen. Establishes the screen-transition pattern all gameplay features plug into.
-See `docs/features/002-game-bootstrap.md` for the full spec.
-Depends on: 001.
-
 ---
 
 ## NEEDS SPEC
