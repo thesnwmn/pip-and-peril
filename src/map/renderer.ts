@@ -4,7 +4,7 @@ import { ROOM_ACCENTS } from './biome'
 import type { FogState, GameMap, GridPos, TileCell } from './types'
 import { E, N, S, W } from './types'
 
-export const TILE_SIZE = 74
+export const TILE_SIZE = 72
 const VIEWPORT_COLS = 5
 const VIEWPORT_ROWS = 5
 export const MAP_X = 10
@@ -53,23 +53,16 @@ function drawCell(
   const px = MAP_X + vpCol * s
   const py = MAP_Y + vpRow * s
 
-  const wt = Math.round(s * 0.175)   // 13 px at TILE_SIZE 74 → fi=48 divisible by 4
-  const cw = Math.round(s * 0.35)
+  const wt = Math.round(s / 6)        // 12 px at TILE_SIZE 72; COURSE_HEIGHT 6 divides s exactly
+  const fi = s - wt * 2              // 48 px
+  const fs = fi / 4                  // 12 px — exact integer; all flagstones same size
+  const cw = 2 * fs + 2              // 26 px — 2 flagstones wide + 1 px margin each side
   const co = Math.round((s - cw) / 2)
-  const fi = s - wt * 2
-  const fs = fi / 4                   // exact integer (48/4=12); all flagstones same size
   const jointSpacing = Math.round(s / 3)
 
   if (cell === null || fogState === 'hidden') {
     ctx.fillStyle = biome.voidFill
     ctx.fillRect(px, py, s, s)
-    ctx.save()
-    ctx.globalAlpha = 0.18
-    ctx.fillStyle = biome.wallCourse
-    for (let line = 0; line < 3; line++) {
-      ctx.fillRect(px, py + Math.round(s * 0.25) + line * COURSE_HEIGHT, s, 1)
-    }
-    ctx.restore()
     return
   }
 
