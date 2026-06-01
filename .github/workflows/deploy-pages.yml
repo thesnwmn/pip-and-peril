@@ -26,4 +26,4 @@ jobs:
           folder: dist
           clean: true
           clean-exclude: |
-            pr-*/
+            preview/pr-*/

@@ -17,7 +17,7 @@ jobs:
 
       - name: Remove preview folder
         run: |
-          FOLDER="pr-${{ github.event.pull_request.number }}"
+          FOLDER="preview/pr-${{ github.event.pull_request.number }}"
           if [ -d "$FOLDER" ]; then
             git config user.name  "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
