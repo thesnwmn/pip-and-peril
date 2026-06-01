@@ -14,9 +14,10 @@ or contradicting them. An out-of-date doc is a bug; your job is to fix it before
 
 ## Process
 
-1. **Find what changed.** Read the relevant `BACKLOG_HISTORY.md` entry, the (now archived) spec in
-   `docs/features/history/`, and the diff/PR. Talk to the manager if the *why* behind a choice
-   isn't obvious from the artefacts.
+1. **Find what changed.** Follow the link in `BACKLOG_HISTORY.md` to the archived spec in
+   `docs/features/history/`; the `## Shipped` section there has the full evidence and what was
+   built. Also read the diff/PR. Talk to the manager if the *why* behind a choice isn't obvious
+   from the artefacts.
 
 2. **Record decisions.** For each non-trivial choice made (a library, a pattern, a data shape, a
    convention, a deliberate trade-off):

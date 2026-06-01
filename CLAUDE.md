@@ -71,10 +71,10 @@ The harness keeps a clear paper trail from concept → decision → backlog → 
 |---|---|
 | **Concept & direction** | `docs/concept.md`, `docs/concept/` (art direction, pillars, tone) |
 | **Raw ideas** | `IDEAS.md` (written by Thinker, consumed by Designer) |
-| **Feature backlog** | `BACKLOG.md` (active) · `BACKLOG_HISTORY.md` (completed, with evidence) |
-| **Feature details** | `docs/features/` (active specs) · `docs/features/history/` (archived specs) |
+| **Feature backlog** | `BACKLOG.md` (active) · `BACKLOG_HISTORY.md` (completed, summary + link) |
+| **Feature details** | `docs/features/` (active specs) · `docs/features/history/` (archived specs with evidence) |
 | **Decisions** | `DECISION_REGISTER.md` (index) · `docs/decisions/` (detailed rationale by area) |
-| **Implementation evidence** | Recorded against the item in `BACKLOG_HISTORY.md` (tests, play-test steps, PR link) |
+| **Implementation evidence** | Appended as `## Shipped` to the archived spec in `docs/features/history/` (tests, play-test steps, PR link) |
 | **Role instructions** | `docs/agent/roles/` |
 
 ## Conventions

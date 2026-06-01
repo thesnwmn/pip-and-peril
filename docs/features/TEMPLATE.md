@@ -68,3 +68,25 @@ Anything the manager still needs to decide. **An item with blocking open questio
 `NEEDS SPEC`, not `READY`.**
 
 - …
+
+---
+
+> The section below is filled in by the **Engineer** when the feature ships. Everything above is
+> the Designer's original spec.
+
+## Shipped
+
+**Date:** YYYY-MM-DD · **PR:** #NN
+
+### What was built
+
+A short description of the change and which acceptance criteria it satisfies.
+
+### Evidence
+
+- Tests: which tests were added/run and that they pass (e.g. `npm test` → N passing).
+- Type-check / build: result, if a toolchain exists.
+
+### Play-test
+
+1. Concrete, sequential steps a human can follow to see the feature working.
