@@ -73,8 +73,12 @@ export class GameApp {
     console.log(`Canvas physical dimensions: ${this.canvas.width}x${this.canvas.height}`)
     console.log(`Canvas CSS dimensions: ${this.canvas.style.width}x${this.canvas.style.height}`)
     console.log(`Device pixel ratio: ${this.dpr}`)
+    let lastScreen = this.currentScreen
     const tick = (timestamp: DOMHighResTimeStamp) => {
-      console.log(`Drawing screen: ${this.currentScreen}`)
+      if (this.currentScreen !== lastScreen) {
+        console.log(`Screen transition: ${lastScreen} → ${this.currentScreen}`)
+        lastScreen = this.currentScreen
+      }
       this.screens[this.currentScreen].draw(this.ctx, timestamp)
       requestAnimationFrame(tick)
     }
