@@ -24,9 +24,13 @@ npm run test       # Run Vitest unit tests
 npm run typecheck  # Run tsc --noEmit for type-checking
 ```
 
-Deployment is automatic: pushing to `main` builds and publishes `dist/` to GitHub Pages via
-`.github/workflows/deploy-pages.yml`; open PRs get a preview at a `pr-<n>/` path via
-`.github/workflows/pr-preview.yml`.
+Deployment is automatic:
+
+- **`main` branch** → builds and publishes `dist/` to GitHub Pages via `.github/workflows/deploy-pages.yml`.
+- **Open PRs** → a live preview is deployed to `https://thesnwmn.github.io/pip-and-peril/pr-<N>/`
+  (where `<N>` is the PR number) via `.github/workflows/pr-preview.yml`. The workflow also posts a
+  comment on the PR with the exact URL. **PRs do NOT need to be merged before a preview is
+  available** — the preview is live as soon as the workflow completes on the open PR.
 
 Alternatively, serve locally with any static server:
 
