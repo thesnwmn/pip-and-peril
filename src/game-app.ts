@@ -1,4 +1,5 @@
 import { colors } from './colors'
+import { BUILD_ID } from './build-id'
 import { createMainMenu, type ScreenController } from './screens/main-menu'
 import { createHome } from './screens/home'
 import { createGame } from './screens/game'
@@ -77,6 +78,7 @@ export class GameApp {
   }
 
   public start(): void {
+    console.log(`[Pip & Peril] build: ${BUILD_ID}`)
     let lastScreen = this.currentScreen
     const tick = (timestamp: DOMHighResTimeStamp) => {
       if (this.currentScreen !== lastScreen) {

@@ -19,6 +19,8 @@ jobs:
           node-version: '22'
 
       - run: npm ci && npm run build
+        env:
+          VITE_BUILD_ID: ${{ github.sha }}
 
       - uses: JamesIves/github-pages-deploy-action@v4
         with:

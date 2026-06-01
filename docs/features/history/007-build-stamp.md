@@ -1,6 +1,6 @@
 # 007 · Build Stamp
 
-**Status:** READY
+**Status:** SHIPPED
 **Source idea:** Manager request
 **Depends on:** 002 (Game Bootstrap)
 
@@ -112,3 +112,33 @@ bottom). `textAlign = 'right'`, `textBaseline = 'bottom'`.
 ## Open questions
 
 _(none — this item is READY)_
+
+## Shipped
+
+**Date:** 2026-06-01
+**PR:** (pending — see below)
+
+### What was built
+
+- `src/build-id.ts` — new module exporting `BUILD_ID` constant; reads `VITE_BUILD_ID` env var injected by Vite at build time, falls back to `'dev'` locally.
+- `src/vite-env.d.ts` — standard Vite+TS declaration file (`/// <reference types="vite/client" />`), required for `import.meta.env` to type-check cleanly.
+- `src/game-app.ts` — `start()` now logs `[Pip & Peril] build: <BUILD_ID>` immediately before starting the RAF loop.
+- `src/screens/main-menu.ts` — `draw()` renders `build: <BUILD_ID sliced to 7>` in `colors.textMuted` at 10 px, bottom-right corner (`textAlign='right'`, `textBaseline='bottom'`, `x=LOGICAL_W-8`, `y=LOGICAL_H-10`).
+- `.github/workflows/deploy-pages.yml` and `pr-preview.yml` — each build step gains `env: VITE_BUILD_ID: ${{ github.sha }}`.
+
+### Test evidence
+
+`npm run test` — 5 tests pass across 2 files:
+- `src/main.test.ts` — pre-existing trivial test (still passing)
+- `src/build-id.test.ts` — 4 new tests: `VITE_BUILD_ID` env stub, 40-char SHA truncation to 7, `'dev'` passthrough, console log format
+
+`npm run typecheck` — clean, no errors.
+
+### Play-test instructions
+
+1. Run `npm run dev` (or `python3 -m http.server 8000` after `npm run build`).
+2. Open the app in a browser and navigate to the Main Menu (it loads there by default).
+3. Open the browser DevTools console. Confirm the first log line reads exactly `[Pip & Peril] build: dev` (locally, without `VITE_BUILD_ID` set).
+4. On the Main Menu canvas, look at the bottom-right corner. Confirm the text `build: dev` is visible in a muted brownish colour, small (10 px), right-aligned, approximately 8 px from the right edge and 10 px from the bottom.
+5. The stamp must not appear on the Home screen or the Game screen — click NEW GAME and verify it is absent on those screens.
+6. To verify CI injection: once the PR is merged (or via the PR preview), open the deployed page, check the console and bottom-right corner — both should show a 7-char hex SHA instead of `dev`.
