@@ -51,12 +51,7 @@ enemy, resolve win/lose. First complete playable game moment. Depends on: 004, 0
 
 ## IN PROGRESS
 
-### 002 · Game Bootstrap
-
-Three-screen state machine (Main Menu → Home → Game) with HTML/CSS menus and a canvas + RAF loop
-shell for the game screen. Establishes the screen-transition pattern all gameplay features plug into.
-See `docs/features/002-game-bootstrap.md` for the full spec.
-Depends on: 001.
+_(none)_
 
 ---
 
