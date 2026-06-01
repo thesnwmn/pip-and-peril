@@ -117,10 +117,10 @@ function drawCell(
   if (exits & E) ctx.fillRect(px + s - wt, py + co, wt, cw)
   if (exits & W) ctx.fillRect(px, py + co, wt, cw)
 
-  if (exits & N) drawCorridorFlags(ctx, px + co, py, cw, wt, 1, fs, biome)
-  if (exits & S) drawCorridorFlags(ctx, px + co, py + s - wt, cw, wt, 0, fs, biome, true)
-  if (exits & E) drawCorridorFlags(ctx, px + s - wt, py + co, wt, cw, 0, fs, biome, false, true)
-  if (exits & W) drawCorridorFlags(ctx, px, py + co, wt, cw, 1, fs, biome)
+  if (exits & N) drawCorridorFlags(ctx, px + co, py, cw, wt, 0, fs, biome)
+  if (exits & S) drawCorridorFlags(ctx, px + co, py + s - wt, cw, wt, 1, fs, biome, true)
+  if (exits & E) drawCorridorFlags(ctx, px + s - wt, py + co, wt, cw, 1, fs, biome, false, true)
+  if (exits & W) drawCorridorFlags(ctx, px, py + co, wt, cw, 0, fs, biome)
 
   // Step 6 — floor-edge marker (skip corridor and start)
   const markerColor = ROOM_ACCENTS[cell.roomType]
