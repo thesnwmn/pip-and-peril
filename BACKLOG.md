@@ -59,11 +59,7 @@ enemy, resolve win/lose. First complete playable game moment. Depends on: 004, 0
 
 ## IN PROGRESS
 
-### 001 · Project Scaffolding — Vite + TypeScript + Vitest
-
-Replaces the plain-HTML POC approach with a proper TypeScript project: Vite for dev server and
-build, Vitest for unit tests. No game logic — just the toolchain every subsequent feature depends on.
-See `docs/features/001-project-scaffolding.md` for the full spec.
+_(none)_
 
 ---
 
