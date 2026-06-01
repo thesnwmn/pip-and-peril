@@ -13,6 +13,28 @@ export const MAP_Y = 50
 const COURSE_HEIGHT = 6
 const BRICK_JOINT_WIDTH = 1
 
+function drawCorridorFlags(
+  ctx: CanvasRenderingContext2D,
+  rx: number, ry: number, rw: number, rh: number,
+  cols: number, rows: number,
+  mapCol: number, mapRow: number,
+  seed: number,
+  biome: BiomePalette,
+): void {
+  const cellW = Math.floor(rw / cols)
+  const cellH = Math.floor(rh / rows)
+  for (let fr = 0; fr < rows; fr++) {
+    for (let fc = 0; fc < cols; fc++) {
+      const fw = fc === cols - 1 ? rw - fc * cellW : cellW
+      const fh = fr === rows - 1 ? rh - fr * cellH : cellH
+      const idx = fc + fr * cols + mapCol * 7 + mapRow * 13 + seed
+      ctx.fillStyle = idx % 2 === 0 ? biome.floorFlagHi : biome.floorFlagLo
+      ctx.fillRect(rx + fc * cellW, ry + fr * cellH, fw, fh)
+      ctx.strokeRect(rx + fc * cellW + 0.3, ry + fr * cellH + 0.3, fw - 0.6, fh - 0.6)
+    }
+  }
+}
+
 function drawCell(
   ctx: CanvasRenderingContext2D,
   cell: TileCell | null,
@@ -71,26 +93,35 @@ function drawCell(
   ctx.fillStyle = biome.floorBase
   ctx.fillRect(px + wt, py + wt, fi, fi)
 
-  // Step 4 — 3×3 flagstone grid (keyed by map position for consistent per-tile variation)
+  // Step 4 — 3×3 flagstone grid (last col/row extends to floor edge to avoid a floorBase strip)
   ctx.strokeStyle = biome.floorMortar
   ctx.lineWidth = 0.6
   for (let fr = 0; fr < 3; fr++) {
     for (let fc = 0; fc < 3; fc++) {
+      const fw = fc === 2 ? fi - fc * fs : fs
+      const fh = fr === 2 ? fi - fr * fs : fs
       const idx = fc + fr * 3 + mapCol * 7 + mapRow * 13
       const flagColor = idx % 2 === 0 ? biome.floorFlagHi : biome.floorFlagLo
       ctx.fillStyle = flagColor
-      ctx.fillRect(px + wt + fc * fs, py + wt + fr * fs, fs, fs)
-      ctx.strokeRect(px + wt + fc * fs + 0.3, py + wt + fr * fs + 0.3, fs - 0.6, fs - 0.6)
+      ctx.fillRect(px + wt + fc * fs, py + wt + fr * fs, fw, fh)
+      ctx.strokeRect(px + wt + fc * fs + 0.3, py + wt + fr * fs + 0.3, fw - 0.6, fh - 0.6)
     }
   }
 
-  // Step 5 — exit corridors (shift S/E start 1px inward so the seam overlap stays within tile)
+  // Step 5 — exit corridors with flagstone tiling (shift S/E start 1px inward for seam overlap)
   const exits = cell.exits
   ctx.fillStyle = biome.corridorFloor
-  if (exits & N) ctx.fillRect(px + co, py, cw, wt + 1)               // N: seam at floor top
-  if (exits & S) ctx.fillRect(px + co, py + s - wt - 1, cw, wt + 1)  // S: seam at floor bottom
-  if (exits & E) ctx.fillRect(px + s - wt - 1, py + co, wt + 1, cw)  // E: seam at floor right
-  if (exits & W) ctx.fillRect(px, py + co, wt + 1, cw)               // W: seam at floor left
+  if (exits & N) ctx.fillRect(px + co, py, cw, wt + 1)
+  if (exits & S) ctx.fillRect(px + co, py + s - wt - 1, cw, wt + 1)
+  if (exits & E) ctx.fillRect(px + s - wt - 1, py + co, wt + 1, cw)
+  if (exits & W) ctx.fillRect(px, py + co, wt + 1, cw)
+
+  ctx.strokeStyle = biome.floorMortar
+  ctx.lineWidth = 0.6
+  if (exits & N) drawCorridorFlags(ctx, px + co, py, cw, wt + 1, 2, 1, mapCol, mapRow, 31, biome)
+  if (exits & S) drawCorridorFlags(ctx, px + co, py + s - wt - 1, cw, wt + 1, 2, 1, mapCol, mapRow, 37, biome)
+  if (exits & E) drawCorridorFlags(ctx, px + s - wt - 1, py + co, wt + 1, cw, 1, 2, mapCol, mapRow, 41, biome)
+  if (exits & W) drawCorridorFlags(ctx, px, py + co, wt + 1, cw, 1, 2, mapCol, mapRow, 47, biome)
 
   // Step 6 — floor-edge marker (skip corridor and start)
   const markerColor = ROOM_ACCENTS[cell.roomType]

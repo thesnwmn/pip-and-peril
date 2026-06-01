@@ -19,7 +19,7 @@ export const DUNGEON: BiomePalette = {
   wallBase: '#1c1714',
   wallCourse: '#241e18',
   wallJoint: '#120e0a',
-  wallHighlight: '#2e2822',
+  wallHighlight: '#211a15',
   floorBase: '#322b22',
   floorMortar: '#221c16',
   floorFlagHi: '#3c3028',

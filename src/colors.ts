@@ -7,12 +7,12 @@ export const colors = {
   textMuted: '#8b7355',
 
   // Room floor-edge marker colours
-  roomEnemy: '#c0392b',
-  roomShop: '#c8941e',
-  roomNpc: '#2980b9',
-  roomItem: '#27ae60',
-  roomChest: '#e67e22',
-  roomBoss: '#8e1010',
+  roomEnemy: '#7d251c',
+  roomShop: '#826014',
+  roomNpc: '#1b5378',
+  roomItem: '#19713e',
+  roomChest: '#965216',
+  roomBoss: '#5c0a0a',
 
   // Pip token colours
   pipBody: '#f5e6c8',
