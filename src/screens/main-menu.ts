@@ -16,6 +16,7 @@ export interface ScreenController {
 
 export function createMainMenu(transitionTo: (screen: string) => void): ScreenController {
   let hoveredElement: string | null = null
+  let isMouseDevice = false
 
   function isInNewGameButton(x: number, y: number): boolean {
     return (
@@ -38,9 +39,11 @@ export function createMainMenu(transitionTo: (screen: string) => void): ScreenCo
 
     ctx.font = 'italic 14px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.textMuted
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
     ctx.fillText('Fortune Favors the Small', LOGICAL_W / 2, 290)
 
-    const buttonFill = hoveredElement === 'new-game' ? colors.surfaceRaised : colors.surface
+    const buttonFill = isMouseDevice && hoveredElement === 'new-game' ? colors.surfaceRaised : colors.surface
     ctx.fillStyle = buttonFill
     ctx.fillRect(BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H)
 
@@ -68,6 +71,7 @@ export function createMainMenu(transitionTo: (screen: string) => void): ScreenCo
   }
 
   function handlePointerMove(x: number, y: number): void {
+    isMouseDevice = true
     const newHovered = isInNewGameButton(x, y) ? 'new-game' : null
     if (newHovered !== hoveredElement) {
       hoveredElement = newHovered

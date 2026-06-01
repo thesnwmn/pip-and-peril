@@ -5,9 +5,9 @@ const LOGICAL_W = 390
 const LOGICAL_H = 844
 
 const BACK_LINK_X = 16
-const BACK_LINK_Y = 24
-const BACK_LINK_W = 120
-const BACK_LINK_H = 16
+const BACK_LINK_Y = 16
+const BACK_LINK_W = 150
+const BACK_LINK_H = 32
 
 const BUTTON_W = 280
 const BUTTON_H = 55
@@ -16,6 +16,7 @@ const BUTTON_Y = 680
 
 export function createHome(transitionTo: (screen: string) => void): ScreenController {
   let hoveredElement: string | null = null
+  let isMouseDevice = false
 
   function isInBackLink(x: number, y: number): boolean {
     return (
@@ -40,10 +41,10 @@ export function createHome(transitionTo: (screen: string) => void): ScreenContro
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 
     ctx.font = '12px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = hoveredElement === 'back' ? colors.textPrimary : colors.textMuted
+    ctx.fillStyle = isMouseDevice && hoveredElement === 'back' ? colors.textPrimary : colors.textMuted
     ctx.textAlign = 'left'
-    ctx.textBaseline = 'top'
-    ctx.fillText('← Main Menu', BACK_LINK_X, BACK_LINK_Y)
+    ctx.textBaseline = 'middle'
+    ctx.fillText('← Main Menu', BACK_LINK_X, BACK_LINK_Y + BACK_LINK_H / 2)
 
     ctx.font = 'bold 24px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.textPrimary
@@ -57,7 +58,7 @@ export function createHome(transitionTo: (screen: string) => void): ScreenContro
     ctx.fillText('The dungeon awaits, Pip.', LOGICAL_W / 2, 380)
     ctx.fillText('Choose your moment.', LOGICAL_W / 2, 410)
 
-    const buttonFill = hoveredElement === 'start-run' ? colors.surfaceRaised : colors.surface
+    const buttonFill = isMouseDevice && hoveredElement === 'start-run' ? colors.surfaceRaised : colors.surface
     ctx.fillStyle = buttonFill
     ctx.fillRect(BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H)
 
@@ -87,6 +88,7 @@ export function createHome(transitionTo: (screen: string) => void): ScreenContro
   }
 
   function handlePointerMove(x: number, y: number): void {
+    isMouseDevice = true
     let newHovered: string | null = null
     if (isInBackLink(x, y)) {
       newHovered = 'back'
