@@ -77,14 +77,9 @@ export class GameApp {
   }
 
   public start(): void {
-    console.log(`🎮 Pip & Peril [Build ${new Date().toISOString().slice(0, 10)}]`)
-    console.log(`Canvas physical dimensions: ${this.canvas.width}x${this.canvas.height}`)
-    console.log(`Canvas CSS dimensions: ${this.canvas.style.width}x${this.canvas.style.height}`)
-    console.log(`Device pixel ratio: ${this.dpr}`)
     let lastScreen = this.currentScreen
     const tick = (timestamp: DOMHighResTimeStamp) => {
       if (this.currentScreen !== lastScreen) {
-        console.log(`Screen transition: ${lastScreen} → ${this.currentScreen}`)
         lastScreen = this.currentScreen
         // Reset canvas completely on screen transition
         this.canvas.width = this.canvas.width
