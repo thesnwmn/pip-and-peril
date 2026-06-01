@@ -37,8 +37,10 @@ export function createHome(transitionTo: (screen: string) => void): ScreenContro
   }
 
   function draw(ctx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
+    console.log(`Home draw, clearing with color: ${colors.bg}`)
     ctx.fillStyle = colors.bg
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
+    console.log(`Home: drawing START RUN button at ${BUTTON_X}, ${BUTTON_Y}, ${BUTTON_W}x${BUTTON_H}`)
 
     ctx.font = '12px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = isMouseDevice && hoveredElement === 'back' ? colors.textPrimary : colors.textMuted
@@ -60,6 +62,7 @@ export function createHome(transitionTo: (screen: string) => void): ScreenContro
 
     const buttonFill = isMouseDevice && hoveredElement === 'start-run' ? colors.surfaceRaised : colors.surface
     ctx.fillStyle = buttonFill
+    console.log(`Filling START RUN button with ${buttonFill}`)
     ctx.fillRect(BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H)
 
     ctx.strokeStyle = colors.gold
@@ -76,6 +79,7 @@ export function createHome(transitionTo: (screen: string) => void): ScreenContro
     ctx.fillStyle = colors.gold
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
+    console.log(`Drawing START RUN text`)
     ctx.fillText('START RUN', LOGICAL_W / 2, BUTTON_Y + BUTTON_H / 2)
   }
 
