@@ -61,6 +61,7 @@ export function createHome(transitionTo: (screen: string) => void): ScreenContro
 
     const buttonFill = isMouseDevice && hoveredElement === 'start-run' ? colors.surfaceRaised : colors.surface
     ctx.fillStyle = buttonFill
+    console.log(`Home: drawing button rect at (${BUTTON_X}, ${BUTTON_Y}) ${BUTTON_W}x${BUTTON_H}`)
     ctx.fillRect(BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H)
 
     ctx.strokeStyle = colors.gold

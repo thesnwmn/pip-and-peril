@@ -46,6 +46,7 @@ export function createMainMenu(transitionTo: (screen: string) => void): ScreenCo
 
     const buttonFill = isMouseDevice && hoveredElement === 'new-game' ? colors.surfaceRaised : colors.surface
     ctx.fillStyle = buttonFill
+    console.log(`Main Menu: drawing button rect at (${BUTTON_X}, ${BUTTON_Y}) ${BUTTON_W}x${BUTTON_H}`)
     ctx.fillRect(BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H)
 
     ctx.strokeStyle = colors.gold
