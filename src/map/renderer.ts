@@ -49,11 +49,11 @@ function drawCell(
   const px = MAP_X + vpCol * s
   const py = MAP_Y + vpRow * s
 
-  const wt = Math.round(s * 0.2)
+  const wt = Math.round(s * 0.175)   // 13 px at TILE_SIZE 74 → fi=48 divisible by 4
   const cw = Math.round(s * 0.38)
   const co = Math.round((s - cw) / 2)
   const fi = s - wt * 2
-  const fs = Math.floor(fi / 3)
+  const fs = fi / 4                   // exact integer (48/4=12); all flagstones same size
   const jointSpacing = Math.round(s / 3)
 
   if (cell === null || fogState === 'hidden') {
@@ -93,18 +93,16 @@ function drawCell(
   ctx.fillStyle = biome.floorBase
   ctx.fillRect(px + wt, py + wt, fi, fi)
 
-  // Step 4 — 3×3 flagstone grid (last col/row extends to floor edge to avoid a floorBase strip)
+  // Step 4 — 4×4 flagstone grid (fi=48 = 4×12 exactly, so all stones are equal size)
   ctx.strokeStyle = biome.floorMortar
   ctx.lineWidth = 0.6
-  for (let fr = 0; fr < 3; fr++) {
-    for (let fc = 0; fc < 3; fc++) {
-      const fw = fc === 2 ? fi - fc * fs : fs
-      const fh = fr === 2 ? fi - fr * fs : fs
-      const idx = fc + fr * 3 + mapCol * 7 + mapRow * 13
+  for (let fr = 0; fr < 4; fr++) {
+    for (let fc = 0; fc < 4; fc++) {
+      const idx = fc + fr * 4 + mapCol * 7 + mapRow * 13
       const flagColor = idx % 2 === 0 ? biome.floorFlagHi : biome.floorFlagLo
       ctx.fillStyle = flagColor
-      ctx.fillRect(px + wt + fc * fs, py + wt + fr * fs, fw, fh)
-      ctx.strokeRect(px + wt + fc * fs + 0.3, py + wt + fr * fs + 0.3, fw - 0.6, fh - 0.6)
+      ctx.fillRect(px + wt + fc * fs, py + wt + fr * fs, fs, fs)
+      ctx.strokeRect(px + wt + fc * fs + 0.3, py + wt + fr * fs + 0.3, fs - 0.6, fs - 0.6)
     }
   }
 
@@ -208,11 +206,13 @@ export function drawPip(
     ctx.fill()
   }
 
-  // Eye
-  ctx.beginPath()
-  ctx.arc(cx + r * 0.2, cy - r * 0.1 + r * 0.2, r * 0.1, 0, Math.PI * 2)
-  ctx.fillStyle = colors.pipEye
-  ctx.fill()
+  // Eyes (left and right)
+  for (const ex of [-r * 0.2, r * 0.2]) {
+    ctx.beginPath()
+    ctx.arc(cx + ex, cy - r * 0.1 + r * 0.2, r * 0.1, 0, Math.PI * 2)
+    ctx.fillStyle = colors.pipEye
+    ctx.fill()
+  }
 
   // Nose
   ctx.beginPath()

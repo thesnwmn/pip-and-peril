@@ -106,11 +106,11 @@ describe('drawPip', () => {
     expect(Math.abs(bodyY - cy)).toBeLessThan(TILE_SIZE * 0.3)
   })
 
-  it('draws body, two ears, eye, and nose', () => {
+  it('draws body, two ears, two eyes, and nose', () => {
     const ctx = makeCtx()
     drawPip(ctx, 100, 100, TILE_SIZE)
-    // body + 2 outer ears + 2 inner ears + eye + nose = 7 arc calls
+    // body + 2 outer ears + 2 inner ears + 2 eyes + nose = 8 arc calls
     const arcCalls = (ctx.arc as ReturnType<typeof vi.fn>).mock.calls
-    expect(arcCalls.length).toBe(7)
+    expect(arcCalls.length).toBe(8)
   })
 })
