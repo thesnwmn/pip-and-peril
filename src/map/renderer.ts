@@ -54,7 +54,7 @@ function drawCell(
   const py = MAP_Y + vpRow * s
 
   const wt = Math.round(s * 0.175)   // 13 px at TILE_SIZE 74 → fi=48 divisible by 4
-  const cw = Math.round(s * 0.38)
+  const cw = Math.round(s * 0.35)
   const co = Math.round((s - cw) / 2)
   const fi = s - wt * 2
   const fs = fi / 4                   // exact integer (48/4=12); all flagstones same size
@@ -111,7 +111,7 @@ function drawCell(
 
   // Step 5 — exit corridors with flagstone tiling
   const exits = cell.exits
-  ctx.fillStyle = biome.floorBase
+  ctx.fillStyle = biome.wallCourse
   if (exits & N) ctx.fillRect(px + co, py, cw, wt)
   if (exits & S) ctx.fillRect(px + co, py + s - wt, cw, wt)
   if (exits & E) ctx.fillRect(px + s - wt, py + co, wt, cw)
