@@ -22,16 +22,16 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-_(none)_
+### 003 · Tile Map Core
+
+Grid data model (`TileCell`, sparse `GameMap`, `FogState`) and a canvas renderer using the Dungeon
+biome: staggered brick walls, flagstone floors with per-stone tonal variation, room-type accent
+overlays, and fog-of-war. No movement logic. Depends on: 002.
+See `docs/features/003-tile-map-core.md` for the full spec.
 
 ---
 
 ## NEEDS SPEC
-
-### 003 · Tile Map Core
-
-Grid data model (tile types, exit bitmask, fog-of-war state) and a canvas renderer. No movement
-logic — just the map as a data structure and a way to draw it. Depends on: 002.
 
 ### 004 · Navigation & Room Selection
 
