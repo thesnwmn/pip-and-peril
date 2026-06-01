@@ -71,6 +71,7 @@ export class GameApp {
 
   public start(): void {
     const tick = (timestamp: DOMHighResTimeStamp) => {
+      console.log(`Drawing screen: ${this.currentScreen}`)
       this.screens[this.currentScreen].draw(this.ctx, timestamp)
       requestAnimationFrame(tick)
     }
