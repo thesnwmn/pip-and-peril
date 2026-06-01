@@ -14,18 +14,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - run: npm ci && npm run build
+
       - uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
-          folder: .
-          target-folder: pr-${{ github.event.pull_request.number }}
+          folder: dist
+          target-folder: preview/pr-${{ github.event.pull_request.number }}
           clean: true
 
       - uses: actions/github-script@v7
         with:
           script: |
             const prNum  = context.issue.number;
-            const url    = `https://${context.repo.owner}.github.io/${context.repo.repo}/pr-${prNum}/`;
+            const url    = `https://${context.repo.owner}.github.io/${context.repo.repo}/preview/pr-${prNum}/`;
             const marker = '<!-- pip-peril-preview -->';
             const body   = `${marker}\n🐭 **Preview:** ${url}`;
 

@@ -22,11 +22,7 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-### 001 · Project Scaffolding — Vite + TypeScript + Vitest
-
-Replaces the plain-HTML POC approach with a proper TypeScript project: Vite for dev server and
-build, Vitest for unit tests. No game logic — just the toolchain every subsequent feature depends on.
-See `docs/features/001-project-scaffolding.md` for the full spec.
+_(none)_
 
 ---
 
