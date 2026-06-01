@@ -16,21 +16,24 @@ const BRICK_JOINT_WIDTH = 1
 function drawCorridorFlags(
   ctx: CanvasRenderingContext2D,
   rx: number, ry: number, rw: number, rh: number,
-  cols: number, rows: number,
   mapCol: number, mapRow: number,
   seed: number,
+  fs: number,
   biome: BiomePalette,
 ): void {
-  const cellW = Math.floor(rw / cols)
-  const cellH = Math.floor(rh / rows)
+  const cols = Math.floor(rw / fs)
+  const rows = Math.floor(rh / fs)
+  if (cols === 0 || rows === 0) return
+  const offsetX = Math.floor((rw - cols * fs) / 2)
+  const offsetY = Math.floor((rh - rows * fs) / 2)
+  ctx.strokeStyle = biome.floorMortar
+  ctx.lineWidth = 0.6
   for (let fr = 0; fr < rows; fr++) {
     for (let fc = 0; fc < cols; fc++) {
-      const fw = fc === cols - 1 ? rw - fc * cellW : cellW
-      const fh = fr === rows - 1 ? rh - fr * cellH : cellH
-      const idx = fc + fr * cols + mapCol * 7 + mapRow * 13 + seed
+      const idx = fc + fr + mapCol * 7 + mapRow * 13 + seed
       ctx.fillStyle = idx % 2 === 0 ? biome.floorFlagHi : biome.floorFlagLo
-      ctx.fillRect(rx + fc * cellW, ry + fr * cellH, fw, fh)
-      ctx.strokeRect(rx + fc * cellW + 0.3, ry + fr * cellH + 0.3, fw - 0.6, fh - 0.6)
+      ctx.fillRect(rx + offsetX + fc * fs, ry + offsetY + fr * fs, fs, fs)
+      ctx.strokeRect(rx + offsetX + fc * fs + 0.3, ry + offsetY + fr * fs + 0.3, fs - 0.6, fs - 0.6)
     }
   }
 }
@@ -98,7 +101,7 @@ function drawCell(
   ctx.lineWidth = 0.6
   for (let fr = 0; fr < 4; fr++) {
     for (let fc = 0; fc < 4; fc++) {
-      const idx = fc + fr * 4 + mapCol * 7 + mapRow * 13
+      const idx = fc + fr + mapCol * 7 + mapRow * 13
       const flagColor = idx % 2 === 0 ? biome.floorFlagHi : biome.floorFlagLo
       ctx.fillStyle = flagColor
       ctx.fillRect(px + wt + fc * fs, py + wt + fr * fs, fs, fs)
@@ -116,10 +119,10 @@ function drawCell(
 
   ctx.strokeStyle = biome.floorMortar
   ctx.lineWidth = 0.6
-  if (exits & N) drawCorridorFlags(ctx, px + co, py, cw, wt + 1, 2, 1, mapCol, mapRow, 31, biome)
-  if (exits & S) drawCorridorFlags(ctx, px + co, py + s - wt - 1, cw, wt + 1, 2, 1, mapCol, mapRow, 37, biome)
-  if (exits & E) drawCorridorFlags(ctx, px + s - wt - 1, py + co, wt + 1, cw, 1, 2, mapCol, mapRow, 41, biome)
-  if (exits & W) drawCorridorFlags(ctx, px, py + co, wt + 1, cw, 1, 2, mapCol, mapRow, 47, biome)
+  if (exits & N) drawCorridorFlags(ctx, px + co, py, cw, wt + 1, mapCol, mapRow, 0, fs, biome)
+  if (exits & S) drawCorridorFlags(ctx, px + co, py + s - wt - 1, cw, wt + 1, mapCol, mapRow, 5, fs, biome)
+  if (exits & E) drawCorridorFlags(ctx, px + s - wt - 1, py + co, wt + 1, cw, mapCol, mapRow, 5, fs, biome)
+  if (exits & W) drawCorridorFlags(ctx, px, py + co, wt + 1, cw, mapCol, mapRow, 0, fs, biome)
 
   // Step 6 — floor-edge marker (skip corridor and start)
   const markerColor = ROOM_ACCENTS[cell.roomType]
