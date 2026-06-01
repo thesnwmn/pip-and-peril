@@ -1,0 +1,49 @@
+import { colors } from '../colors'
+import { ScreenController } from './main-menu'
+
+const LOGICAL_W = 390
+const LOGICAL_H = 844
+
+const BACK_LINK_X = 16
+const BACK_LINK_Y = 24
+const BACK_LINK_W = 120
+const BACK_LINK_H = 16
+
+export function createGame(transitionTo: (screen: string) => void): ScreenController {
+  let hoveredElement: string | null = null
+
+  function isInBackLink(x: number, y: number): boolean {
+    return (
+      x >= BACK_LINK_X &&
+      x <= BACK_LINK_X + BACK_LINK_W &&
+      y >= BACK_LINK_Y &&
+      y <= BACK_LINK_Y + BACK_LINK_H
+    )
+  }
+
+  function draw(ctx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
+    ctx.fillStyle = colors.bg
+    ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
+
+    ctx.font = '12px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = hoveredElement === 'back' ? colors.textPrimary : colors.textMuted
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    ctx.fillText('← Quit Run', BACK_LINK_X, BACK_LINK_Y)
+  }
+
+  function handleClick(x: number, y: number): void {
+    if (isInBackLink(x, y)) {
+      transitionTo('home')
+    }
+  }
+
+  function handlePointerMove(x: number, y: number): void {
+    const newHovered = isInBackLink(x, y) ? 'back' : null
+    if (newHovered !== hoveredElement) {
+      hoveredElement = newHovered
+    }
+  }
+
+  return { draw, handleClick, handlePointerMove }
+}
