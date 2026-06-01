@@ -5,7 +5,6 @@ export interface BiomePalette {
   wallBase: string
   wallCourse: string
   wallJoint: string
-  wallHighlight: string
   floorBase: string
   floorMortar: string
   floorFlagHi: string
@@ -18,7 +17,6 @@ export const DUNGEON: BiomePalette = {
   wallBase: '#1c1714',
   wallCourse: '#241e18',
   wallJoint: '#120e0a',
-  wallHighlight: '#211a15',
   floorBase: '#322b22',
   floorMortar: '#221c16',
   floorFlagHi: '#3c3028',

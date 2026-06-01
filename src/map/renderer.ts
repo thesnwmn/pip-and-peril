@@ -80,10 +80,6 @@ function drawCell(
   // Step 2 — brick bond pattern
   let courseIndex = 0
   for (let r = 0; r < s; r += COURSE_HEIGHT, courseIndex++) {
-    if (courseIndex === 0) {
-      ctx.fillStyle = biome.wallHighlight
-      ctx.fillRect(px, py + r, s, COURSE_HEIGHT)
-    }
     ctx.fillStyle = biome.wallJoint
     ctx.fillRect(px, py + r, s, BRICK_JOINT_WIDTH)
 
