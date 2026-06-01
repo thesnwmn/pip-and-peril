@@ -22,17 +22,16 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-_(none)_
+### 002 · Game Bootstrap
+
+Three-screen state machine (Main Menu → Home → Game) with HTML/CSS menus and a canvas + RAF loop
+shell for the game screen. Establishes the screen-transition pattern all gameplay features plug into.
+See `docs/features/002-game-bootstrap.md` for the full spec.
+Depends on: 001.
 
 ---
 
 ## NEEDS SPEC
-
-### 002 · Game Bootstrap
-
-Game entry point, canvas initialisation, and a minimal game-loop shell (requestAnimationFrame).
-Establishes the screen/state-machine pattern that navigation and combat screens will plug into.
-Depends on: 001.
 
 ### 003 · Tile Map Core
 
