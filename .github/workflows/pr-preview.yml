@@ -24,14 +24,14 @@ jobs:
         with:
           branch: gh-pages
           folder: dist
-          target-folder: pr-${{ github.event.pull_request.number }}
+          target-folder: preview/pr-${{ github.event.pull_request.number }}
           clean: true
 
       - uses: actions/github-script@v7
         with:
           script: |
             const prNum  = context.issue.number;
-            const url    = `https://${context.repo.owner}.github.io/${context.repo.repo}/pr-${prNum}/`;
+            const url    = `https://${context.repo.owner}.github.io/${context.repo.repo}/preview/pr-${prNum}/`;
             const marker = '<!-- pip-peril-preview -->';
             const body   = `${marker}\n🐭 **Preview:** ${url}`;
 
