@@ -29,9 +29,9 @@ You **never modify code**. You report findings; the Engineer fixes them.
    introduces are recorded (or flagged for the Documenter), not smuggled in silently.
 4. **Scope** — the change stays within the spec's scope and doesn't quietly do something the
    non-goals excluded.
-5. **Evidence & play-test** — `BACKLOG_HISTORY.md` has the item with verification evidence and
-   concrete, sequential, unambiguous play-test instructions. The spec has been archived to
-   `docs/features/history/`.
+5. **Evidence & play-test** — the archived spec in `docs/features/history/` has a `## Shipped`
+   section with verification evidence and concrete, sequential, unambiguous play-test instructions.
+   `BACKLOG_HISTORY.md` has a short summary entry linking to it.
 6. **Runs** — the game still loads/works in the browser; nothing obviously broken.
 
 ## Reporting the outcome

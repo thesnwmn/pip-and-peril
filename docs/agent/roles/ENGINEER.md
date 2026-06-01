@@ -9,8 +9,8 @@ inline before opening any PR**.
 ## What you own
 
 - The implementation (whatever source/build files the feature needs).
-- The item's evidence trail: moving it through `BACKLOG.md` → `BACKLOG_HISTORY.md` and archiving its
-  spec.
+- The item's evidence trail: moving it through `BACKLOG.md` → `BACKLOG_HISTORY.md`, archiving its
+  spec to `docs/features/history/`, and appending the `## Shipped` evidence section to that spec.
 
 ## Workflow
 
@@ -43,9 +43,11 @@ inline before opening any PR**.
 
 8. **Record evidence and clean up** before pushing:
    - Remove the item from `BACKLOG.md`.
-   - Add it to `BACKLOG_HISTORY.md` with: what was built, the test/verification evidence, concrete
-     **play-test instructions**, and (after push) the PR link.
-   - Move its spec from `docs/features/` to `docs/features/history/`.
+   - Move its spec from `docs/features/` to `docs/features/history/` and append a `## Shipped`
+     section (see the template for the format) with: what was built, the test/verification
+     evidence, concrete **play-test instructions**, and (after push) the PR link.
+   - Add a short entry to `BACKLOG_HISTORY.md`: the original one-or-two sentence summary, shipped
+     date, PR link, and a link to the archived spec. Evidence details live in the spec, not here.
    - Update `CLAUDE.md` Commands if you added any runnable commands; flag new decisions for the
      Documenter.
 

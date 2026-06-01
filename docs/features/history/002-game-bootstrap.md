@@ -257,3 +257,47 @@ as fallback.
 ## Open questions
 
 _(none — all choices above can be acted on immediately)_
+
+---
+
+## Shipped
+
+**Date:** 2026-06-01 · **PR:** (pending)
+
+### What was built
+
+Three-screen state machine (Main Menu → Home → Game) with canvas-based rendering and a continuous
+RAF loop. The Main Menu displays the game title and tagline with a clickable "NEW GAME" button. The
+Home screen shows flavour text and a "START RUN" button to begin a run, with a back-link to the
+Main Menu. The Game screen provides a blank canvas that subsequent gameplay features will render
+into. A single event loop runs from app start, delegating each frame to the current screen's draw
+function. All UI interactions (buttons, links) support hover states with visual feedback.
+
+### Evidence
+
+- Tests: `npm run test` → 1 passing (no new failures)
+- Type-check: `npm run typecheck` → 0 errors (tsc --noEmit)
+- Browser verification: All three screens render correctly with proper typography, colors, and layout
+- Screen transitions: All bidirectional transitions (Main Menu ↔ Home ↔ Game) work correctly
+- Input handling: Button and link hit-detection precise; hover states render on mousemove
+- RAF loop: Single continuous loop confirmed, no separate loops per screen
+
+### Play-test
+
+1. `npm run dev` — start the dev server at http://localhost:5173
+2. Visit http://localhost:5173 — Main Menu displays with "PIP & PERIL" title, "Fortune Favors the
+   Small" tagline, and "NEW GAME" button (centred, with gold border and background)
+3. Hover over "NEW GAME" button — background lightens from dark to lighter shade
+4. Click "NEW GAME" — transitions to Home screen (no animation, instant change)
+5. Home screen displays: "← Main Menu" link (top-left), "HOME" heading (centred), flavour text
+   ("The dungeon awaits, Pip. Choose your moment."), and "START RUN" button (lower centre)
+6. Hover over "START RUN" button — background lightens like in step 3
+7. Click "← Main Menu" link — transitions back to Main Menu
+8. Verify Main Menu is identical to step 2 — state machine correctly restored
+9. Click "NEW GAME" again, then click "START RUN" — transitions to Game screen
+10. Game screen displays: blank dark canvas with "← Quit Run" link in top-left corner
+11. Hover over "← Quit Run" — text colour brightens (visual feedback)
+12. Click "← Quit Run" — transitions back to Home screen
+13. From Home, click "START RUN" again — transitions to Game (verifying forward transition works
+    repeatedly)
+14. Observe that RAF loop is running: no jank, smooth rendering at 60fps
