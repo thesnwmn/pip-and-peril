@@ -86,6 +86,9 @@ export class GameApp {
       if (this.currentScreen !== lastScreen) {
         console.log(`Screen transition: ${lastScreen} → ${this.currentScreen}`)
         lastScreen = this.currentScreen
+        // Reset canvas completely on screen transition
+        this.canvas.width = this.canvas.width
+        this.ctx.scale(this.dpr, this.dpr)
       }
       this.screens[this.currentScreen].draw(this.ctx, timestamp)
       requestAnimationFrame(tick)
