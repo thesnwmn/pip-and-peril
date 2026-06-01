@@ -41,6 +41,12 @@ arriving at a *sharper* spec after productive friction is the goal.
    `docs/features/TEMPLATE.md`. Give it the next free number (above the current max across
    `BACKLOG.md`, `BACKLOG_HISTORY.md`, and `docs/features/`).
 
+   Prefer **diagrams and intent** over code-like constructs throughout. ASCII state charts, flow
+   diagrams, and wireframes communicate design clearly without prescribing the solution. If you find
+   yourself writing interfaces or typed shapes, pause: can acceptance criteria or a diagram say the
+   same thing? Reserve code-adjacent notation for areas where a boundary is genuinely uncertain and
+   the ambiguity could derail the Engineer.
+
    For any feature that involves a visible screen or UI component, visual design is **part of the
    spec** — not a follow-up. Read `docs/concept.md` (Aesthetic Direction) and any existing color
    decisions before writing, then include in the Design detail section:
@@ -67,7 +73,7 @@ anything. At minimum (see the template):
 - **Acceptance criteria** — a numbered list of concrete, testable statements. This is the contract.
 - **Scope / non-goals** — what is explicitly *not* part of this item.
 - **Dependencies** — other features or decisions this relies on.
-- **Design detail** — data shapes, interfaces, states, screens, and edge cases. Interfaces yes; full code no.
+- **Design detail** — states, screens, flows, and edge cases expressed as prose, diagrams, or state charts. Capture *intent*, not implementation. Reach for acceptance criteria before reaching for code-like constructs; a diagram communicates structure without prescribing the solution. A minimal named-shape sketch is acceptable only where a boundary is genuinely ambiguous and prose won't resolve it — not as a default.
 - **Visual design** *(UI-facing features only)* — layout wireframe, new color tokens, typography/sizing. The Engineer should not have to invent these.
 - **Open questions** — anything the manager still needs to decide (an item with blocking open
   questions is `NEEDS SPEC`, not `READY`).
