@@ -15,24 +15,24 @@ implemented features require them.
 
 ## Commands
 
-There is **no build tooling yet**. The current artefacts are plain static HTML:
+The project uses **Vite + TypeScript + Vitest** for development, testing, and building:
 
 ```bash
-# Preview locally — just open the file in a browser, no build step:
-#   index.html              landing page linking to all POCs
-#   poc/<name>/index.html   individual proof-of-concept
-
-# Or serve the folder over HTTP (any static server works), e.g.:
-python3 -m http.server 8000   # then visit http://localhost:8000
+npm run dev        # Start Vite dev server at http://localhost:5173
+npm run build      # Build for production into dist/
+npm run test       # Run Vitest unit tests
+npm run typecheck  # Run tsc --noEmit for type-checking
 ```
 
-Deployment is automatic: pushing to `main` publishes the repo root to GitHub Pages via
+Deployment is automatic: pushing to `main` builds and publishes `dist/` to GitHub Pages via
 `.github/workflows/deploy-pages.yml`; open PRs get a preview at a `pr-<n>/` path via
 `.github/workflows/pr-preview.yml`.
 
-> When the Engineer introduces a build/test toolchain (e.g. Vite + TypeScript + Vitest), the
-> commands to run dev server, tests, type-check and build **must be added to this section** and
-> recorded as a decision in `DECISION_REGISTER.md`.
+Alternatively, serve locally with any static server:
+
+```bash
+python3 -m http.server 8000   # then visit http://localhost:8000
+```
 
 ## How This Project Works
 
