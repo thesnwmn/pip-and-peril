@@ -28,9 +28,11 @@ export function createMainMenu(transitionTo: (screen: string) => void): ScreenCo
   }
 
   function draw(ctx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
-    console.log(`Main Menu draw, clearing with color: ${colors.bg}`)
+    console.log(`Main Menu draw, ctx dimensions: ${ctx.canvas.width}x${ctx.canvas.height}`)
+    console.log(`Clearing rect: (0,0) to (${LOGICAL_W},${LOGICAL_H}) with color ${colors.bg}`)
     ctx.fillStyle = colors.bg
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
+    console.log(`Clear complete`)
     console.log(`Main Menu: drawing button at ${BUTTON_X}, ${BUTTON_Y}, ${BUTTON_W}x${BUTTON_H}`)
 
     ctx.font = 'bold 48px system-ui, -apple-system, sans-serif'

@@ -70,6 +70,9 @@ export class GameApp {
   }
 
   public start(): void {
+    console.log(`Canvas physical dimensions: ${this.canvas.width}x${this.canvas.height}`)
+    console.log(`Canvas CSS dimensions: ${this.canvas.style.width}x${this.canvas.style.height}`)
+    console.log(`Device pixel ratio: ${this.dpr}`)
     const tick = (timestamp: DOMHighResTimeStamp) => {
       console.log(`Drawing screen: ${this.currentScreen}`)
       this.screens[this.currentScreen].draw(this.ctx, timestamp)
