@@ -23,6 +23,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   }
 
   function draw(ctx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
+    ctx.clearRect(0, 0, LOGICAL_W, LOGICAL_H)
     ctx.fillStyle = colors.bg
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 

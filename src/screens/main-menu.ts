@@ -28,11 +28,9 @@ export function createMainMenu(transitionTo: (screen: string) => void): ScreenCo
   }
 
   function draw(ctx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
-    console.log(`Main Menu: fillStyle=${ctx.fillStyle}, globalCompositeOperation=${ctx.globalCompositeOperation}`)
+    ctx.clearRect(0, 0, LOGICAL_W, LOGICAL_H)
     ctx.fillStyle = colors.bg
-    console.log(`Main Menu: about to fillRect(0, 0, ${LOGICAL_W}, ${LOGICAL_H})`)
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
-    console.log(`Main Menu: fillRect complete`)
 
     ctx.font = 'bold 48px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.gold

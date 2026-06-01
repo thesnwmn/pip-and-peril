@@ -37,11 +37,9 @@ export function createHome(transitionTo: (screen: string) => void): ScreenContro
   }
 
   function draw(ctx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
-    console.log(`Home: fillStyle=${ctx.fillStyle}, globalCompositeOperation=${ctx.globalCompositeOperation}`)
+    ctx.clearRect(0, 0, LOGICAL_W, LOGICAL_H)
     ctx.fillStyle = colors.bg
-    console.log(`Home: about to fillRect(0, 0, ${LOGICAL_W}, ${LOGICAL_H})`)
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
-    console.log(`Home: fillRect complete`)
 
     ctx.font = '12px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = isMouseDevice && hoveredElement === 'back' ? colors.textPrimary : colors.textMuted
