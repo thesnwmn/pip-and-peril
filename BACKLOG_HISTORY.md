@@ -16,6 +16,16 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 003 · Tile Map Core
+
+**Shipped:** 2026-06-01 · **PR:** (pending) · **Spec:** [docs/features/history/003-tile-map-core.md](docs/features/history/003-tile-map-core.md)
+
+Grid data model (`TileCell`, sparse `GameMap`, `FogState`) and a canvas renderer using the Dungeon
+biome: staggered brick walls, flagstone floors with per-stone tonal variation, room-type accent
+overlays, and fog-of-war. No movement logic. Depends on: 002.
+
+---
+
 ### 007 · Build Stamp
 
 **Shipped:** 2026-06-01 · **PR:** (pending) · **Spec:** [docs/features/history/007-build-stamp.md](docs/features/history/007-build-stamp.md)

@@ -433,3 +433,56 @@ grid drawn over it. Alternating between `floorFlagHi` and `floorFlagLo` seeded b
 makes each stone look individually set, which is the "paved floor" feeling the manager asked for.
 The seed formula `(col × 7 + row × 13 + flagIndex)` is deterministic — no `Math.random()` in the
 render path.
+
+---
+
+## Shipped
+
+**Date:** 2026-06-01
+**Branch:** `claude/tile-map-core-jx21b`
+**PR:** (pending)
+
+### What was built
+
+- `src/map/types.ts` — `TileCell`, `GameMap`, `FogState`, `ExitMask` (N/E/S/W constants), `GridPos`
+- `src/map/biome.ts` — `BiomePalette` interface, `DUNGEON` constant, `ROOM_ACCENTS` map (keyed by `RoomType`, values sourced from `src/colors.ts`)
+- `src/map/fog.ts` — `computeFog(fog, map, center, radius)` with Chebyshev radius; null cells get `'seen'`, non-null cells get `'visible'`
+- `src/map/renderer.ts` — `drawMap`, `drawPip` (exported); `drawCell` (internal). Flagstone variation is keyed by map coordinates (not viewport slot). S/E corridor seam-overlap stays within tile bounds.
+- `src/colors.ts` — extended with room floor-edge marker colours and Pip token colours
+- `src/screens/game.ts` — updated to render a hardcoded 13×13 test map with all seven room types and all four exit directions; `computeFog` called once at init with `radius = 3`
+
+### Reviewer inline pass
+
+Five findings raised and fixed before PR:
+
+1. **Flagstone idx used viewport coords** — `drawCell` now receives separate `mapCol`/`mapRow` for the flagstone hash so the pattern is tile-anchored, not screen-anchored.
+2. **`computeFog` set null cells to `'visible'`** — corrected to `'seen'` per spec; the fog test that asserted the wrong behavior was also fixed.
+3. **S and E corridor rects overshot tile boundary by 1 px** — shifted start 1 px inward so the seam-overlap lands within the tile.
+4. **`ROOM_ACCENTS` duplicated `colors.ts` room constants** — `biome.ts` now imports `colors.*` so `colors.ts` is the single source of truth.
+5. **Magic number bitmasks in renderer** — `N`, `E`, `S`, `W` constants from `types.ts` are now imported and used throughout.
+
+### Test evidence
+
+```
+Test Files  4 passed (4)
+      Tests  20 passed (20)
+```
+
+`npm run typecheck` exits with zero errors (pre-existing vitest type-declaration errors unaffected).
+
+### Play-test steps
+
+1. `npm run dev` (or `python3 -m http.server 8000` after `npm run build`)
+2. Open `http://localhost:5173` in a browser
+3. Click **New Run** on the Main Menu → you reach the Game screen
+4. Verify the 5×5 tile viewport renders correctly:
+   - Centre tile (Start room): flagstone floor, all four exits open, no room-type accent marker
+   - Tiles at fog radius 1–2 (Corridor N/S above and below, Enemy/Shop/NPC cluster top-right): rendered with full tile art
+   - Tiles at fog radius 3: rendered with full art + fog overlay (darker)
+   - Tiles beyond radius: dark void with faint brick hint scanlines
+   - Pip (mouse token — cream body, pink ear inner, brown eye and nose) at the centre tile
+5. **Brick bond**: each wall tile shows horizontal mortar courses (~6 px) with staggered vertical joints; top course is lighter
+6. **Flagstone variation**: the 3×3 floor grid inside each wall shows alternating light/dark stones; the pattern stays consistent across frames (no flicker)
+7. **Room-type markers**: Enemy tile has a red floor-edge stroke, Shop has gold, NPC has blue, Item has green, Chest has orange, Boss has dark red; Corridor and Start have no marker
+8. **Exit corridors**: passages between adjacent tiles are seamless (no dark gap at tile boundaries)
+9. Click **← Quit Run** → returns to Home screen
