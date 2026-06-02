@@ -290,9 +290,4 @@ label  = "≡ MENU"   (U+2261 identical-to as a stand-in for hamburger, + space 
 
 ## Open questions
 
-None blocking — this feature is READY to build.
-
-Non-blocking note for the Planner: Feature 008 can ship before or after Pip's Satchel (Idea 013).
-During the gap, the Game screen menu will contain only Settings (stub) and End Run — no stats or
-map. That is an acceptable interim state. The satchel button (when specced) will sit separately
-in a different corner and the two features do not share UI space.
+_(none)_

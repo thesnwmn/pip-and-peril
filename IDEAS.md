@@ -30,16 +30,6 @@ Instead of hard-centering the viewport on Pip at all times, Pip can roam freely 
 
 ---
 
-## Idea 003 — In-Game Context Menu
-
-**Area:** UI
-**Inspiration:** Manager suggestion; the current navigation design has a back/backtrack affordance that may end up as a standalone button.
-
-**Absorbed:** Meta-action intent (quit/back) → Feature 008 (Menu Button & Pause Modal). In-game info intent (run stats, map) → Idea 013 (Pip's Satchel). Backtrack remains an in-map gesture per Idea 013.
-
-Replace any dedicated "back" button with a lightweight in-game context menu (a small icon or gesture in a corner) that surfaces multiple options in one place: backtrack / retreat, inspect current tile, check run stats, abandon run. This avoids cluttering the portrait layout with multiple persistent controls, and a menu naturally scales as more options are added (inventory, map zoom, settings). Risk: adding a tap-to-open menu introduces one extra step for backtracking, which is a frequent action — the menu may need a swipe or long-press shortcut to stay out of the way during normal navigation.
-
----
 
 ## Idea 008 — Interior Tile Archetypes
 
@@ -131,24 +121,6 @@ Supersedes the lightweight-menu intent of Idea 003 (which can remain as a refere
 
 ---
 
-## Idea 015 — Menu Button & Pause Modal
-
-**Area:** UI
-**Inspiration:** Manager — resolves the tension of where settings and end-run live; the existing "← Quit Run" / "← Main Menu" back links are misaligned relative to the status bar and mix navigation with meta-actions.
-
-Replace the current top-left back/quit text link on the **Home** and **Game** screens with a small **MENU** button (or ≡ icon) that is visually aligned as a proper member of the status bar row rather than a floating text link. Tapping it opens a clean, player-facing modal overlay — deliberately *not* styled in the satchel aesthetic, since its contents are meta (player-facing, not Pip-facing):
-
-- **Settings** — audio toggles, display options; expandable as features accumulate
-- **Quit Run / Back** — context-labelled depending on screen: "End Run" on Game (with a confirmation step to prevent accidents), "Back to Menu" on Home (no confirmation needed)
-- **Save / Load** (future slot, stubbed or hidden for now)
-
-The modal uses the existing dark palette (surface, gold border, text-primary) in a conventional centred card style. It pauses whatever state the current screen is in while open. Tapping outside the modal or pressing a close button dismisses it.
-
-**Consistent across screens:** the same button and the same modal shell appear on Home and Game. The button label and modal option list change per screen (the quit action is labelled and weighted differently), but the visual component is shared. Main Menu has no menu button — you're not yet in a session.
-
-**Alignment fix:** the current back link sits at y ≈ 24 as a raw text draw, outside the status bar's visual rhythm. The new menu button should be vertically centred within the status bar zone (y 0–50), sized and positioned to sit flush with the other bar elements (floor label, HP bars during combat). This is a polish fix that ships as part of introducing the button, not separately.
-
----
 
 ## Idea 014 — Dungeon Sketch (Satchel Map Tab)
 
