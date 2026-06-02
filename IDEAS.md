@@ -101,27 +101,6 @@ Risk: if too frequent it becomes its own kind of predictable.
 
 ---
 
-## Idea 013 — Pip's Satchel (In-Game Context Hub)
-
-**Area:** UI
-**Inspiration:** Manager suggestion — "a menu styled on Pip's satchel showing inventory, quests, settings, end run — a mix of pause menu and browser."
-
-**Updated:** Settings and end-run now handled by the Menu Button modal (Idea 015). The satchel is purely in-world — Pip's possessions and records.
-
-A single persistent satchel-icon button (bottom-right, thumb-friendly on portrait mobile) opens a full-screen overlay styled as the interior of Pip's worn leather explorer satchel: aged canvas lining, brass rivets, warm brown and amber tones that contrast with the dungeon's cold blues and blacks. Opening plays a short buckle-unfasten micro-animation (≈300 ms, skippable on tap). The overlay is organized into named **compartments** navigated by small pocket-icons or stitched tab labels along the base:
-
-- **Pouch** (default): inventory — items and consumables shown as small drawn objects on worn canvas; stub-friendly (empty pouch is fine before inventory exists as a system)
-- **Journal** (folded parchment): Pip's notes and active objectives, written in-character in Pip's voice rather than as a sterile quest log
-- **Tally** (scrap of paper): run stats — rooms entered, enemies defeated, depth, pips spent; formatted as tally marks and scribbled numbers
-- **Map** (parchment sketch): see Idea 014 for the full design of this compartment
-
-The overlay pauses navigation (arrows hidden, room selection blocked). During combat it is blocked entirely — in-combat item use is interesting but belongs in a later, dedicated design. When blocked, the satchel icon should appear greyed rather than hidden so the player learns it exists.
-
-Supersedes the lightweight-menu intent of Idea 003 (which can remain as a reference; this is the fuller version). Idea 003's "backtrack" option stays as an in-map gesture, not a satchel item.
-
----
-
-
 ## Idea 014 — Dungeon Sketch (Satchel Map Tab)
 
 **Area:** UI / World
