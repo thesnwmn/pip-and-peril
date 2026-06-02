@@ -114,20 +114,37 @@ Risk: if too frequent it becomes its own kind of predictable.
 **Area:** UI
 **Inspiration:** Manager suggestion — "a menu styled on Pip's satchel showing inventory, quests, settings, end run — a mix of pause menu and browser."
 
-A single persistent satchel-icon button (bottom-right, thumb-friendly on portrait mobile) opens a full-screen overlay styled as the interior of Pip's worn leather explorer satchel: aged canvas lining, brass rivets, warm brown and amber tones that contrast with the dungeon's cold blues and blacks. Opening plays a short buckle-unfasten micro-animation (≈300 ms, skippable on tap) before the interior is revealed. The overlay is organized into named **compartments** — navigated by small pocket-icons or stitched tab labels along the base of the overlay rather than standard UI tabs:
+**Updated:** Settings and end-run now handled by the Menu Button modal (Idea 015). The satchel is purely in-world — Pip's possessions and records.
+
+A single persistent satchel-icon button (bottom-right, thumb-friendly on portrait mobile) opens a full-screen overlay styled as the interior of Pip's worn leather explorer satchel: aged canvas lining, brass rivets, warm brown and amber tones that contrast with the dungeon's cold blues and blacks. Opening plays a short buckle-unfasten micro-animation (≈300 ms, skippable on tap). The overlay is organized into named **compartments** navigated by small pocket-icons or stitched tab labels along the base:
 
 - **Pouch** (default): inventory — items and consumables shown as small drawn objects on worn canvas; stub-friendly (empty pouch is fine before inventory exists as a system)
 - **Journal** (folded parchment): Pip's notes and active objectives, written in-character in Pip's voice rather than as a sterile quest log
 - **Tally** (scrap of paper): run stats — rooms entered, enemies defeated, depth, pips spent; formatted as tally marks and scribbled numbers
-- **Retreat** (a sketched rope ladder): the abandon-run action with a required confirmation step; frames abandonment as Pip choosing to leave rather than the player pressing a "quit" button
+- **Map** (parchment sketch): see Idea 014 for the full design of this compartment
 
-Settings are intentionally *outside* the satchel — they're player-facing (volume, display), not Pip-facing, and belong in a separate gear icon that doesn't dilute the satchel's in-world character.
-
-The overlay pauses navigation (arrows hidden, room selection blocked). During combat it is blocked entirely for now — in-combat item use is interesting but belongs in a later, dedicated design. The existing "← Quit Run" link in the status bar should coexist with the satchel's Retreat option: the status-bar link is a fast emergency exit during combat (where the satchel is blocked anyway), while Retreat is the deliberate, confirmed in-navigation abandonment path. Long-term, "← Quit Run" may be retired in favour of the satchel; for now they're complementary.
-
-Open design question: does the satchel icon appear during combat greyed/disabled, or hide entirely? Greyed is better — the player learns the icon exists and isn't confused by it disappearing.
+The overlay pauses navigation (arrows hidden, room selection blocked). During combat it is blocked entirely — in-combat item use is interesting but belongs in a later, dedicated design. When blocked, the satchel icon should appear greyed rather than hidden so the player learns it exists.
 
 Supersedes the lightweight-menu intent of Idea 003 (which can remain as a reference; this is the fuller version). Idea 003's "backtrack" option stays as an in-map gesture, not a satchel item.
+
+---
+
+## Idea 015 — Menu Button & Pause Modal
+
+**Area:** UI
+**Inspiration:** Manager — resolves the tension of where settings and end-run live; the existing "← Quit Run" / "← Main Menu" back links are misaligned relative to the status bar and mix navigation with meta-actions.
+
+Replace the current top-left back/quit text link on the **Home** and **Game** screens with a small **MENU** button (or ≡ icon) that is visually aligned as a proper member of the status bar row rather than a floating text link. Tapping it opens a clean, player-facing modal overlay — deliberately *not* styled in the satchel aesthetic, since its contents are meta (player-facing, not Pip-facing):
+
+- **Settings** — audio toggles, display options; expandable as features accumulate
+- **Quit Run / Back** — context-labelled depending on screen: "End Run" on Game (with a confirmation step to prevent accidents), "Back to Menu" on Home (no confirmation needed)
+- **Save / Load** (future slot, stubbed or hidden for now)
+
+The modal uses the existing dark palette (surface, gold border, text-primary) in a conventional centred card style. It pauses whatever state the current screen is in while open. Tapping outside the modal or pressing a close button dismisses it.
+
+**Consistent across screens:** the same button and the same modal shell appear on Home and Game. The button label and modal option list change per screen (the quit action is labelled and weighted differently), but the visual component is shared. Main Menu has no menu button — you're not yet in a session.
+
+**Alignment fix:** the current back link sits at y ≈ 24 as a raw text draw, outside the status bar's visual rhythm. The new menu button should be vertically centred within the status bar zone (y 0–50), sized and positioned to sit flush with the other bar elements (floor label, HP bars during combat). This is a polish fix that ships as part of introducing the button, not separately.
 
 ---
 
