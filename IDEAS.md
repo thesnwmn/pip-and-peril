@@ -106,3 +106,21 @@ When Pip enters a notable room, there's a small chance (~20%) the log message is
 personality and stops every room feeling formulaic. Needs a small string table per room type
 (e.g. Enemy: "Already dead." · "It flees before you can act.", Shop: "Sold out. Bare shelves.").
 Risk: if too frequent it becomes its own kind of predictable.
+
+---
+
+## Idea 012 — Immersive Combat Overlay
+
+**Area:** UI
+**Inspiration:** Manager suggestion during dice pool spec discussion (feature 005).
+
+Instead of the permanent split-screen layout (map top / dice panel bottom), the dice tray appears
+as a contextual overlay when combat triggers: it fades up from the bottom and floats over the
+lower portion of the tile map. The visible map area above shows a zoomed-in "combat camera" view —
+framing Pip and the enemy inside the room with atmospheric dungeon context — so the player never
+loses sight of where they are. The result feels more immersive than a hard split, and the dice
+tray appears and disappears with the encounter rather than occupying permanent screen estate.
+Prerequisites: encounter state machine (006) and a zoom/pan capability in the tile renderer.
+Risk: the overlay must not obscure critical combat information (HP bars, action outcomes); the
+combat camera zoom needs careful tuning for phone screen sizes. A natural follow-on to feature 006
+once the encounter loop is solid.

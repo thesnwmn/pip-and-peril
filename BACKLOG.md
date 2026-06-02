@@ -22,16 +22,18 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-_(none)_
+### 005 · Dice Pool System
+
+`DicePool` data model (roll, spend, canAfford, reset) and a dice panel UI rendered in the Game
+screen's bottom zone: coloured die faces, pip total badges, ROLL button with ~500 ms animation,
+and three placeholder action buttons (Strike, Evade, Focus) that demonstrate the full
+roll-to-spend flow. The data API and panel component are ready for 006 to integrate into the
+combat encounter loop.
+See `docs/features/005-dice-pool-system.md` for the full spec.
 
 ---
 
 ## NEEDS SPEC
-
-### 005 · Dice Pool System
-
-Die colour types (Red, Blue, Green, Yellow), roll logic, pip display, and a spend-pips API.
-Covers the full dice-roll-to-action flow from POC 2. Depends on: 002.
 
 ### 006 · Combat Encounter
 
