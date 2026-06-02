@@ -3,15 +3,19 @@ import { DUNGEON } from '../map/biome'
 import type { ExitMask } from '../map/types'
 import { E, N, S, W } from '../map/types'
 import { drawMap, drawSingleTile, MAP_X, MAP_Y, TILE_SIZE } from '../map/renderer'
-import type { DungeonState, RoomOffering } from '../navigation/dungeon-state'
+import type { DungeonState, LogStyle, RoomOffering } from '../navigation/dungeon-state'
 import { chebyshev, DIR_DELTA, initDungeon, OPP } from '../navigation/dungeon-state'
 import { availableDirs, dirFromPipToNeighbour, isBacktrackable, movePip } from '../navigation/movement'
-import { generateOfferings, placeRoom, CARD_TEASES, validExitConfigs } from '../navigation/room-selection'
+import { generateOfferings, placeRoom, CARD_TEASES } from '../navigation/room-selection'
 import { pickRandom } from '../navigation/room-pool'
 import type { ScreenController } from './main-menu'
 import type { DicePool } from '../dice/pool'
-import { starterPool } from '../dice/pool'
+import { resetPool, starterPool } from '../dice/pool'
 import { createDicePanel, PANEL_TOP as DICE_PANEL_TOP } from '../dice/panel'
+import type { CombatState } from '../combat/types'
+import { GOBLIN } from '../combat/types'
+import { applyEnemyAttack, applyEvade, applyFocus, applyStrike } from '../combat/encounter'
+import { drawCombatBanner, drawCombatStatusBar } from '../combat/panel'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
@@ -335,6 +339,34 @@ function drawRoomPanel(
   }
 }
 
+function drawNavHint(ctx: CanvasRenderingContext2D): void {
+  const panelH = LOGICAL_H - PANEL_TOP
+  ctx.fillStyle = colors.surface
+  ctx.beginPath()
+  const ctxAny = ctx as unknown as {
+    roundRect?: (x: number, y: number, w: number, h: number, radii: number[]) => void
+  }
+  if (ctxAny.roundRect) {
+    ctxAny.roundRect(0, PANEL_TOP, LOGICAL_W, panelH, [PANEL_CORNER, PANEL_CORNER, 0, 0])
+  } else {
+    ctx.rect(0, PANEL_TOP, LOGICAL_W, panelH)
+  }
+  ctx.fill()
+
+  ctx.strokeStyle = colors.logNormal
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(0, PANEL_TOP)
+  ctx.lineTo(LOGICAL_W, PANEL_TOP)
+  ctx.stroke()
+
+  ctx.font = 'italic 13px system-ui, -apple-system, sans-serif'
+  ctx.fillStyle = colors.textMuted
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('Tap an exit to move.', LOGICAL_W / 2, PANEL_TOP + 30)
+}
+
 export function createGame(transitionTo: (screen: string) => void): ScreenController {
   let state: DungeonState = initDungeon()
   let hoveredElement: string | null = null
@@ -343,15 +375,95 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   let hitRects: HitRect[] = []
   let dicePool: DicePool = starterPool()
 
+  const pipMaxHp = 10
+  let pipHp = pipMaxHp
+  let combat: CombatState | null = null
+  let bannerStartTime: number | null = null
+
   const dicePanel = createDicePanel(
     () => dicePool,
     {
       onStateChange: (pool) => { dicePool = pool },
-      addLog: (message) => {
-        state = { ...state, log: [{ message, style: 'normal' }, ...state.log] }
+      addLog: (message) => { addLogEntry(message, 'normal') },
+      onBeforeRoll: (): boolean => {
+        if (combat === null) return true
+        if (combat.phase === 'awaiting-roll') {
+          combat = { ...combat, phase: 'player-turn' }
+          return true
+        }
+        if (combat.phase === 'player-turn') {
+          const prevHp = pipHp
+          const result = applyEnemyAttack(combat, pipHp)
+          pipHp = result.pipHp
+          combat = result.combat
+          addLogEntry(
+            `Goblin strikes — −${result.damage} HP! (Pip: ${prevHp}→${pipHp})`,
+            'enemy',
+          )
+          if (result.defeat) {
+            bannerStartTime = performance.now()
+            return false
+          }
+          return true
+        }
+        return false
+      },
+      onAction: (actionId: string): void => {
+        if (combat === null) return
+        if (actionId === 'strike') {
+          const prevEnemyHp = combat.enemy.hp
+          const result = applyStrike(combat)
+          combat = result.combat
+          addLogEntry(
+            `Strike — 2 damage! (Goblin: ${prevEnemyHp}→${combat.enemy.hp})`,
+            'enemy',
+          )
+          if (result.victory) {
+            const newCells = state.grid.cells.map(row => [...row])
+            const cell = newCells[state.pip.row][state.pip.col]
+            if (cell) {
+              newCells[state.pip.row][state.pip.col] = { ...cell, cleared: true }
+            }
+            state = { ...state, grid: { ...state.grid, cells: newCells } }
+            bannerStartTime = performance.now()
+          }
+        } else if (actionId === 'evade') {
+          combat = applyEvade(combat)
+          addLogEntry('Evade — incoming damage reduced.', 'normal')
+        } else if (actionId === 'focus') {
+          const prevPipHp = pipHp
+          const focusResult = applyFocus(pipHp, pipMaxHp)
+          pipHp = focusResult.pipHp
+          if (focusResult.heal === 0) {
+            addLogEntry(`Focus — +0 HP (Pip: ${prevPipHp}/${pipMaxHp} full)`, 'normal')
+          } else {
+            addLogEntry(`Focus — +${focusResult.heal} HP (Pip: ${prevPipHp}→${pipHp})`, 'normal')
+          }
+        }
       },
     },
   )
+
+  function addLogEntry(message: string, style: LogStyle): void {
+    const newLog = [{ message, style }, ...state.log]
+    if (newLog.length > 8) newLog.length = 8
+    state = { ...state, log: newLog }
+  }
+
+  function checkCombatTrigger(): void {
+    const cell = state.grid.cells[state.pip.row][state.pip.col]
+    if (cell && cell.roomType === 'enemy' && cell.cleared !== true) {
+      combat = { enemy: { ...GOBLIN }, phase: 'awaiting-roll', evadeBuffer: 0 }
+      dicePool = resetPool(dicePool)
+      bannerStartTime = null
+    }
+  }
+
+  function endCombatVictory(): void {
+    combat = null
+    dicePool = resetPool(dicePool)
+    bannerStartTime = null
+  }
 
   function getCardTeases(offerings: RoomOffering[]): string[] {
     return offerings.map(o => {
@@ -378,7 +490,21 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     return null
   }
 
-  function draw(ctx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
+  function draw(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
+    // Banner auto-advance
+    if (combat !== null && bannerStartTime !== null &&
+        (combat.phase === 'victory' || combat.phase === 'defeat')) {
+      const timeout = combat.phase === 'victory' ? 1500 : 2000
+      if (timestamp - bannerStartTime >= timeout) {
+        if (combat.phase === 'victory') {
+          endCombatVictory()
+        } else {
+          transitionTo('home')
+          return
+        }
+      }
+    }
+
     hitRects = []
 
     ctx.fillStyle = colors.bg
@@ -386,26 +512,56 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
 
     drawMap(ctx, state.grid, state.fog, state.pip, DUNGEON)
 
-    if (state.uiState === 'idle') {
+    // Nav arrows only when not in combat
+    if (state.uiState === 'idle' && combat === null) {
       drawNavArrows(ctx, state, hitRects)
     }
 
-    drawStatusBar(ctx, state, isMouseDevice, hoveredElement)
+    // Status bar
+    if (combat !== null) {
+      drawCombatStatusBar(ctx, pipHp, pipMaxHp, combat, isMouseDevice, hoveredElement)
+    } else {
+      drawStatusBar(ctx, state, isMouseDevice, hoveredElement)
+    }
+
     drawLogStrip(ctx, state)
 
-    if (state.uiState === 'idle') {
-      dicePanel.draw(ctx, _timestamp)
+    // Panel zone
+    if (combat !== null) {
+      if (combat.phase === 'victory' || combat.phase === 'defeat') {
+        drawCombatBanner(ctx, timestamp, combat, bannerStartTime ?? timestamp)
+      } else {
+        dicePanel.draw(ctx, timestamp)
+      }
     } else if (state.uiState === 'choosing') {
       drawRoomPanel(ctx, state, cardTeases, hoveredElement, hitRects)
+    } else {
+      drawNavHint(ctx)
     }
   }
 
   function handleClick(x: number, y: number): void {
+    // Back link is always active
     if (isInBackLink(x, y)) {
       transitionTo('home')
       return
     }
 
+    // Combat active
+    if (combat !== null) {
+      if (y >= DICE_PANEL_TOP) {
+        if (combat.phase === 'victory') {
+          endCombatVictory()
+        } else if (combat.phase === 'defeat') {
+          transitionTo('home')
+        } else {
+          dicePanel.handleClick(x, y)
+        }
+      }
+      return
+    }
+
+    // Room selection
     if (state.uiState === 'choosing') {
       const hit = hitTest(x, y)
       if (hit?.startsWith('card-')) {
@@ -415,17 +571,12 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         const targetPos = { col: state.pip.col + dc, row: state.pip.row + dr }
         state = placeRoom(state, offering, targetPos)
         cardTeases = []
+        checkCombatTrigger()
       }
       return
     }
 
-    // IDLE state: dice panel handles panel zone clicks first
-    if (state.uiState === 'idle' && y >= DICE_PANEL_TOP) {
-      dicePanel.handleClick(x, y)
-      return
-    }
-
-    // IDLE state: check nav arrows or backtrack
+    // Idle navigation
     if (state.uiState === 'idle') {
       const startCol = state.pip.col - Math.floor(VIEWPORT_COLS / 2)
       const startRow = state.pip.row - Math.floor(VIEWPORT_ROWS / 2)
@@ -460,6 +611,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         }
       } else if (isBacktrackable(state, dir)) {
         state = movePip(state, dir)
+        checkCombatTrigger()
       }
     }
   }
@@ -472,15 +624,19 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       return
     }
 
-    if (state.uiState === 'choosing') {
-      const hit = hitTest(x, y)
-      hoveredElement = hit?.startsWith('card-') ? hit : null
+    // Combat active
+    if (combat !== null) {
+      if (y >= DICE_PANEL_TOP &&
+          combat.phase !== 'victory' && combat.phase !== 'defeat') {
+        dicePanel.handlePointerMove(x, y)
+      }
+      hoveredElement = null
       return
     }
 
-    if (state.uiState === 'idle' && y >= DICE_PANEL_TOP) {
-      dicePanel.handlePointerMove(x, y)
-      hoveredElement = null
+    if (state.uiState === 'choosing') {
+      const hit = hitTest(x, y)
+      hoveredElement = hit?.startsWith('card-') ? hit : null
       return
     }
 

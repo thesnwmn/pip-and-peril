@@ -330,10 +330,49 @@ after the first play-test, but this does not block the Engineer)_
 
 ## Shipped
 
-**Date:** · **PR:** #
+**Date:** 2026-06-02 · **PR:** [#25](https://github.com/thesnwmn/pip-and-peril/pull/25)
 
 ### What was built
 
+- `src/combat/types.ts` — `Enemy`, `CombatState` interfaces and `GOBLIN` constant.
+- `src/combat/encounter.ts` — pure functions: `applyStrike`, `applyEvade`, `applyFocus`,
+  `applyEnemyAttack`; all accept/return immutable state.
+- `src/combat/panel.ts` — canvas renderers for the combat status bar (Pip HP bar + enemy HP bar)
+  and victory/defeat banners with timed "Tap to continue" fade-in.
+- `src/combat/encounter.test.ts` — 17 unit tests covering every pure function and all edge cases
+  from the spec (one-shot kill, over-damage, Evade reducing hit to 0, Focus at max HP, HP floor
+  at 0, evadeBuffer reset, defeat detection).
+- `src/map/types.ts` — added `cleared?: boolean` to `TileCell`.
+- `src/dice/panel.ts` — extended `DicePanelCallbacks` with optional `onAction` and `onBeforeRoll`
+  hooks; `onBeforeRoll` can cancel a roll; `onAction` bypasses the panel's generic log so game.ts
+  controls combat log messages.
+- `src/screens/game.ts` — wired `pipHp`, `pipMaxHp`, `combat`, `bannerStartTime` into run state;
+  combat trigger after every movement; combat-mode status bar, dice panel, and victory/defeat
+  banner rendering; nav arrows and room cards gated during combat; back link always active;
+  "Tap an exit to move." hint during idle non-combat navigation.
+
 ### Evidence
 
+All 112 tests pass (`npm run test -- --run`). No new type errors (`npm run typecheck`; only
+pre-existing vitest-module errors in test files, unchanged from prior features).
+
 ### Play-test
+
+1. Start a new run: Main Menu → Home → **Play**.
+2. Tap an exit arrow; choose an **ENEMY** room from the selection cards.
+3. Confirm the dice panel appears and the status bar shows **PIP 10/10** and **GOBLIN 6/6** bars.
+   Nav arrows are absent.
+4. Tap **ROLL DICE**. Confirm dice animate (~500 ms) and action buttons become enabled.
+5. Tap **Strike** (costs 🔴2). Confirm log: `"Strike — 2 damage! (Goblin: 6→4)"`. Bar updates.
+6. Tap **Evade** (costs 🟢2). Confirm log: `"Evade — incoming damage reduced."`.
+7. Tap **ROLL DICE** (end turn). Confirm log: `"Goblin strikes — −0 HP! (Pip: 10→10)"` — the
+   Evade buffer fully blocked the 2-damage hit. Pool re-rolls.
+8. Tap **Focus** (costs 🔵1). Confirm log: `"Focus — +0 HP (Pip: 10/10 full)"` (already at max).
+9. Continue Striking until the Goblin reaches 0 HP. Confirm the gold **VICTORY** banner appears
+   with "Goblin defeated!" and a fading "Tap to continue" subtitle.
+10. Tap anywhere in the panel zone (or wait 1.5 s). Confirm: banner dismisses, status bar returns
+    to floor/depth view, nav arrows reappear, and "Tap an exit to move." hint shows.
+11. Re-enter the cleared enemy room (backtrack or navigate through it). Confirm no new encounter.
+12. For defeat: start fresh, enter an enemy room, and roll without using Evade each turn until Pip
+    HP reaches 0 (5 unblocked hits). Confirm the red **DEFEATED** banner appears with "Pip has fallen…".
+13. Tap or wait 2 s. Confirm the screen transitions back to Home.
