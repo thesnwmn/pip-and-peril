@@ -71,8 +71,7 @@ all times.
     Enemy, Boss, Shop, NPC, Item, or Chest. Corridor placement, Start, backtrack moves, and
     re-entering already-visited tiles never add a log entry.
 
-14. Log entries carry no `[Label]` prefix. Approximately 20% of entries append a "surprise" clause
-    that undercuts the initial flavour (see Design detail for strings).
+14. Log entries carry no `[Label]` prefix.
 
 15. The log strip shows the 3 most recent entries, newest first. Opacity: most recent 1.0,
     previous 0.7, oldest 0.45.
@@ -233,16 +232,6 @@ All strings live in `src/navigation/room-pool.ts`.
 | NPC | "A stranger whispers a warning." · "Someone slumps against the far wall." · "A robed figure stares." |
 | Item | "Something glints in the rubble." · "Discarded by a previous delver." · "Left here for a reason." |
 | Chest | "A locked chest catches your eye." · "Gold light under the lid." · "Heavy iron lock. Weak hinges." |
-
-**Surprise overrides** (appended to main message, ~20% chance):
-
-| Room | Surprises |
-|---|---|
-| Enemy | " It flees before you can act." · " Already dead." |
-| Shop | " Sold out. Bare shelves." · " Nobody home." |
-| Chest | " Empty. Someone got here first." · " Just rocks inside." |
-| NPC | " They point deeper and say nothing." |
-| Item | " Broken beyond use." · " You leave it — looks cursed." |
 
 **Card flavour teases** (shown on choice cards before committing, pick one per card at random):
 
