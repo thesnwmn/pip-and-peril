@@ -58,7 +58,7 @@ export function drawCombatStatusBar(
   ctx.fillText(`${pipHp}/${pipMaxHp}`, pipBarX + pipBarW + 4, midY)
 
   // Enemy label
-  const enemyLabelX = 225
+  const enemyLabelX = 260
   const enemyName = combat.enemy.name.toUpperCase()
   ctx.font = 'bold 10px monospace'
   ctx.fillStyle = ENEMY_RED
@@ -69,7 +69,7 @@ export function drawCombatStatusBar(
 
   // Enemy bar
   const enemyBarX = enemyLabelX + enemyLabelW + 6
-  const enemyBarW = 70
+  const enemyBarW = 60
   ctx.fillStyle = BAR_EMPTY
   ctx.fillRect(enemyBarX, barY, enemyBarW, BAR_H)
   const enemyFill = Math.max(0, combat.enemy.hp / combat.enemy.maxHp) * enemyBarW
