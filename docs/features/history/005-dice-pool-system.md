@@ -270,7 +270,7 @@ _(none — approach is agreed, all choices above are actionable)_
 
 ## Shipped
 
-**Date:** 2026-06-02 · **PR:** #TBD
+**Date:** 2026-06-02 · **PR:** [#24](https://github.com/thesnwmn/pip-and-peril/pull/24)
 
 ### What was built
 
