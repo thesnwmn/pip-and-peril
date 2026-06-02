@@ -22,13 +22,7 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-### 004 · Navigation & Room Selection
-
-Direction-first movement: player picks an exit on Pip's current tile; if the destination is
-unknown, three playing-card-style room choice cards are offered (room name, tile preview, flavour
-tease); chosen tile is placed and Pip moves. Event log records notable room entries; corridors and
-backtracking are silent. Status bar shows floor label and depth.
-See `docs/features/004-navigation-room-selection.md` for the full spec.
+_(none)_
 
 ---
 

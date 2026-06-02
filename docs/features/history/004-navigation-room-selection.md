@@ -427,10 +427,38 @@ and `biome.ts` — no new room colour constants needed beyond the log set above.
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-02 · **PR:** (see PR link below)
 
 ### What was built
 
+- `src/navigation/dungeon-state.ts` — `DungeonState`, `RoomOffering`, `LogEntry`, `LogStyle` types; `initDungeon()` factory; `chebyshev()`, `OPP`, `DIR_DELTA` helpers
+- `src/navigation/movement.ts` — `availableDirs()`, `isBacktrackable()`, `dirFromPipToNeighbour()`, `movePip()`
+- `src/navigation/room-pool.ts` — depth-weighted pools, log messages, card tease strings, `poolForDepth()`, `logStyleForRoom()`, `pickRandom()`
+- `src/navigation/room-selection.ts` — `validExitConfigs()`, `generateOfferings()`, `placeRoom()`; exit configs shuffled for per-card variety
+- `src/map/renderer.ts` — exported `drawSingleTile()` for card preview rendering
+- `src/colors.ts` — added 8 `log*` colour tokens and 21 `card*` colour tokens
+- `src/screens/game.ts` — replaced static test map with full interactive `DungeonState`; status bar (floor label + depth counter), log strip, nav arrows, room selection panel with three playing-card choices
+
+Inline Reviewer pass completed. Two findings fixed: exit-config assignment randomised (was deterministic); card side margins corrected to 12 px (was 13 px by centring formula).
+
 ### Evidence
 
+**Tests:** 8 test files, 72 tests, all passing (`npm run test`).
+
+New test files cover all ACs via unit tests:
+- `src/navigation/dungeon-state.test.ts` (15 tests) — init state, chebyshev, OPP, DIR_DELTA
+- `src/navigation/movement.test.ts` (14 tests) — availableDirs, isBacktrackable, movePip
+- `src/navigation/room-selection.test.ts` (19 tests) — validExitConfigs, generateOfferings, placeRoom
+- `src/navigation/room-pool.test.ts` (6 tests) — poolForDepth, logStyleForRoom, LOG_MESSAGES, CARD_TEASES
+
+**Typecheck:** `npm run typecheck` exits clean (0 errors).
+
 ### Play-test
+
+1. Start a run from the home screen — you land on the Game screen with Pip centred on a single stone-floor start tile. Status bar shows "← Quit Run" (left), "FLOOR 1" (centre), "Depth 0" (right). Log shows "Pip descends into the dungeon…"
+2. Four gold arrow triangles appear on the four adjacent void cells — N, E, S, W.
+3. Tap a gold arrow. The room selection panel appears below the log strip showing "WHERE DOES THIS LEAD?" and three playing-card choices, each with a room-type title in small caps, a rendered tile preview, and a flavour tease.
+4. Tap a card. The tile is placed, Pip moves there, fog updates. If the room was Enemy/Boss/Shop/NPC/Item/Chest a coloured log entry appears. Depth counter updates.
+5. From the new tile, new arrows appear on any null adjacent exit. Tap the tile behind you — Pip backtracks silently (no log entry).
+6. Move deeper: depth counter increments. Cards at distance ≤2 draw from the shallow pool (corridor, shop, npc, item). Cards at distance ≥5 surface enemies and bosses.
+7. Tap "← Quit Run" at any point — returns to the home screen.
