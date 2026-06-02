@@ -101,13 +101,6 @@ Risk: if too frequent it becomes its own kind of predictable.
 
 ---
 
-## Idea 013 — Pip's Satchel *(promoted to Feature 016)*
-
-Specced as `docs/features/016-pip-satchel.md`.
-
----
-
-
 ## Idea 014 — Dungeon Sketch (Satchel Map Tab)
 
 **Area:** UI / World
