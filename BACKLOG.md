@@ -22,7 +22,13 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-_(none)_
+### 008 · Menu Button & Pause Modal
+
+Replaces the raw text back-links on the Home and Game screens with a proper MENU button in the
+status bar. Tapping it opens a modal with meta actions: Settings (stub) and a context-labelled
+End Run / Back to Menu. End Run requires a confirmation step. All in-game info (stats, map,
+inventory) belongs to the future Satchel — this menu is deliberately administrative only.
+See `docs/features/008-menu-button-pause-modal.md` for the full spec.
 
 ---
 
