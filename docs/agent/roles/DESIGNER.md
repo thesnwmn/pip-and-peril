@@ -60,7 +60,10 @@ arriving at a *sharper* spec after productive friction is the goal.
 4. **Add or update the backlog entry** in `BACKLOG.md`. A fully-specced item is `READY`; a captured
    but unspecced one stays `NEEDS SPEC` with a note on what's blocking the spec.
 
-5. **Summarise for the manager.** State what you specced, the alternatives you considered and
+5. **Remove the source idea from `IDEAS.md`** if the work originated there. A promoted idea no
+   longer belongs in the raw ideas list, regardless of whether it landed as `READY` or `NEEDS SPEC`.
+
+6. **Summarise for the manager.** State what you specced, the alternatives you considered and
    discarded (and why), the key decisions you made, anything you deliberately deferred, and any
    open questions still outstanding.
 
