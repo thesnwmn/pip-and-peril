@@ -39,6 +39,63 @@ Replace any dedicated "back" button with a lightweight in-game context menu (a s
 
 ---
 
+## Idea 008 — Interior Tile Archetypes
+
+**Area:** Art
+**Inspiration:** Manager — "every tile is exactly the same"; concept note `docs/concept/tiles-and-props.md`.
+
+Treat a tile as four independent layers — exit layout × **interior archetype** × room type × props —
+and add the missing archetype layer: the *shape and substance between the doorways*. Starting set:
+Chamber (today), Passage (a real corridor, floor only where it connects exits), Cavern (rough,
+narrower, rubble), Pillared Hall, Rubble/Collapse. The hard invariant is that doorway openings stay
+at the fixed snapping position and width, so any interior tiles cleanly. Recommend shipping as a
+pure visual skin first (new `drawCell` branches, no rule changes). Risk: must stay legible at
+phone-thumbnail size — favour *shape* changes over texture.
+
+---
+
+## Idea 009 — Prop Layer (Decor & Features)
+
+**Area:** Art
+**Inspiration:** Manager — "props that can be randomly placed… torches on the wall, rocks, etc."
+
+A draw pass that scatters small objects over a finished tile from a weighted set: wall torches
+(with a soft light glow), rubble, bones/skulls, glowing mushrooms, cobwebs, puddles, coin glints.
+Props use **anchor zones** (wall band, floor corners, centre) rather than raw coordinates; the
+placer never covers a doorway and caps density (~0–3 per tile) for readability. Torch glow tints
+the surrounding stone so props feel lit by the room. Rough shape: `Prop = { kind, anchors[], weight }`
+plus a `placeProps(tile)` that fills anchors. Risk: over-cluttered thumbnails — needs a tight cap
+and a "no prop over exits" rule.
+
+---
+
+## Idea 010 — Squeeze Tiles (Pip-Only Shortcuts)
+
+**Area:** System
+**Inspiration:** Pillar "Pip's small size is a mechanic"; manager — "slightly narrower than usual".
+
+A Squeeze archetype: a crack far narrower than a normal doorway, with a mouse-hole motif, that only
+Pip can pass. Renders as atmosphere but carries a mechanic — a shortcut or secret route that large
+enemies (and pursuing bosses) cannot follow, turning Pip's smallness into traversable geography
+rather than flavour text. Open question: does a Squeeze guarantee a safe escape, or just a different
+path? Pairs naturally with backtracking and any future "chase" pressure.
+
+---
+
+## Idea 011 — Feature Tiles as Interactions
+
+**Area:** World
+**Inspiration:** Manager — "bridges across chasms, a well in the room, a magic pool".
+
+Promote a few archetypes from decoration to interaction. Chasm+Bridge → a 🟢 agility check (or trap
+trigger) to cross; Well/Cistern → drop a coin for a luck boon or draw something up; Magic
+Pool/Shrine → a 🟣-flavoured drink/scry/gamble that foreshadows the future Magic die. Each is a
+small dice-pool encounter reusing the existing resolution system, flavoured by the tile rather than
+a generic room. Recommend these land *after* the visual archetype skin (Idea 008) so the renderer
+is proven first. Risk: scope creep — keep each interaction to a single check at first.
+
+---
+
 ## Idea 001 — Room Entry Surprises
 
 **Area:** World

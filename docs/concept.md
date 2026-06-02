@@ -104,6 +104,10 @@ Each room type has a distinct **colour-coded border** and tints the room's wall 
 
 | Type | Colour | Encounter |
 |------|--------|-----------|
+> **Tile variety:** room *type* (this table) is only one of four layers that compose a tile. The
+> interior *shape* (chamber, passage, cavern, chasm, well, magic pool…) and scattered *props*
+> (torches, rubble, bones…) are explored in [`concept/tiles-and-props.md`](concept/tiles-and-props.md).
+
 | Corridor | Steel grey | Safe passthrough, no encounter |
 | Enemy | Red | Combat — forced |
 | Shop | Gold | Merchant menu — optional |
