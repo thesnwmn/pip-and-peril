@@ -16,6 +16,7 @@ export interface GridPos {
 export interface TileCell {
   roomType: RoomType
   exits: ExitMask
+  cleared?: boolean
 }
 
 export interface GameMap {

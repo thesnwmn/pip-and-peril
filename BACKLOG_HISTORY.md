@@ -16,6 +16,16 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 006 · Combat Encounter
+
+**Shipped:** 2026-06-02 · **PR:** #TBD · **Spec:** [docs/features/history/006-combat-encounter.md](docs/features/history/006-combat-encounter.md)
+
+Turn-based encounter loop: roll dice pool, spend pips on Strike/Evade/Focus, track HP for Pip and
+one enemy (Goblin), resolve win/lose. First complete playable game moment. Enemy rooms cleared on
+victory; Pip's HP persists between rooms. Defeat returns to main menu.
+
+---
+
 ### 005 · Dice Pool System
 
 **Shipped:** 2026-06-02 · **PR:** [#24](https://github.com/thesnwmn/pip-and-peril/pull/24) · **Spec:** [docs/features/history/005-dice-pool-system.md](docs/features/history/005-dice-pool-system.md)

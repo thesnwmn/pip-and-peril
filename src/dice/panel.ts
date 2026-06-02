@@ -307,6 +307,8 @@ interface AnimState {
 export interface DicePanelCallbacks {
   onStateChange: (pool: DicePool) => void
   addLog: (message: string) => void
+  onAction?: (actionId: string) => void
+  onBeforeRoll?: () => boolean
 }
 
 export function createDicePanel(
@@ -449,6 +451,7 @@ export function createDicePanel(
     if (!hit) return
 
     if (hit === 'roll') {
+      if (callbacks.onBeforeRoll && !callbacks.onBeforeRoll()) return
       const rolled = rollPool(pool)
       anim.startTime = performance.now()
       anim.lastTickTime = 0
@@ -469,11 +472,16 @@ export function createDicePanel(
       }
 
       const { pool: updated } = spendPips(pool, action.cost)
-      const costParts = (Object.entries(action.cost) as [DieColor, number][])
-        .map(([c, n]) => `${COLOR_EMOJI[c]}${n} → ${COLOR_EMOJI[c]}${updated.totals[c]}`)
-        .join(' ')
-      callbacks.addLog(`${action.label} used. (${costParts})`)
-      callbacks.onStateChange(updated)
+      if (callbacks.onAction) {
+        callbacks.onStateChange(updated)
+        callbacks.onAction(actionId)
+      } else {
+        const costParts = (Object.entries(action.cost) as [DieColor, number][])
+          .map(([c, n]) => `${COLOR_EMOJI[c]}${n} → ${COLOR_EMOJI[c]}${updated.totals[c]}`)
+          .join(' ')
+        callbacks.addLog(`${action.label} used. (${costParts})`)
+        callbacks.onStateChange(updated)
+      }
     }
   }
 
