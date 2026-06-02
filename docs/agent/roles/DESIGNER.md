@@ -58,11 +58,12 @@ arriving at a *sharper* spec after productive friction is the goal.
    same as mechanical ideas: raw material to challenge and sharpen, not instructions to transcribe.
 
 4. **Add or update the backlog entry** in `BACKLOG.md`. A fully-specced item is `READY`; a captured
-   but unspecced one stays `NEEDS SPEC` with a note on what's blocking the spec. If the work
-   originated from an idea in `IDEAS.md`, remove that idea from the document — it has been
-   promoted and no longer belongs in the raw ideas list.
+   but unspecced one stays `NEEDS SPEC` with a note on what's blocking the spec.
 
-5. **Summarise for the manager.** State what you specced, the alternatives you considered and
+5. **Remove the source idea from `IDEAS.md`** if the work originated there. A promoted idea no
+   longer belongs in the raw ideas list, regardless of whether it landed as `READY` or `NEEDS SPEC`.
+
+6. **Summarise for the manager.** State what you specced, the alternatives you considered and
    discarded (and why), the key decisions you made, anything you deliberately deferred, and any
    open questions still outstanding.
 
