@@ -297,7 +297,7 @@ _(none)_
 ## Shipped
 
 **Date:** 2026-06-02
-**PR:** TBD (update after push)
+**PR:** [#31](https://github.com/thesnwmn/pip-and-peril/pull/31)
 
 ### What was built
 
