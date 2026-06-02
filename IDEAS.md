@@ -21,15 +21,6 @@ code; the Designer writes those.
 
 ---
 
-## Idea 002 — Soft Camera Follow
-
-**Area:** UI
-**Inspiration:** Manager suggestion; the concept doc currently locks the viewport centred on Pip, which may feel mechanical.
-
-Instead of hard-centering the viewport on Pip at all times, Pip can roam freely within the central 3×3 tiles of the visible grid; the camera only scrolls when she would exit that zone (or when she is near the dungeon boundary, where the map edge takes precedence and she can reach the visible edge). This gives the movement a more alive, dynamic quality — the world shifts in the direction of travel rather than keeping Pip pinned like a crosshair. Open question: on a portrait phone the visible area is already constrained; if the viewport shows, say, 7×9 tiles the 3×3 dead zone may feel subtler than expected, so the exact zone size needs playtesting against screen real estate.
-
----
-
 
 ## Idea 008 — Interior Tile Archetypes
 
