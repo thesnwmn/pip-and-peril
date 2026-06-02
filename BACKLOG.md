@@ -30,14 +30,6 @@ Map (stub). Establishes the inventory data model (gold + Item list) and pauses n
 open; greyed and blocked during combat. Opens with a ≈300 ms buckle-unfasten animation.
 See `docs/features/016-pip-satchel.md` for the full spec.
 
-### 008 · Menu Button & Pause Modal
-
-Replaces the raw text back-links on the Home and Game screens with a proper MENU button in the
-status bar. Tapping it opens a modal with meta actions: Settings (stub) and a context-labelled
-End Run / Back to Menu. End Run requires a confirmation step. All in-game info (stats, map,
-inventory) belongs to the future Satchel — this menu is deliberately administrative only.
-See `docs/features/008-menu-button-pause-modal.md` for the full spec.
-
 ### 017 · Soft Camera Follow
 
 Decouples the viewport from Pip's exact position: the camera follows through a configurable dead
@@ -57,7 +49,13 @@ _(none)_
 
 ## IN PROGRESS
 
-_(none)_
+### 008 · Menu Button & Pause Modal
+
+Replaces the raw text back-links on the Home and Game screens with a proper MENU button in the
+status bar. Tapping it opens a modal with meta actions: Settings (stub) and a context-labelled
+End Run / Back to Menu. End Run requires a confirmation step. All in-game info (stats, map,
+inventory) belongs to the future Satchel — this menu is deliberately administrative only.
+See `docs/features/008-menu-button-pause-modal.md` for the full spec.
 
 ---
 

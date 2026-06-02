@@ -10,25 +10,12 @@ const BAR_H = 8
 const BAR_EMPTY = '#2a2a3a'
 const ENEMY_RED = '#7a1a1a'
 
-const BACK_LINK_X = 16
-const BACK_LINK_Y = 16
-const BACK_LINK_H = 32
-
 export function drawCombatStatusBar(
   ctx: CanvasRenderingContext2D,
   pipHp: number,
   pipMaxHp: number,
   combat: CombatState,
-  isMouseDevice: boolean,
-  hoveredElement: string | null,
 ): void {
-  // Back link
-  ctx.font = '12px system-ui, -apple-system, sans-serif'
-  ctx.fillStyle = isMouseDevice && hoveredElement === 'back' ? colors.textPrimary : colors.textMuted
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'middle'
-  ctx.fillText('← Quit Run', BACK_LINK_X, BACK_LINK_Y + BACK_LINK_H / 2)
-
   const midY = STATUS_MID_Y
   const barY = midY - BAR_H / 2
 

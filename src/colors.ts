@@ -69,4 +69,9 @@ export const colors = {
   pipEarInner: 'rgba(200,100,80,0.5)',
   pipEye: '#3d2b1f',
   pipNose: '#c87060',
+
+  // Menu modal
+  menuScrim: 'rgba(13, 13, 26, 0.65)',
+  danger: '#c0392b',
+  border: '#2a1f15',
 } as const

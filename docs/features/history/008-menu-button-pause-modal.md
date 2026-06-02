@@ -291,3 +291,53 @@ label  = "≡ MENU"   (U+2261 identical-to as a stand-in for hamburger, + space 
 ## Open questions
 
 _(none)_
+
+---
+
+## Shipped
+
+**Date:** 2026-06-02
+**PR:** TBD (update after push)
+
+### What was built
+
+- `src/menu/modal.ts` — new module containing the MENU button draw/hit-test helpers (`drawMenuButton`, `isInMenuButton`) and `createMenuModal` factory. The modal manages list / settings sub-view / confirm-end views internally and exports layout constants for test access. Both screens share this single module.
+- `src/colors.ts` — added `menuScrim`, `danger`, `border` colour tokens.
+- `src/screens/home.ts` — replaced `← Main Menu` text link with `≡ MENU` button; integrated modal (Back to Menu → `main-menu` transition).
+- `src/screens/game.ts` — replaced `← Quit Run` text link with `≡ MENU` button in both normal and combat status bars; integrated modal (End Run Confirm → `resetRunState()` + transition to `home`); fixed pre-existing defeat regression: both defeat paths now call `resetRunState()` before transitioning so that returning to the game screen after defeat starts a fresh run rather than immediately re-triggering the defeat banner.
+- `src/combat/panel.ts` — removed back-link drawing and the two parameters that drove it from `drawCombatStatusBar`.
+
+### Evidence
+
+134 tests pass (`npm run test`). No new type errors (`npm run typecheck`; only the pre-existing vitest-module errors in test files, unchanged from prior features).
+
+The Reviewer inline pass surfaced two bugs fixed before PR:
+1. Defeat auto-advance and click-dismiss both skipped `resetRunState()`, causing START RUN to immediately bounce back to Home on the next entry.
+2. Stale dice-panel hover state under the modal scrim (cleared by calling `dicePanel.handlePointerMove(-1, -1)` when the modal opens).
+
+### Play-test
+
+**MENU button — Home screen:**
+1. Main Menu → **NEW GAME** → Home screen. Confirm a `≡ MENU` button is visible top-left in the status bar (no `← Main Menu` link). On desktop, hover it and confirm the background lightens.
+2. Tap `≡ MENU`. Confirm a dark scrim appears and a gold-bordered modal card opens with two rows: **Settings** and **Back to Menu**.
+3. Tap anywhere on the scrim outside the card. Confirm modal dismisses, Home screen is unchanged.
+4. Tap `≡ MENU` again, then tap **×** (top-right of card). Same result.
+5. Tap `≡ MENU`, then tap **Settings**. Confirm the card body changes to show `← Settings` at the top, a separator, and "No settings yet — more coming soon." centred in muted text. No × button.
+6. Tap `← Settings`. Confirm the list view is restored (Settings + Back to Menu rows).
+7. Tap `≡ MENU`, then **Back to Menu**. Confirm the modal closes and the screen transitions to Main Menu.
+
+**MENU button — Game screen:**
+8. Main Menu → NEW GAME → Home → **START RUN**. Confirm `≡ MENU` appears top-left alongside FLOOR 1 (centre) and Depth counter (right).
+9. Tap `≡ MENU`. Confirm modal opens with rows **Settings** and **End Run** (End Run in red/danger colour).
+10. Tap **End Run**. Confirm the card body changes to a confirmation view: "End this run?" heading, "Your progress will be lost." sub-text, and **Cancel** (gold) + **Confirm** (red) buttons.
+11. Tap **Cancel**. Confirm the list view is restored.
+12. Tap **End Run** again, then **Confirm**. Confirm: modal closes, game state is discarded, and the screen transitions to Home.
+13. Click **START RUN** again. Confirm a fresh dungeon starts (depth 0, full HP) and does not immediately jump back to Home — this verifies the defeat-reset fix.
+
+**MENU button — during combat:**
+14. Navigate to an enemy room to trigger combat. Confirm `≡ MENU` is still visible in the combat status bar.
+15. Hover a dice action button, then tap `≡ MENU`. Confirm no dice-panel hover highlight shows under the modal scrim.
+16. Tap **End Run → Confirm** from inside combat. Confirm the game resets and the Home screen is shown with a fresh run available.
+
+**Main Menu — no MENU button:**
+17. Confirm the Main Menu screen has no `≡ MENU` button.
