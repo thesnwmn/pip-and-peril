@@ -109,6 +109,41 @@ Risk: if too frequent it becomes its own kind of predictable.
 
 ---
 
+## Idea 013 — Pip's Satchel (In-Game Context Hub)
+
+**Area:** UI
+**Inspiration:** Manager suggestion — "a menu styled on Pip's satchel showing inventory, quests, settings, end run — a mix of pause menu and browser."
+
+A single persistent satchel-icon button (bottom-right, thumb-friendly on portrait mobile) opens a full-screen overlay styled as the interior of Pip's worn leather explorer satchel: aged canvas lining, brass rivets, warm brown and amber tones that contrast with the dungeon's cold blues and blacks. Opening plays a short buckle-unfasten micro-animation (≈300 ms, skippable on tap) before the interior is revealed. The overlay is organized into named **compartments** — navigated by small pocket-icons or stitched tab labels along the base of the overlay rather than standard UI tabs:
+
+- **Pouch** (default): inventory — items and consumables shown as small drawn objects on worn canvas; stub-friendly (empty pouch is fine before inventory exists as a system)
+- **Journal** (folded parchment): Pip's notes and active objectives, written in-character in Pip's voice rather than as a sterile quest log
+- **Tally** (scrap of paper): run stats — rooms entered, enemies defeated, depth, pips spent; formatted as tally marks and scribbled numbers
+- **Retreat** (a sketched rope ladder): the abandon-run action with a required confirmation step; frames abandonment as Pip choosing to leave rather than the player pressing a "quit" button
+
+Settings are intentionally *outside* the satchel — they're player-facing (volume, display), not Pip-facing, and belong in a separate gear icon that doesn't dilute the satchel's in-world character.
+
+The overlay pauses navigation (arrows hidden, room selection blocked). During combat it is blocked entirely for now — in-combat item use is interesting but belongs in a later, dedicated design. The existing "← Quit Run" link in the status bar should coexist with the satchel's Retreat option: the status-bar link is a fast emergency exit during combat (where the satchel is blocked anyway), while Retreat is the deliberate, confirmed in-navigation abandonment path. Long-term, "← Quit Run" may be retired in favour of the satchel; for now they're complementary.
+
+Open design question: does the satchel icon appear during combat greyed/disabled, or hide entirely? Greyed is better — the player learns the icon exists and isn't confused by it disappearing.
+
+Supersedes the lightweight-menu intent of Idea 003 (which can remain as a reference; this is the fuller version). Idea 003's "backtrack" option stays as an in-map gesture, not a satchel item.
+
+---
+
+## Idea 014 — Dungeon Sketch (Satchel Map Tab)
+
+**Area:** UI / World
+**Inspiration:** The satchel as an explorer's kit; a mouse cartographer sketching her route on parchment as she goes.
+
+A compartment within the Satchel showing Pip's hand-drawn overhead sketch of the explored dungeon: rooms as rough pencil rectangles on aged parchment, corridors as connecting ink lines, room types denoted by small inked symbols (a skull for enemy, a coin stack for shop, a scroll for NPC, a question mark for unresolved). The sketch is deliberately imprecise — slightly off-square rooms, mildly crooked lines — reinforcing in-world charm rather than acting as a nav tool. Unexplored tiles are blank parchment; the absence of marks is the fog. This is a different visual register from the game's precision tile renderer: the game map is what Pip *sees*; the sketch is what Pip *remembers and records*.
+
+Rough shape: a sepia/cream parchment fills the centre panel of the satchel view; the dungeon graph is redrawn in a "sketchy" style (slightly randomised line offsets per session) at a scale that fits the whole explored run on one page; Pip's current position is a small mouse-paw icon. Open questions: does the sketch build progressively as Pip enters rooms (new rooms fade in), or appear all-at-once when the satchel opens? Progressive feels more alive; all-at-once is simpler. Does this tab only appear once at least one room beyond the starting tile has been explored?
+
+This can be specced independently of whether the rest of the satchel is built first — the parchment sketch is a fully self-contained visual feature once the satchel overlay shell exists.
+
+---
+
 ## Idea 012 — Immersive Combat Overlay
 
 **Area:** UI
