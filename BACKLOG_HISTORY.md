@@ -18,7 +18,7 @@ Original one- or two-sentence summary from the backlog.
 
 ### 004 · Navigation & Room Selection
 
-**Shipped:** 2026-06-02 · **PR:** (see PR) · **Spec:** [docs/features/history/004-navigation-room-selection.md](docs/features/history/004-navigation-room-selection.md)
+**Shipped:** 2026-06-02 · **PR:** [#21](https://github.com/thesnwmn/pip-and-peril/pull/21) · **Spec:** [docs/features/history/004-navigation-room-selection.md](docs/features/history/004-navigation-room-selection.md)
 
 Direction-first movement: player picks an exit on Pip's current tile; if the destination is
 unknown, three playing-card-style room choice cards are offered (room name, tile preview, flavour

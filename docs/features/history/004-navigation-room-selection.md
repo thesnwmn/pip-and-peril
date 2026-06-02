@@ -427,7 +427,7 @@ and `biome.ts` — no new room colour constants needed beyond the log set above.
 
 ## Shipped
 
-**Date:** 2026-06-02 · **PR:** (see PR link below)
+**Date:** 2026-06-02 · **PR:** [#21](https://github.com/thesnwmn/pip-and-peril/pull/21)
 
 ### What was built
 
