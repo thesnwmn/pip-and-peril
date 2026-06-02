@@ -129,3 +129,56 @@ Prerequisites: encounter state machine (006) and a zoom/pan capability in the ti
 Risk: the overlay must not obscure critical combat information (HP bars, action outcomes); the
 combat camera zoom needs careful tuning for phone screen sizes. A natural follow-on to feature 006
 once the encounter loop is solid.
+
+---
+
+## Idea 015 — Camera Zoom as Encounter Signal
+
+**Area:** UI
+**Inspiration:** `docs/concept/screen-layout-and-transitions.md` — the camera-as-storyteller section.
+
+Different encounter types call for different zoom depths and transition *speeds*, and that
+variation is itself communication before a single UI element appears. Combat: smooth medium-close
+zoom (tension building). Boss: a slower, wider pull that pauses on the boss before tightening
+(scale and weight). Trap: a near-instant snap with no easing (the trap already fired). Shop:
+gentle centering with minimal zoom (unhurried). Each signature is a learned signal; once
+the player knows it, a trap snap feels jarring and a boss pull feels cinematic. Rough shape:
+a `CameraMode` enum (NavigationFollow, CombatClose, BossEntrance, ShopAmbient, DialogueMedium,
+ChestTight, TrapSnap) with associated zoom target and easing curve per mode. Prerequisite: a
+tile renderer that supports smooth zoom and pan (post-003 enhancement). Risk: the transitions
+must stay within the 200–350ms window so they don't feel sluggish on slower phones.
+
+---
+
+## Idea 016 — Dialogue-Primary NPC Panel
+
+**Area:** UI / World
+**Inspiration:** `docs/concept/screen-layout-and-transitions.md` — NPC encounter breakdown.
+
+NPC encounters should be text and choice first; the dice tray should appear *inside* the
+dialogue panel only when a stat check is required, then recede afterward. This is the reverse
+of the combat encounter (dice primary, log secondary) and signals to the player that they are
+talking, not fighting. Rough shape: a dialogue panel (~60% screen height) with NPC portrait
+straddling the panel edge into the map view above, scrolling single-line dialogue, up to three
+response buttons, and a dice tray sub-region that fades in/out as checks are triggered by
+specific responses. The dice tray sub-region reuses the same dice components as combat but is
+smaller (single-check scale) and inherits the dialogue panel's warm surface rather than
+dungeon-dark. Open question: should the NPC portrait be a distinct art asset, a zoomed-in
+tile sprite, or a stylised icon? Ties to the unresolved art approach (D8).
+
+---
+
+## Idea 017 — Run Summary as Dungeon Sketch
+
+**Area:** UI / Flow
+**Inspiration:** `docs/concept/screen-layout-and-transitions.md` — future screens section; pairs naturally with Idea 014 (Dungeon Sketch).
+
+When a run ends — by death, by floor clear, or by any other end trigger — the run summary
+screen uses the same parchment sketch from Idea 014 as its centrepiece. The explored dungeon
+fills the page; Pip's terminal position (and cause of death, if applicable) is marked. Around
+the sketch: floor reached, enemies defeated, gold found, shiny scraps earned. The scraps count
+animates up slowly, like coins being counted. The hero element is the *map* — the record of
+where Pip went — not a stats panel. There is no "YOU DIED" header; the absence of Pip moving
+on the parchment is the signal. Prerequisite: Idea 014 (the parchment sketch renderer). Risk:
+if the run was short (early death), the sketch is sparse — need to verify this still reads as
+satisfying rather than underwhelming.
