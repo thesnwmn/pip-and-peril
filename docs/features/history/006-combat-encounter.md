@@ -330,7 +330,7 @@ after the first play-test, but this does not block the Engineer)_
 
 ## Shipped
 
-**Date:** 2026-06-02 · **PR:** #TBD
+**Date:** 2026-06-02 · **PR:** [#25](https://github.com/thesnwmn/pip-and-peril/pull/25)
 
 ### What was built
 

@@ -18,7 +18,7 @@ Original one- or two-sentence summary from the backlog.
 
 ### 006 · Combat Encounter
 
-**Shipped:** 2026-06-02 · **PR:** #TBD · **Spec:** [docs/features/history/006-combat-encounter.md](docs/features/history/006-combat-encounter.md)
+**Shipped:** 2026-06-02 · **PR:** [#25](https://github.com/thesnwmn/pip-and-peril/pull/25) · **Spec:** [docs/features/history/006-combat-encounter.md](docs/features/history/006-combat-encounter.md)
 
 Turn-based encounter loop: roll dice pool, spend pips on Strike/Evade/Focus, track HP for Pip and
 one enemy (Goblin), resolve win/lose. First complete playable game moment. Enemy rooms cleared on
