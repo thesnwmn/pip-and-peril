@@ -22,6 +22,13 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
+### 006 · Combat Encounter
+
+Turn-based encounter loop: roll dice pool, spend pips on Strike/Evade/Focus, track HP for Pip and
+one enemy (Goblin), resolve win/lose. First complete playable game moment. Enemy rooms cleared on
+victory; Pip's HP persists between rooms. Defeat returns to main menu.
+See `docs/features/006-combat-encounter.md` for the full spec.
+
 ### 005 · Dice Pool System
 
 `DicePool` data model (roll, spend, canAfford, reset) and a dice panel UI rendered in the Game
@@ -35,10 +42,7 @@ See `docs/features/005-dice-pool-system.md` for the full spec.
 
 ## NEEDS SPEC
 
-### 006 · Combat Encounter
-
-Turn-based encounter loop: roll dice pool, spend pips on attack/dodge, track HP for Pip and one
-enemy, resolve win/lose. First complete playable game moment. Depends on: 004, 005.
+_(none)_
 
 ---
 
