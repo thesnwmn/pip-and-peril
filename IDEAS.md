@@ -21,4 +21,13 @@ code; the Designer writes those.
 
 ---
 
-_No ideas captured yet. The Thinker adds the first one starting at `001`._
+## Idea 001 — Room Entry Surprises
+
+**Area:** World
+**Inspiration:** Removed from feature 004 spec to keep scope tight.
+
+When Pip enters a notable room, there's a small chance (~20%) the log message is undercut by a
+"surprise" clause — the enemy is already dead, the shop is sold out, the chest is empty. Adds
+personality and stops every room feeling formulaic. Needs a small string table per room type
+(e.g. Enemy: "Already dead." · "It flees before you can act.", Shop: "Sold out. Bare shelves.").
+Risk: if too frequent it becomes its own kind of predictable.
