@@ -35,6 +35,8 @@ Instead of hard-centering the viewport on Pip at all times, Pip can roam freely 
 **Area:** UI
 **Inspiration:** Manager suggestion; the current navigation design has a back/backtrack affordance that may end up as a standalone button.
 
+**Absorbed:** Meta-action intent (quit/back) → Feature 008 (Menu Button & Pause Modal). In-game info intent (run stats, map) → Idea 013 (Pip's Satchel). Backtrack remains an in-map gesture per Idea 013.
+
 Replace any dedicated "back" button with a lightweight in-game context menu (a small icon or gesture in a corner) that surfaces multiple options in one place: backtrack / retreat, inspect current tile, check run stats, abandon run. This avoids cluttering the portrait layout with multiple persistent controls, and a menu naturally scales as more options are added (inventory, map zoom, settings). Risk: adding a tap-to-open menu introduces one extra step for backtracking, which is a frequent action — the menu may need a swipe or long-press shortcut to stay out of the way during normal navigation.
 
 ---
