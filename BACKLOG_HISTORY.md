@@ -16,6 +16,18 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 005 · Dice Pool System
+
+**Shipped:** 2026-06-02 · **PR:** #TBD · **Spec:** [docs/features/history/005-dice-pool-system.md](docs/features/history/005-dice-pool-system.md)
+
+`DicePool` data model (roll, spend, canAfford, reset) and a dice panel UI rendered in the Game
+screen's bottom zone: coloured die faces, pip total badges, ROLL button with ~500 ms animation,
+and three placeholder action buttons (Strike, Evade, Focus) that demonstrate the full
+roll-to-spend flow. The data API and panel component are ready for 006 to integrate into the
+combat encounter loop.
+
+---
+
 ### 004 · Navigation & Room Selection
 
 **Shipped:** 2026-06-02 · **PR:** [#21](https://github.com/thesnwmn/pip-and-peril/pull/21) · **Spec:** [docs/features/history/004-navigation-room-selection.md](docs/features/history/004-navigation-room-selection.md)

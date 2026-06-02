@@ -270,10 +270,35 @@ _(none — approach is agreed, all choices above are actionable)_
 
 ## Shipped
 
-**Date:** · **PR:** #
+**Date:** 2026-06-02 · **PR:** #TBD
 
 ### What was built
 
+- `src/dice/pool.ts` — `DicePool` type + `starterPool`, `rollPool`, `spendPips`, `canAfford`, `resetPool` pure functions. Immutable-style: every function returns a new object.
+- `src/dice/pool.test.ts` — 19 unit tests covering all acceptance criteria for the data layer (roll values in range, totals computed, spend deducts/rejects/never-partial, reset zeroes state).
+- `src/dice/panel.ts` — canvas dice panel renderer. Exports `createDicePanel` factory and `PANEL_TOP` layout constant. Handles the RAF-driven scramble animation (timestamp-based, ~50 ms ticks over 500 ms), per-colour pip badges, ROLL button, and three placeholder action buttons (Strike/Evade/Focus) with cost pills and flash-on-unaffordable.
+- `src/colors.ts` — 12 new colour tokens for die faces and pip badges.
+- `src/screens/game.ts` — integrates the dice panel: `dicePool` state lives alongside `DungeonState`; panel renders in the bottom zone when `uiState === 'idle'`; clicks and pointer moves routed through `DICE_PANEL_TOP` boundary (imported from panel.ts to keep the two constants in sync).
+
+Reviewer fixes applied: C1 (no early-return in `draw()` — final rolled frame drawn synchronously on the animation-end tick), C3/C4 (`472` replaced by `DICE_PANEL_TOP` imported from `panel.ts`), C5 (dead null assignment removed from `handleClick`).
+
 ### Evidence
 
+```
+Test Files  9 passed (9)
+Tests       93 passed (93)   (19 new pool tests)
+Typecheck   0 errors
+```
+
 ### Play-test
+
+1. `npm run dev` → open `http://localhost:5173`.
+2. Click **New Run** to enter the Game screen.
+3. **Dice panel visible**: the bottom zone shows a "DICE" heading, four blank die faces (Red / Blue / Green / Yellow), dash badges for each colour, a gold-bordered ROLL DICE button, and three greyed-out action buttons (Strike 2🔴 / Evade 2🟢 / Focus 1🔵).
+4. **Roll animation**: tap ROLL DICE — the die faces scramble for ~500 ms then settle on their values; pip total badges update with the rolled counts.
+5. **Affordability**: if the rolled total for a colour meets an action's cost, that button lights up; if not, it stays dimmed.
+6. **Spend pips**: tap an affordable action — its pip cost is deducted from the badge totals; a log entry appears (`Strike used. (🔴2 → 🔴1)` style); button enabled/disabled states update.
+7. **Unaffordable flash**: tap a greyed-out action — its border briefly flashes red; totals unchanged.
+8. **Re-roll**: tap ROLL DICE again at any point after the first roll — animation plays again, totals refresh.
+9. **Panel hidden during room choice**: tap a nav arrow → room cards appear; the dice panel is not shown while `uiState === 'choosing'`. Choose a room → dice panel returns.
+10. **Navigation unchanged**: nav arrows and backtracking still work normally when clicking above the panel zone.

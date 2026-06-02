@@ -9,6 +9,9 @@ import { availableDirs, dirFromPipToNeighbour, isBacktrackable, movePip } from '
 import { generateOfferings, placeRoom, CARD_TEASES, validExitConfigs } from '../navigation/room-selection'
 import { pickRandom } from '../navigation/room-pool'
 import type { ScreenController } from './main-menu'
+import type { DicePool } from '../dice/pool'
+import { starterPool } from '../dice/pool'
+import { createDicePanel, PANEL_TOP as DICE_PANEL_TOP } from '../dice/panel'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
@@ -189,17 +192,6 @@ function drawLogStrip(ctx: CanvasRenderingContext2D, state: DungeonState): void 
   ctx.globalAlpha = 1
 }
 
-function drawIdleHint(ctx: CanvasRenderingContext2D, state: DungeonState): void {
-  if (state.stepCount > 0) return
-  ctx.font = 'italic 11px system-ui, -apple-system, sans-serif'
-  ctx.fillStyle = colors.textMuted
-  ctx.globalAlpha = 0.5
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText('Tap an exit to move.', LOGICAL_W / 2, PANEL_TOP + 30)
-  ctx.globalAlpha = 1
-}
-
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
   const words = text.split(' ')
   const lines: string[] = []
@@ -349,6 +341,17 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   let isMouseDevice = false
   let cardTeases: string[] = []
   let hitRects: HitRect[] = []
+  let dicePool: DicePool = starterPool()
+
+  const dicePanel = createDicePanel(
+    () => dicePool,
+    {
+      onStateChange: (pool) => { dicePool = pool },
+      addLog: (message) => {
+        state = { ...state, log: [{ message, style: 'normal' }, ...state.log] }
+      },
+    },
+  )
 
   function getCardTeases(offerings: RoomOffering[]): string[] {
     return offerings.map(o => {
@@ -391,7 +394,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     drawLogStrip(ctx, state)
 
     if (state.uiState === 'idle') {
-      drawIdleHint(ctx, state)
+      dicePanel.draw(ctx, _timestamp)
     } else if (state.uiState === 'choosing') {
       drawRoomPanel(ctx, state, cardTeases, hoveredElement, hitRects)
     }
@@ -413,6 +416,12 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         state = placeRoom(state, offering, targetPos)
         cardTeases = []
       }
+      return
+    }
+
+    // IDLE state: dice panel handles panel zone clicks first
+    if (state.uiState === 'idle' && y >= DICE_PANEL_TOP) {
+      dicePanel.handleClick(x, y)
       return
     }
 
@@ -466,6 +475,12 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     if (state.uiState === 'choosing') {
       const hit = hitTest(x, y)
       hoveredElement = hit?.startsWith('card-') ? hit : null
+      return
+    }
+
+    if (state.uiState === 'idle' && y >= DICE_PANEL_TOP) {
+      dicePanel.handlePointerMove(x, y)
+      hoveredElement = null
       return
     }
 

@@ -47,6 +47,22 @@ export const colors = {
   cardBgCorridor: '#0e0c0a',
   cardTextCorridor: '#8b7355',
 
+  // Die face backgrounds
+  dieFaceRed: '#7a1a1a',
+  dieFaceBlue: '#1a2a7a',
+  dieFaceGreen: '#1a6a2a',
+  dieFaceYellow: '#7a6a00',
+
+  // Pip total badge colours
+  pipBadgeRedBg: '#3a0a0a',
+  pipBadgeRedText: '#ff9090',
+  pipBadgeBlueBg: '#0a1040',
+  pipBadgeBlueText: '#90aaff',
+  pipBadgeGreenBg: '#0a2a0a',
+  pipBadgeGreenText: '#90ff90',
+  pipBadgeYellowBg: '#2a2000',
+  pipBadgeYellowText: '#ffe060',
+
   // Pip token colours
   pipBody: '#f5e6c8',
   pipEar: '#e0c8a0',
