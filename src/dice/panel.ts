@@ -12,45 +12,51 @@ export const PANEL_TOP = 416
 const PANEL_CORNER = 8
 const SIDE_MARGIN = 16
 
-// HP bars section (top of combat panel)
-const HP_MID_Y = PANEL_TOP + 16          // vertical centre of HP row = 432
+// HP bars — two stacked rows, full-width bars
 const HP_BAR_H = 8
 const HP_BAR_EMPTY = '#2a2a3a'
 const ENEMY_RED = '#7a1a1a'
-const HP_SECTION_BOTTOM = HP_MID_Y + HP_BAR_H / 2 + 8  // = 444
-
-// Encounter log zone (below HP bars)
-const LOG_RULE_Y = HP_SECTION_BOTTOM + 6   // = 450
-const LOG_LINE_H = 14
-const LOG_LINE1_Y = LOG_RULE_Y + 8         // = 458
-const LOG_SECTION_BOTTOM = LOG_LINE1_Y + 3 * LOG_LINE_H + 6  // = 506
+const HP_LABEL_ANCHOR_X = 70              // labels right-align to this x
+const HP_BAR_X = HP_LABEL_ANCHOR_X + 6   // = 76, bar start
+const HP_BAR_W = LOGICAL_W - HP_BAR_X - SIDE_MARGIN - 44  // = 254
+const HP_TEXT_RIGHT_X = LOGICAL_W - SIDE_MARGIN            // = 374
+const HP_ROW1_Y = PANEL_TOP + 14          // = 430, PIP row centre
+const HP_ROW2_Y = PANEL_TOP + 30          // = 446, enemy row centre
+const HP_SECTION_BOTTOM = HP_ROW2_Y + HP_BAR_H / 2 + 10   // = 460
 
 // Die faces (no heading label)
 const DIE_SIZE = 68
 const DIE_GAP = 10
 const DIE_RADIUS = 12
-const DIE_ROW_Y = LOG_SECTION_BOTTOM + 6   // = 512
-const PIP_DOT_R = 4.5                      // pip circle radius
+const DIE_ROW_Y = HP_SECTION_BOTTOM + 8   // = 468
+const PIP_DOT_R = 4.5                     // pip circle radius
 
 // Colour label row
-const LABEL_Y = DIE_ROW_Y + DIE_SIZE + 6   // = 586
+const LABEL_Y = DIE_ROW_Y + DIE_SIZE + 6  // = 542
 
 // Badge row
-const BADGE_Y = LABEL_Y + 16               // = 602
+const BADGE_Y = LABEL_Y + 16              // = 558
 const BADGE_H = 26
 const BADGE_PAD_X = 8
 
 // ROLL button
-const ROLL_BTN_Y = BADGE_Y + BADGE_H + 10  // = 638
+const ROLL_BTN_Y = BADGE_Y + BADGE_H + 10  // = 594
 const ROLL_BTN_H = 44
 const ROLL_BTN_X = SIDE_MARGIN
 const ROLL_BTN_W = LOGICAL_W - SIDE_MARGIN * 2
 
 // Action buttons (2-column grid)
-const ACTION_Y = ROLL_BTN_Y + ROLL_BTN_H + 10  // = 692
+const ACTION_Y = ROLL_BTN_Y + ROLL_BTN_H + 10  // = 648
 const ACTION_BTN_H = 46
 const ACTION_BTN_W = (LOGICAL_W - SIDE_MARGIN * 2 - 10) / 2
 const ACTION_BTN_RADIUS = 8
+
+// Encounter log zone — below action buttons
+const ACTION_ROWS = Math.ceil(3 / 2)  // 2 rows for 3 actions
+const ACTIONS_BOTTOM = ACTION_Y + ACTION_ROWS * ACTION_BTN_H + (ACTION_ROWS - 1) * 8  // = 748
+const LOG_RULE_Y = ACTIONS_BOTTOM + 8     // = 756
+const LOG_LINE_H = 14
+const LOG_LINE1_Y = LOG_RULE_Y + 7        // = 763
 
 // ── Pip dot patterns for d6 ───────────────────────────────────────────────────
 
@@ -304,51 +310,42 @@ function drawActionButton(
 // ── HP bars ───────────────────────────────────────────────────────────────────
 
 function drawHpBars(ctx: CanvasRenderingContext2D, info: HpInfo): void {
-  const midY = HP_MID_Y
-  const barY = midY - HP_BAR_H / 2
-
   ctx.font = 'bold 10px monospace'
   ctx.textBaseline = 'middle'
 
-  // PIP
-  const pipLabelX = 110
+  // PIP row — label right-aligned at HP_LABEL_ANCHOR_X, full-width bar
+  const pip_barY = HP_ROW1_Y - HP_BAR_H / 2
   ctx.fillStyle = colors.textMuted
-  ctx.textAlign = 'left'
-  ctx.fillText('PIP', pipLabelX, midY)
-  const pipLabelW = ctx.measureText('PIP').width
+  ctx.textAlign = 'right'
+  ctx.fillText('PIP', HP_LABEL_ANCHOR_X, HP_ROW1_Y)
 
-  const pipBarX = pipLabelX + pipLabelW + 6
-  const pipBarW = 80
   ctx.fillStyle = HP_BAR_EMPTY
-  ctx.fillRect(pipBarX, barY, pipBarW, HP_BAR_H)
+  ctx.fillRect(HP_BAR_X, pip_barY, HP_BAR_W, HP_BAR_H)
   ctx.fillStyle = colors.gold
-  ctx.fillRect(pipBarX, barY, Math.max(0, info.pipHp / info.pipMaxHp) * pipBarW, HP_BAR_H)
+  ctx.fillRect(HP_BAR_X, pip_barY, Math.max(0, info.pipHp / info.pipMaxHp) * HP_BAR_W, HP_BAR_H)
 
   ctx.font = '10px monospace'
   ctx.fillStyle = colors.textPrimary
-  ctx.textAlign = 'left'
-  ctx.fillText(`${info.pipHp}/${info.pipMaxHp}`, pipBarX + pipBarW + 4, midY)
+  ctx.textAlign = 'right'
+  ctx.fillText(`${info.pipHp}/${info.pipMaxHp}`, HP_TEXT_RIGHT_X, HP_ROW1_Y)
 
-  // Enemy
-  const enemyLabelX = 260
+  // Enemy row — label right-aligned at HP_LABEL_ANCHOR_X, full-width bar
+  const enemy_barY = HP_ROW2_Y - HP_BAR_H / 2
   const enemyName = info.enemyName.toUpperCase()
   ctx.font = 'bold 10px monospace'
   ctx.fillStyle = ENEMY_RED
-  ctx.textAlign = 'left'
-  ctx.fillText(enemyName, enemyLabelX, midY)
-  const enemyLabelW = ctx.measureText(enemyName).width
+  ctx.textAlign = 'right'
+  ctx.fillText(enemyName, HP_LABEL_ANCHOR_X, HP_ROW2_Y)
 
-  const enemyBarX = enemyLabelX + enemyLabelW + 6
-  const enemyBarW = 60
   ctx.fillStyle = HP_BAR_EMPTY
-  ctx.fillRect(enemyBarX, barY, enemyBarW, HP_BAR_H)
+  ctx.fillRect(HP_BAR_X, enemy_barY, HP_BAR_W, HP_BAR_H)
   ctx.fillStyle = ENEMY_RED
-  ctx.fillRect(enemyBarX, barY, Math.max(0, info.enemyHp / info.enemyMaxHp) * enemyBarW, HP_BAR_H)
+  ctx.fillRect(HP_BAR_X, enemy_barY, Math.max(0, info.enemyHp / info.enemyMaxHp) * HP_BAR_W, HP_BAR_H)
 
   ctx.font = '10px monospace'
   ctx.fillStyle = colors.textPrimary
-  ctx.textAlign = 'left'
-  ctx.fillText(`${info.enemyHp}/${info.enemyMaxHp}`, enemyBarX + enemyBarW + 4, midY)
+  ctx.textAlign = 'right'
+  ctx.fillText(`${info.enemyHp}/${info.enemyMaxHp}`, HP_TEXT_RIGHT_X, HP_ROW2_Y)
 }
 
 // ── Encounter log zone ────────────────────────────────────────────────────────
@@ -519,9 +516,6 @@ export function createDicePanel(
       if (hpInfo) drawHpBars(ctx, hpInfo)
     }
 
-    // Encounter log zone (below HP bars, above dice)
-    drawEncounterLogZone(ctx, callbacks.getCombatLog ? callbacks.getCombatLog() : [])
-
     // Die faces
     const centres = dieCentres(pool.dice.length)
     for (let i = 0; i < pool.dice.length; i++) {
@@ -564,6 +558,9 @@ export function createDicePanel(
         drawActionButton(ctx, action, x, y, affordable, hovered, flashing)
       }
     }
+
+    // Encounter log zone (below action buttons)
+    drawEncounterLogZone(ctx, callbacks.getCombatLog ? callbacks.getCombatLog() : [])
 
     ctx.restore()
   }
