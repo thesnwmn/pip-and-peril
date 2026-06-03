@@ -74,4 +74,11 @@ export const colors = {
   menuScrim: 'rgba(13, 13, 26, 0.65)',
   danger: '#c0392b',
   border: '#2a1f15',
+
+  // Satchel overlay
+  satchelLeather: '#3d2010',
+  satchelCanvas: '#c4a07a',
+  satchelBrass: '#a07828',
+  satchelStitch: '#6b4f2a',
+  satchelInk: '#1a0f08',
 } as const

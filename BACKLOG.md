@@ -22,14 +22,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-### 016 · Pip's Satchel
-
-Full-screen in-world overlay opened by a persistent bottom-right button: Pip's worn leather
-satchel with four compartments — Pouch (gold + items), Journal (stub), Tally (live run stats),
-Map (stub). Establishes the inventory data model (gold + Item list) and pauses navigation while
-open; greyed and blocked during combat. Opens with a ≈300 ms buckle-unfasten animation.
-See `docs/features/016-pip-satchel.md` for the full spec.
-
 ### 017 · Soft Camera Follow
 
 Decouples the viewport from Pip's exact position: the camera follows through a configurable dead
