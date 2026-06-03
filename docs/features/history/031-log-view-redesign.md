@@ -142,7 +142,7 @@ None blocking — this spec is READY.
 ## Shipped
 
 **Date:** 2026-06-03
-**PR:** #TBD (update after push)
+**PR:** [#45](https://github.com/thesnwmn/pip-and-peril/pull/45)
 
 ### What was built
 
