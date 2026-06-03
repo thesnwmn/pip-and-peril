@@ -138,3 +138,39 @@ No new color tokens. The whisper scrim uses `--bg` at ~25% opacity as its opaque
 ## Open questions
 
 None blocking — this spec is READY.
+
+## Shipped
+
+**Date:** 2026-06-03
+**PR:** [#45](https://github.com/thesnwmn/pip-and-peril/pull/45)
+
+### What was built
+
+- **Log strip removed:** `drawLogStrip` and all `LOG_*` constants deleted from `game.ts`; `log: LogEntry[]` removed from `DungeonState`; `placeRoom()` no longer appends to a log array.
+- **Situated whisper** (`src/log/whisper.ts` + `src/screens/game.ts`): ephemeral single-line overlay at the bottom of the map canvas. Triggered by `triggerWhisper(roomType)` on card selection, using existing `LOG_MESSAGES` strings. Fade-in 200 ms → hold → fade-out 500 ms (total ~2.5 s). Scrim: transparent-to-25%-bg gradient, 60 px tall. Cleared immediately when room cards appear (`whisper = null` before entering `uiState: 'choosing'`) or when combat trigger fires.
+- **Encounter log zone** (`src/dice/panel.ts`): up to 3 plain-text lines at base of combat panel, oldest→newest top→bottom, opacities 0.45 / 0.70 / 1.00, separated by a 1 px hairline rule. Combat events append via `addLogEntry` → `combatLog` array in `game.ts` closure. Cleared (`combatLog = []`) when victory or defeat banner appears.
+- **Panel layout:** `PANEL_TOP` moved 416 (from 472), `PANEL_TOP` in `dice/panel.ts` likewise 416. Map canvas now clips to `LOGICAL_H` (screen bottom) in idle navigation state — room selection panel still appears at 416 when choosing.
+- **Nav hint removed:** `drawNavHint` deleted; map fills unobstructed to screen bottom when idle.
+- **New module:** `src/log/whisper.ts` exports `whisperAlpha(elapsed)` and timing constants, tested in `src/log/whisper.test.ts` (8 tests).
+
+### Test evidence
+
+```
+Test Files  14 passed (14)
+Tests       201 passed (201)
+```
+
+`src/log/whisper.test.ts` covers: alpha=0 at t=0, reaches 1 by fade-in end, holds 1 throughout hold window, linear fade-out to 0, expired at TOTAL_MS, monotone in both ramp directions.
+
+### Play-test instructions
+
+1. Run `npm run dev` and open `http://localhost:5173`.
+2. Start a new run. Confirm **no log strip** appears between the map and the bottom of the screen — the map fills down to the room-selection panel.
+3. In idle state (not choosing), confirm the **map fills to the screen bottom** with no panel below it.
+4. Select a direction arrow to open room cards. Confirm cards appear; whisper is not visible at the same time.
+5. Choose an **Enemy, Shop, NPC, Item, or Chest** room card. On entering, a narration line should appear overlaid at the bottom of the map (e.g. "Something snarls in the dark.") with a subtle gradient beneath it, then fade out after ~2.5 s.
+6. Choose a **Corridor** room — no whisper should appear.
+7. While a whisper is visible, choose another direction immediately. Confirm the whisper disappears at once when the room cards appear.
+8. Enter an **Enemy** room. Confirm the encounter panel rises and the whisper is gone.
+9. In combat, **Roll Dice** and use **Strike, Evade, Focus** actions. Confirm log entries appear at the base of the combat panel below the action buttons, with the hairline rule above them. Oldest entry is faintest (top), newest is fully opaque (bottom). After 3 entries, the oldest drops when a new one arrives.
+10. Win or lose the combat. Confirm the log zone is empty (cleared) when the victory/defeat banner appears.

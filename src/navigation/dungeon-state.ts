@@ -25,7 +25,6 @@ export interface DungeonState {
   uiState: 'idle' | 'choosing'
   pendingDir: ExitMask | null
   offerings: RoomOffering[]
-  log: LogEntry[]
   stepCount: number
   roomsEntered: number
   enemiesDefeated: number
@@ -60,7 +59,6 @@ export function initDungeon(): DungeonState {
     uiState: 'idle',
     pendingDir: null,
     offerings: [],
-    log: [{ message: 'Pip descends into the dungeon…', style: 'system' }],
     stepCount: 0,
     roomsEntered: 0,
     enemiesDefeated: 0,

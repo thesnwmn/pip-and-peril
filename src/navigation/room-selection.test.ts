@@ -155,21 +155,6 @@ describe('placeRoom', () => {
     expect(next.stepCount).toBe(1)
   })
 
-  it('adds a log entry for enemy rooms', () => {
-    const base = initDungeon()
-    const offering = { roomType: 'enemy' as const, exits: S }
-    const next = placeRoom(base, offering, { col: 6, row: 5 })
-    expect(next.log.length).toBeGreaterThan(base.log.length)
-    expect(next.log[0].style).toBe('enemy')
-  })
-
-  it('does not add a log entry for corridor rooms', () => {
-    const base = initDungeon()
-    const offering = { roomType: 'corridor' as const, exits: N | S }
-    const next = placeRoom(base, offering, { col: 6, row: 5 })
-    expect(next.log.length).toBe(base.log.length)
-  })
-
   it('does not mutate original state', () => {
     const base = initDungeon()
     const origCell = base.grid.cells[5][6]
@@ -186,12 +171,4 @@ describe('placeRoom', () => {
     expect(next.fog).not.toBe(base.fog)
   })
 
-  it('caps log at 8 entries', () => {
-    let state = initDungeon()
-    // Build up 7 existing log entries
-    state = { ...state, log: Array.from({ length: 7 }, (_, i) => ({ message: `msg${i}`, style: 'system' as const })) }
-    const offering = { roomType: 'enemy' as const, exits: S }
-    const next = placeRoom(state, offering, { col: 6, row: 5 })
-    expect(next.log.length).toBeLessThanOrEqual(8)
-  })
 })

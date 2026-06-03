@@ -2,8 +2,8 @@ import { computeFog } from '../map/fog'
 import type { ExitMask, GridPos, RoomType } from '../map/types'
 import { E, N, S, W } from '../map/types'
 import { chebyshev, DIR_DELTA, OPP, updateCamera } from './dungeon-state'
-import type { DungeonState, LogEntry, RoomOffering } from './dungeon-state'
-import { LOG_MESSAGES, logStyleForRoom, pickRandom, poolForDepth, CARD_TEASES } from './room-pool'
+import type { DungeonState, RoomOffering } from './dungeon-state'
+import { pickRandom, poolForDepth, CARD_TEASES } from './room-pool'
 
 export { CARD_TEASES }
 
@@ -91,17 +91,6 @@ export function placeRoom(
   const newFog = computeFog(state.fog, newGrid, newPip, 3)
   const newCamera = updateCamera(state.camera, newPip, newGrid.width, newGrid.height)
 
-  const needsLog = ['enemy', 'boss', 'shop', 'npc', 'item', 'chest'].includes(offering.roomType)
-  const newLog: LogEntry[] = [...state.log]
-  if (needsLog) {
-    const messages = LOG_MESSAGES[offering.roomType]
-    const message = messages ? pickRandom(messages) : ''
-    if (message) {
-      newLog.unshift({ message, style: logStyleForRoom(offering.roomType) })
-      if (newLog.length > 8) newLog.length = 8
-    }
-  }
-
   return {
     ...state,
     grid: newGrid,
@@ -111,7 +100,6 @@ export function placeRoom(
     uiState: 'idle',
     pendingDir: null,
     offerings: [],
-    log: newLog,
     stepCount: state.stepCount + 1,
   }
 }
