@@ -313,6 +313,7 @@ export interface DicePanelCallbacks {
 
 export function createDicePanel(
   getPool: () => DicePool,
+  getPanelTop: () => number,
   callbacks: DicePanelCallbacks,
 ): {
   draw: (ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp) => void
@@ -323,6 +324,8 @@ export function createDicePanel(
   let flashingAction: string | null = null
   let flashEndTime: number | null = null
   const anim: AnimState = { startTime: null, lastTickTime: 0, scramble: [] }
+
+  function yOffset(): number { return getPanelTop() - PANEL_TOP }
 
   function actionButtonPos(i: number): { x: number; y: number } {
     const col = i % 2
@@ -335,15 +338,16 @@ export function createDicePanel(
 
   function buildHitRects(pool: DicePool): HitRect[] {
     const rects: HitRect[] = []
+    const off = yOffset()
 
     if (pool.state !== 'rolling') {
-      rects.push({ x: ROLL_BTN_X, y: ROLL_BTN_Y, w: ROLL_BTN_W, h: ROLL_BTN_H, id: 'roll' })
+      rects.push({ x: ROLL_BTN_X, y: ROLL_BTN_Y + off, w: ROLL_BTN_W, h: ROLL_BTN_H, id: 'roll' })
     }
 
     if (pool.state === 'rolled') {
       for (let i = 0; i < ACTIONS.length; i++) {
         const { x, y } = actionButtonPos(i)
-        rects.push({ x, y, w: ACTION_BTN_W, h: ACTION_BTN_H, id: `action-${ACTIONS[i].id}` })
+        rects.push({ x, y: y + off, w: ACTION_BTN_W, h: ACTION_BTN_H, id: `action-${ACTIONS[i].id}` })
       }
     }
 
@@ -382,8 +386,14 @@ export function createDicePanel(
       flashEndTime = null
     }
 
-    // Panel background
-    const panelH = LOGICAL_H - PANEL_TOP
+    // Translate so panel content renders at the animated panel position
+    const off = yOffset()
+    ctx.save()
+    ctx.translate(0, off)
+
+    // Panel background — extend height to cover screen bottom regardless of offset
+    const extraH = Math.max(0, -off)
+    const panelH = LOGICAL_H - PANEL_TOP + extraH
     roundRect(ctx, 0, PANEL_TOP, LOGICAL_W, panelH, PANEL_CORNER)
     ctx.fillStyle = colors.surface
     ctx.fill()
@@ -443,6 +453,8 @@ export function createDicePanel(
         drawActionButton(ctx, action, x, y, affordable, hovered, flashing)
       }
     }
+
+    ctx.restore()
   }
 
   function handleClick(x: number, y: number): void {

@@ -76,8 +76,14 @@ export function drawCombatBanner(
   timestamp: DOMHighResTimeStamp,
   combat: CombatState,
   bannerStartTime: number,
+  panelTopOverride: number,
 ): void {
-  const panelH = LOGICAL_H - PANEL_TOP
+  const off = panelTopOverride - PANEL_TOP
+  ctx.save()
+  ctx.translate(0, off)
+
+  const extraH = Math.max(0, -off)
+  const panelH = LOGICAL_H - PANEL_TOP + extraH
   const isVictory = combat.phase === 'victory'
 
   const bgColor = isVictory ? colors.surface : colors.bg
@@ -108,7 +114,7 @@ export function drawCombatBanner(
   ctx.stroke()
 
   const cx = LOGICAL_W / 2
-  const midY = PANEL_TOP + panelH / 2
+  const midY = PANEL_TOP + (LOGICAL_H - PANEL_TOP) / 2
 
   // Title
   ctx.font = 'bold 22px monospace'
@@ -147,4 +153,6 @@ export function drawCombatBanner(
     ctx.fillText('Tap to continue', cx, isVictory ? midY + 52 : midY + 40)
     ctx.globalAlpha = 1
   }
+
+  ctx.restore()
 }

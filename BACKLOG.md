@@ -20,21 +20,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-## READY
-
-### 030 · Elastic Canvas & Combat Immersion
-
-Establishes the **elastic canvas** as the game's structural architecture — the dungeon map is
-always present, encounter panels **rise from the screen bottom** while the camera adjusts above,
-both simultaneous at 200–350ms. Combat is retrofitted as the first consumer: Pip entering an
-enemy room now triggers an animated panel rise and a smooth medium-close camera zoom, making the
-dungeon the stage for every encounter. The panel API this feature introduces is the foundation all
-subsequent encounter types (021, 023, 025–028) plug into.
-See `docs/features/030-elastic-canvas-combat-immersion.md` for the full spec.
-**Depends on:** 006 (combat encounter + panel), 017 (soft camera follow).
-
----
-
 ## NEEDS SPEC
 
 > **Run-loop feature set.** Items 020–029 together complete the *full gameplay run loop* — every
