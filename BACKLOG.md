@@ -144,6 +144,13 @@ upgrades (swap d6→d8, add a die); ③ engrave faces / passive skills.
 
 ---
 
+## READY
+
+### 031 · Log View Redesign
+
+Replace the three-line navigation log strip with two correctly-scoped layers: a **situated whisper** (ephemeral single-line overlay on the map canvas for world narration, fading in ~2.5 s) and a **per-encounter log zone** (up to 3 fading lines at the base of the encounter panel). Combat gets the full 3-line zone so players can read the exchange; other encounter types define their own log behaviour in their specs. The navigation map reclaims the strip's height; the combat panel grows slightly to hold the richer zone.
+See `docs/features/031-log-view-redesign.md` for the full spec.
+
 ---
 
 ## DONE
