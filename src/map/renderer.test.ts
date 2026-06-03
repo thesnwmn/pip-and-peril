@@ -20,6 +20,9 @@ function makeCtx() {
     fill: vi.fn(),
     save: vi.fn(),
     restore: vi.fn(),
+    rect: vi.fn(),
+    clip: vi.fn(),
+    setLineDash: vi.fn(),
   } as unknown as CanvasRenderingContext2D
 }
 
