@@ -12,17 +12,17 @@ export const PANEL_TOP = 416
 const PANEL_CORNER = 8
 const SIDE_MARGIN = 16
 
-// HP bars — two stacked rows, full-width bars
+// HP bars — two side-by-side columns, each half the screen
 const HP_BAR_H = 8
 const HP_BAR_EMPTY = '#2a2a3a'
 const ENEMY_RED = '#7a1a1a'
-const HP_LABEL_ANCHOR_X = 70              // labels right-align to this x
-const HP_BAR_X = HP_LABEL_ANCHOR_X + 6   // = 76, bar start
-const HP_BAR_W = LOGICAL_W - HP_BAR_X - SIDE_MARGIN - 44  // = 254
-const HP_TEXT_RIGHT_X = LOGICAL_W - SIDE_MARGIN            // = 374
-const HP_ROW1_Y = PANEL_TOP + 14          // = 430, PIP row centre
-const HP_ROW2_Y = PANEL_TOP + 30          // = 446, enemy row centre
-const HP_SECTION_BOTTOM = HP_ROW2_Y + HP_BAR_H / 2 + 10   // = 460
+const HP_COL_GAP = 8
+const HP_COL_W = (LOGICAL_W - SIDE_MARGIN * 2 - HP_COL_GAP) / 2  // = 175
+const HP_COL1_X = SIDE_MARGIN                                      // = 16
+const HP_COL2_X = SIDE_MARGIN + HP_COL_W + HP_COL_GAP             // = 199
+const HP_LABEL_Y = PANEL_TOP + 10                                  // = 426, top of name/total text
+const HP_BAR_Y = HP_LABEL_Y + 14                                   // = 440, top of bar
+const HP_SECTION_BOTTOM = HP_BAR_Y + HP_BAR_H + 12                // = 460
 
 // Die faces (no heading label)
 const DIE_SIZE = 68
@@ -310,42 +310,40 @@ function drawActionButton(
 // ── HP bars ───────────────────────────────────────────────────────────────────
 
 function drawHpBars(ctx: CanvasRenderingContext2D, info: HpInfo): void {
+  ctx.textBaseline = 'top'
+
+  // PIP column (left half)
   ctx.font = 'bold 10px monospace'
-  ctx.textBaseline = 'middle'
-
-  // PIP row — label right-aligned at HP_LABEL_ANCHOR_X, full-width bar
-  const pip_barY = HP_ROW1_Y - HP_BAR_H / 2
   ctx.fillStyle = colors.textMuted
-  ctx.textAlign = 'right'
-  ctx.fillText('PIP', HP_LABEL_ANCHOR_X, HP_ROW1_Y)
-
-  ctx.fillStyle = HP_BAR_EMPTY
-  ctx.fillRect(HP_BAR_X, pip_barY, HP_BAR_W, HP_BAR_H)
-  ctx.fillStyle = colors.gold
-  ctx.fillRect(HP_BAR_X, pip_barY, Math.max(0, info.pipHp / info.pipMaxHp) * HP_BAR_W, HP_BAR_H)
+  ctx.textAlign = 'left'
+  ctx.fillText('PIP', HP_COL1_X, HP_LABEL_Y)
 
   ctx.font = '10px monospace'
   ctx.fillStyle = colors.textPrimary
   ctx.textAlign = 'right'
-  ctx.fillText(`${info.pipHp}/${info.pipMaxHp}`, HP_TEXT_RIGHT_X, HP_ROW1_Y)
+  ctx.fillText(`${info.pipHp}/${info.pipMaxHp}`, HP_COL1_X + HP_COL_W, HP_LABEL_Y)
 
-  // Enemy row — label right-aligned at HP_LABEL_ANCHOR_X, full-width bar
-  const enemy_barY = HP_ROW2_Y - HP_BAR_H / 2
+  ctx.fillStyle = HP_BAR_EMPTY
+  ctx.fillRect(HP_COL1_X, HP_BAR_Y, HP_COL_W, HP_BAR_H)
+  ctx.fillStyle = colors.gold
+  ctx.fillRect(HP_COL1_X, HP_BAR_Y, Math.max(0, info.pipHp / info.pipMaxHp) * HP_COL_W, HP_BAR_H)
+
+  // Enemy column (right half)
   const enemyName = info.enemyName.toUpperCase()
   ctx.font = 'bold 10px monospace'
   ctx.fillStyle = ENEMY_RED
-  ctx.textAlign = 'right'
-  ctx.fillText(enemyName, HP_LABEL_ANCHOR_X, HP_ROW2_Y)
-
-  ctx.fillStyle = HP_BAR_EMPTY
-  ctx.fillRect(HP_BAR_X, enemy_barY, HP_BAR_W, HP_BAR_H)
-  ctx.fillStyle = ENEMY_RED
-  ctx.fillRect(HP_BAR_X, enemy_barY, Math.max(0, info.enemyHp / info.enemyMaxHp) * HP_BAR_W, HP_BAR_H)
+  ctx.textAlign = 'left'
+  ctx.fillText(enemyName, HP_COL2_X, HP_LABEL_Y)
 
   ctx.font = '10px monospace'
   ctx.fillStyle = colors.textPrimary
   ctx.textAlign = 'right'
-  ctx.fillText(`${info.enemyHp}/${info.enemyMaxHp}`, HP_TEXT_RIGHT_X, HP_ROW2_Y)
+  ctx.fillText(`${info.enemyHp}/${info.enemyMaxHp}`, HP_COL2_X + HP_COL_W, HP_LABEL_Y)
+
+  ctx.fillStyle = HP_BAR_EMPTY
+  ctx.fillRect(HP_COL2_X, HP_BAR_Y, HP_COL_W, HP_BAR_H)
+  ctx.fillStyle = ENEMY_RED
+  ctx.fillRect(HP_COL2_X, HP_BAR_Y, Math.max(0, info.enemyHp / info.enemyMaxHp) * HP_COL_W, HP_BAR_H)
 }
 
 // ── Encounter log zone ────────────────────────────────────────────────────────
