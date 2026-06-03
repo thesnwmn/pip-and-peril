@@ -10,7 +10,7 @@ export interface EncounterConfig {
 
 export const COMBAT_CONFIG: EncounterConfig = {
   panelHeightFraction: 0.50,
-  cameraZoom: 1.0,
+  cameraZoom: 2.3,
   cameraTarget: 'room',
   transitionSpeed: 'normal',
 }
