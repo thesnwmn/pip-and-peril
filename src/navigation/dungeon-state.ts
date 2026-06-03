@@ -14,10 +14,13 @@ export interface RoomOffering {
   exits: ExitMask
 }
 
+export const DEAD_ZONE = 3
+
 export interface DungeonState {
   grid: GameMap
   fog: FogState[][]
   pip: GridPos
+  camera: GridPos
   startPos: GridPos
   uiState: 'idle' | 'choosing'
   pendingDir: ExitMask | null
@@ -52,6 +55,7 @@ export function initDungeon(): DungeonState {
     grid,
     fog,
     pip: { col: START_COL, row: START_ROW },
+    camera: { col: START_COL, row: START_ROW },
     startPos,
     uiState: 'idle',
     pendingDir: null,
@@ -79,4 +83,25 @@ export const DIR_DELTA: Record<number, { dc: number; dr: number }> = {
   [S]: { dc: 0, dr: 1 },
   [E]: { dc: 1, dr: 0 },
   [W]: { dc: -1, dr: 0 },
+}
+
+export function updateCamera(
+  camera: GridPos,
+  pip: GridPos,
+  gridWidth: number,
+  gridHeight: number,
+): GridPos {
+  const hz = Math.floor(DEAD_ZONE / 2)
+  let col = camera.col
+  let row = camera.row
+
+  if (pip.col > col + hz) col = pip.col - hz
+  if (pip.col < col - hz) col = pip.col + hz
+  if (pip.row > row + hz) row = pip.row - hz
+  if (pip.row < row - hz) row = pip.row + hz
+
+  col = Math.max(0, Math.min(col, gridWidth - 1))
+  row = Math.max(0, Math.min(row, gridHeight - 1))
+
+  return { col, row }
 }

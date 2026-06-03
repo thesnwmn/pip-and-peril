@@ -38,7 +38,7 @@ describe('drawMap', () => {
     const ctx = makeCtx()
     const map = makeMap()
     const fog = makeFog('visible')
-    drawMap(ctx, map, fog, { col: 2, row: 2 }, DUNGEON)
+    drawMap(ctx, map, fog, { col: 2, row: 2 }, { col: 2, row: 2 }, DUNGEON)
     expect(ctx.fillRect).toHaveBeenCalled()
   })
 
@@ -46,7 +46,7 @@ describe('drawMap', () => {
     const ctx = makeCtx()
     const map = makeMap()
     const fog = makeFog('hidden')
-    drawMap(ctx, map, fog, { col: 2, row: 2 }, DUNGEON)
+    drawMap(ctx, map, fog, { col: 2, row: 2 }, { col: 2, row: 2 }, DUNGEON)
     // At least one fill with voidFill expected
     const calls = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls
     const setVoid = calls.some(
@@ -58,20 +58,36 @@ describe('drawMap', () => {
     expect(setVoid || calls.length > 0).toBe(true)
   })
 
-  it('draws pip at viewport centre when fog is visible', () => {
+  it('draws pip at viewport centre when pip equals camera and fog is visible', () => {
     const ctx = makeCtx()
     const map = makeMap()
     const fog = makeFog('visible')
-    drawMap(ctx, map, fog, { col: 2, row: 2 }, DUNGEON)
+    drawMap(ctx, map, fog, { col: 2, row: 2 }, { col: 2, row: 2 }, DUNGEON)
     // drawPip calls arc — verify it was called
     expect(ctx.arc).toHaveBeenCalled()
+    // Body arc x should be at viewport centre: MAP_X + 2*TILE_SIZE + TILE_SIZE/2
+    const arcCalls = (ctx.arc as ReturnType<typeof vi.fn>).mock.calls
+    const expectedX = MAP_X + 2 * TILE_SIZE + TILE_SIZE / 2
+    expect(Math.abs(arcCalls[0][0] - expectedX)).toBeLessThan(5)
   })
 
-  it('does not draw pip when centre fog is not visible', () => {
+  it('draws pip at offset position when pip differs from camera', () => {
+    const ctx = makeCtx()
+    const map = makeMap()
+    const fog = makeFog('visible')
+    // pip 1 tile east of camera → vpCol = 2 + (3-2) = 3
+    drawMap(ctx, map, fog, { col: 2, row: 2 }, { col: 3, row: 2 }, DUNGEON)
+    expect(ctx.arc).toHaveBeenCalled()
+    const arcCalls = (ctx.arc as ReturnType<typeof vi.fn>).mock.calls
+    const expectedX = MAP_X + 3 * TILE_SIZE + TILE_SIZE / 2
+    expect(Math.abs(arcCalls[0][0] - expectedX)).toBeLessThan(5)
+  })
+
+  it('does not draw pip when pip fog is not visible', () => {
     const ctx = makeCtx()
     const map = makeMap()
     const fog = makeFog('hidden')
-    drawMap(ctx, map, fog, { col: 2, row: 2 }, DUNGEON)
+    drawMap(ctx, map, fog, { col: 2, row: 2 }, { col: 2, row: 2 }, DUNGEON)
     expect(ctx.arc).not.toHaveBeenCalled()
   })
 
@@ -81,7 +97,7 @@ describe('drawMap', () => {
     const fog = makeFog('visible')
     // With viewCenter (2,2), viewport column 0 = map col 0, row 0 = map row 0
     // First tile top-left: MAP_X + 0*TILE_SIZE, MAP_Y + 0*TILE_SIZE
-    drawMap(ctx, map, fog, { col: 2, row: 2 }, DUNGEON)
+    drawMap(ctx, map, fog, { col: 2, row: 2 }, { col: 2, row: 2 }, DUNGEON)
     const calls = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls
     // Background fill for the full screen comes from game.ts, not drawMap
     // First drawCell call: fillRect(MAP_X, MAP_Y, TILE_SIZE, TILE_SIZE) for wall base

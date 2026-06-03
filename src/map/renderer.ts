@@ -308,6 +308,7 @@ export function drawMap(
   map: GameMap,
   fog: FogState[][],
   viewCenter: GridPos,
+  pip: GridPos,
   biome: BiomePalette,
 ): void {
   const startCol = viewCenter.col - Math.floor(VIEWPORT_COLS / 2)
@@ -327,10 +328,12 @@ export function drawMap(
     }
   }
 
-  const centerFog = fog[viewCenter.row]?.[viewCenter.col]
-  if (centerFog === 'visible') {
-    const pipX = MAP_X + Math.floor(VIEWPORT_COLS / 2) * TILE_SIZE + TILE_SIZE / 2
-    const pipY = MAP_Y + Math.floor(VIEWPORT_ROWS / 2) * TILE_SIZE + TILE_SIZE / 2
+  const pipFog = fog[pip.row]?.[pip.col]
+  if (pipFog === 'visible') {
+    const vpCol = Math.floor(VIEWPORT_COLS / 2) + (pip.col - viewCenter.col)
+    const vpRow = Math.floor(VIEWPORT_ROWS / 2) + (pip.row - viewCenter.row)
+    const pipX = MAP_X + vpCol * TILE_SIZE + TILE_SIZE / 2
+    const pipY = MAP_Y + vpRow * TILE_SIZE + TILE_SIZE / 2
     drawPip(ctx, pipX, pipY, TILE_SIZE)
   }
 }

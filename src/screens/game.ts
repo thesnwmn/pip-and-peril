@@ -74,13 +74,13 @@ function cardColors(roomType: import('../map/types').RoomType): {
   }
 }
 
-// Viewport tile pixel position for a grid cell (in viewport coords)
+// Viewport tile pixel position for a grid cell relative to camera
 function vpPixel(
-  pipCol: number, pipRow: number,
+  cameraCol: number, cameraRow: number,
   cellCol: number, cellRow: number,
 ): { px: number; py: number } {
-  const startCol = pipCol - Math.floor(VIEWPORT_COLS / 2)
-  const startRow = pipRow - Math.floor(VIEWPORT_ROWS / 2)
+  const startCol = cameraCol - Math.floor(VIEWPORT_COLS / 2)
+  const startRow = cameraRow - Math.floor(VIEWPORT_ROWS / 2)
   const vc = cellCol - startCol
   const vr = cellRow - startRow
   return {
@@ -99,7 +99,7 @@ function drawNavArrows(
     const { dc, dr } = DIR_DELTA[dir]
     const nc = state.pip.col + dc
     const nr = state.pip.row + dr
-    const { px, py } = vpPixel(state.pip.col, state.pip.row, nc, nr)
+    const { px, py } = vpPixel(state.camera.col, state.camera.row, nc, nr)
     const cx = px + TILE_SIZE / 2
     const cy = py + TILE_SIZE / 2
 
@@ -513,7 +513,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     ctx.fillStyle = colors.bg
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 
-    drawMap(ctx, state.grid, state.fog, state.pip, DUNGEON)
+    drawMap(ctx, state.grid, state.fog, state.camera, state.pip, DUNGEON)
 
     // Nav arrows only when not in combat
     if (state.uiState === 'idle' && combat === null) {
@@ -611,8 +611,8 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
 
     // Idle navigation
     if (state.uiState === 'idle') {
-      const startCol = state.pip.col - Math.floor(VIEWPORT_COLS / 2)
-      const startRow = state.pip.row - Math.floor(VIEWPORT_ROWS / 2)
+      const startCol = state.camera.col - Math.floor(VIEWPORT_COLS / 2)
+      const startRow = state.camera.row - Math.floor(VIEWPORT_ROWS / 2)
 
       const vc = Math.floor((x - MAP_X) / TILE_SIZE)
       const vr = Math.floor((y - MAP_Y) / TILE_SIZE)

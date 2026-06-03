@@ -1,7 +1,7 @@
 import { computeFog } from '../map/fog'
 import type { ExitMask } from '../map/types'
 import { E, N, S, W } from '../map/types'
-import { DIR_DELTA, OPP } from './dungeon-state'
+import { DIR_DELTA, OPP, updateCamera } from './dungeon-state'
 import type { DungeonState } from './dungeon-state'
 
 export const ALL_DIRS: ExitMask[] = [N, E, S, W]
@@ -44,9 +44,11 @@ export function movePip(state: DungeonState, dir: ExitMask): DungeonState {
   const { dc, dr } = DIR_DELTA[dir]
   const newPip = { col: state.pip.col + dc, row: state.pip.row + dr }
   const newFog = computeFog(state.fog, state.grid, newPip, 3)
+  const newCamera = updateCamera(state.camera, newPip, state.grid.width, state.grid.height)
   return {
     ...state,
     pip: newPip,
+    camera: newCamera,
     fog: newFog,
     stepCount: state.stepCount + 1,
   }

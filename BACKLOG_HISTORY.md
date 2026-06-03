@@ -16,6 +16,18 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 017 · Soft Camera Follow
+
+**Shipped:** 2026-06-03 · **PR:** [#36](https://github.com/thesnwmn/pip-and-peril/pull/36) · **Spec:** [docs/features/history/017-soft-camera-follow.md](docs/features/history/017-soft-camera-follow.md)
+
+Decouples the viewport from Pip's exact position: the camera follows through a configurable dead
+zone (default 3×3 tiles) so Pip can roam freely within the central band without the map scrolling.
+The camera only catches up when Pip exits the zone. Near the dungeon boundary the camera clamps,
+letting Pip walk toward the visible edge. Makes each step feel more alive — the world shifts in
+the direction of travel instead of pinning Pip like a crosshair.
+
+---
+
 ### 016 · Pip's Satchel
 
 **Shipped:** 2026-06-03 · **PR:** [#35](https://github.com/thesnwmn/pip-and-peril/pull/35) · **Spec:** [docs/features/history/016-pip-satchel.md](docs/features/history/016-pip-satchel.md)
