@@ -17,6 +17,8 @@ import { GOBLIN } from '../combat/types'
 import { applyEnemyAttack, applyEvade, applyFocus, applyStrike } from '../combat/encounter'
 import { drawCombatBanner, drawCombatStatusBar } from '../combat/panel'
 import { createMenuModal, drawMenuButton, isInMenuButton } from '../menu/modal'
+import { createSatchelOverlay, drawSatchelButton, isInSatchelButton } from '../satchel/overlay'
+import type { Inventory } from '../satchel/types'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
@@ -362,11 +364,14 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   let cardTeases: string[] = []
   let hitRects: HitRect[] = []
   let dicePool: DicePool = starterPool()
+  let inventory: Inventory = { gold: 0, items: [] }
 
   const pipMaxHp = 10
   let pipHp = pipMaxHp
   let combat: CombatState | null = null
   let bannerStartTime: number | null = null
+
+  const satchelOverlay = createSatchelOverlay()
 
   function resetRunState(): void {
     state = initDungeon()
@@ -376,6 +381,8 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     bannerStartTime = null
     cardTeases = []
     hitRects = []
+    inventory = { gold: 0, items: [] }
+    satchelOverlay.close()
   }
 
   const menuModal = createMenuModal('game', (screen) => {
@@ -463,6 +470,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   }
 
   function endCombatVictory(): void {
+    state = { ...state, enemiesDefeated: state.enemiesDefeated + 1 }
     combat = null
     dicePool = resetPool(dicePool)
     bannerStartTime = null
@@ -537,6 +545,16 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       drawNavHint(ctx)
     }
 
+    // Satchel button — drawn after panels so it floats on top; greyed during combat
+    drawSatchelButton(
+      ctx,
+      combat !== null,
+      !menuModal.isOpen() && !satchelOverlay.isOpen() && isMouseDevice && hoveredElement === 'satchel-btn',
+    )
+
+    // Satchel overlay draws on top of everything except the menu modal
+    satchelOverlay.draw(ctx, timestamp, inventory, state)
+
     menuModal.draw(ctx)
   }
 
@@ -544,10 +562,19 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     // Modal consumes all input when open
     if (menuModal.handleClick(x, y)) return
 
+    // Satchel overlay consumes all input when open
+    if (satchelOverlay.handleClick(x, y)) return
+
     // MENU button
     if (isInMenuButton(x, y)) {
       dicePanel.handlePointerMove(-1, -1)  // clear any stale dice hover under the scrim
       menuModal.open()
+      return
+    }
+
+    // Satchel button — navigation only, not during combat
+    if (isInSatchelButton(x, y) && combat === null) {
+      satchelOverlay.open()
       return
     }
 
@@ -575,6 +602,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         const { dc, dr } = DIR_DELTA[state.pendingDir!]
         const targetPos = { col: state.pip.col + dc, row: state.pip.row + dr }
         state = placeRoom(state, offering, targetPos)
+        state = { ...state, roomsEntered: state.roomsEntered + 1 }
         cardTeases = []
         checkCombatTrigger()
       }
@@ -615,6 +643,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         }
       } else if (isBacktrackable(state, dir)) {
         state = movePip(state, dir)
+        state = { ...state, roomsEntered: state.roomsEntered + 1 }
         checkCombatTrigger()
       }
     }
@@ -629,8 +658,19 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       return
     }
 
+    // Satchel overlay consumes pointer when open
+    if (satchelOverlay.handlePointerMove(x, y)) {
+      hoveredElement = null
+      return
+    }
+
     if (isInMenuButton(x, y)) {
       hoveredElement = 'menu-btn'
+      return
+    }
+
+    if (isInSatchelButton(x, y)) {
+      hoveredElement = 'satchel-btn'
       return
     }
 

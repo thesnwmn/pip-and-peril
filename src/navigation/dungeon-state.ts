@@ -24,6 +24,8 @@ export interface DungeonState {
   offerings: RoomOffering[]
   log: LogEntry[]
   stepCount: number
+  roomsEntered: number
+  enemiesDefeated: number
 }
 
 const GRID_W = 13
@@ -56,6 +58,8 @@ export function initDungeon(): DungeonState {
     offerings: [],
     log: [{ message: 'Pip descends into the dungeon…', style: 'system' }],
     stepCount: 0,
+    roomsEntered: 0,
+    enemiesDefeated: 0,
   }
 }
 

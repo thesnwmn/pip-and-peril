@@ -221,10 +221,43 @@ None — all blocking questions resolved before spec was written.
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-03 · **PR:** [#35](https://github.com/thesnwmn/pip-and-peril/pull/35)
 
 ### What was built
 
+- `src/satchel/types.ts` — `Item` and `Inventory` interfaces (inventory data model)
+- `src/satchel/overlay.ts` — `createSatchelOverlay()` controller, `drawSatchelButton()`, `isInSatchelButton()`, all four tab renderers (Pouch, Journal, Tally, Map), tally-mark drawing for values ≤ 20, ≈300 ms ease-out-cubic expand animation from the button origin
+- `src/colors.ts` — five satchel colour tokens: `satchelLeather`, `satchelCanvas`, `satchelBrass`, `satchelStitch`, `satchelInk`
+- `src/navigation/dungeon-state.ts` — `roomsEntered` and `enemiesDefeated` counters added to `DungeonState`, initialised to 0
+- `src/screens/game.ts` — satchel button always drawn; overlay opens on navigation tap and is blocked during combat; `roomsEntered` increments on each `movePip`/`placeRoom`; `enemiesDefeated` increments in `endCombatVictory`; `resetRunState` resets inventory and closes the overlay; overlay drawn before the menu modal
+
 ### Evidence
 
+**23 new tests in `src/satchel/overlay.test.ts`:**
+- `isInSatchelButton` — 6 hit-test cases (centre, corners, misses)
+- `drawSatchelButton` — smoke: normal and combat states
+- Initial state: closed, `handleClick`/`handlePointerMove` return false
+- Open/close: opens, resets to pouch tab, re-open after tab-switch resets to pouch, closes, all input consumed when open
+- Animation: consumes clicks during animation without closing, skip-to-fully-open, draw during animation doesn't throw
+- Tab switching: all four tabs switch correctly, no close on switch
+- Close button: × closes; content tap stays open
+- Draw smoke: all four tabs render without throwing; pouch with items renders
+- Counter initial values: `roomsEntered` and `enemiesDefeated` both start at 0
+
+`npm run test` — 170 tests pass (all pre-existing + 23 new).
+`npm run build` — clean build, 41.70 kB bundle.
+
 ### Play-test
+
+1. Start a new run (Home → Play).
+2. **Button visible:** A leather-bag icon is visible in the bottom-right corner of the game screen.
+3. **Open satchel:** Tap the icon. The overlay expands from the button with a ≈300 ms ease-out animation, filling the screen.
+4. **Frozen canvas:** While open, tap the map area and arrows — nothing happens beneath the overlay.
+5. **Default tab:** Pouch tab is active (brass text + underline). Content shows "Gold ◈ 0" and the italic empty-state message.
+6. **Tab switching:** Tap JRNL — Pip's journal stub appears. Tap TALLY — Depth 0, Rooms entered 0, Enemies felled 0 shown as tally marks. Tap MAP — map stub appears. Tap POUCH — returns to the pouch.
+7. **Close:** Tap ×. Overlay dismisses; navigation arrows reappear and respond.
+8. **Room-choice restored:** Open the satchel while a room-choice panel is showing (tap a nav arrow, see the three cards, then tap the satchel). Close the satchel — the room-choice panel should still be showing.
+9. **Tally live values:** Move Pip into two or three new rooms. Re-open → Tally tab. *Rooms entered* should match the number of moves; *Depth* should reflect Pip's Chebyshev distance from start.
+10. **Combat block:** Enter an enemy room to start combat. The satchel button should be visually dimmed (~40% opacity). Tap it — nothing happens.
+11. **Enemies felled:** Win the combat (roll dice → Strike until goblin is defeated). After the victory banner clears, re-open → Tally tab. *Enemies felled* should show 1.
+12. **Animation skip:** Open the satchel and tap anywhere during the opening animation — the overlay should jump immediately to fully open.
