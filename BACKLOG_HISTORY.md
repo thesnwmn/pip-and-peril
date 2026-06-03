@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 031 · Log View Redesign
+
+**Shipped:** 2026-06-03 · **PR:** #TBD · **Spec:** [docs/features/history/031-log-view-redesign.md](docs/features/history/031-log-view-redesign.md)
+
+Replace the three-line navigation log strip with two correctly-scoped layers: a **situated whisper** (ephemeral single-line overlay on the map canvas for world narration, fading in ~2.5 s) and a **per-encounter log zone** (up to 3 fading lines at the base of the encounter panel). The navigation map reclaims the strip's height; the combat panel grows slightly to hold the richer zone.
+
+---
+
 ### 030 · Elastic Canvas & Combat Immersion
 
 **Shipped:** 2026-06-03 · **PR:** [#42](https://github.com/thesnwmn/pip-and-peril/pull/42) · **Spec:** [docs/features/history/030-elastic-canvas-combat-immersion.md](docs/features/history/030-elastic-canvas-combat-immersion.md)

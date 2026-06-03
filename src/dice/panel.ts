@@ -7,8 +7,8 @@ import { canAfford, rollPool, spendPips } from './pool'
 const LOGICAL_W = 390
 const LOGICAL_H = 844
 
-// PANEL_TOP must match game.ts (LOG_BOTTOM + 6 ≈ 472)
-export const PANEL_TOP = 472
+// PANEL_TOP must match game.ts (MAP_BOTTOM + 6 = 416)
+export const PANEL_TOP = 416
 const PANEL_CORNER = 8
 const SIDE_MARGIN = 16
 
@@ -288,6 +288,43 @@ function drawActionButton(
   ctx.globalAlpha = 1
 }
 
+// ── Encounter log zone ────────────────────────────────────────────────────────
+
+const LOG_ZONE_ACTION_BOTTOM = ACTION_Y + ACTION_BTN_H  // bottom of last action button row
+const LOG_ZONE_RULE_Y = LOG_ZONE_ACTION_BOTTOM + 10
+const LOG_ZONE_LINE_H = 14
+const LOG_ZONE_LINE1_Y = LOG_ZONE_RULE_Y + 8
+
+const LOG_OPACITIES = [0.45, 0.70, 1.00]
+
+function drawEncounterLogZone(
+  ctx: CanvasRenderingContext2D,
+  entries: CombatLogEntry[],
+): void {
+  if (entries.length === 0) return
+
+  // Hairline rule
+  ctx.globalAlpha = 0.5
+  ctx.strokeStyle = colors.logNormal
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(SIDE_MARGIN, LOG_ZONE_RULE_Y)
+  ctx.lineTo(LOGICAL_W - SIDE_MARGIN, LOG_ZONE_RULE_Y)
+  ctx.stroke()
+  ctx.globalAlpha = 1
+
+  ctx.font = '11px monospace'
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'top'
+
+  for (let i = 0; i < entries.length; i++) {
+    ctx.globalAlpha = LOG_OPACITIES[i] ?? 1
+    ctx.fillStyle = colors.logNormal
+    ctx.fillText(entries[i].message, SIDE_MARGIN, LOG_ZONE_LINE1_Y + i * LOG_ZONE_LINE_H)
+  }
+  ctx.globalAlpha = 1
+}
+
 // ── Hit rect type ─────────────────────────────────────────────────────────────
 
 interface HitRect {
@@ -304,11 +341,16 @@ interface AnimState {
 
 // ── Factory ───────────────────────────────────────────────────────────────────
 
+export interface CombatLogEntry {
+  message: string
+}
+
 export interface DicePanelCallbacks {
   onStateChange: (pool: DicePool) => void
   addLog: (message: string) => void
   onAction?: (actionId: string) => void
   onBeforeRoll?: () => boolean
+  getCombatLog?: () => CombatLogEntry[]
 }
 
 export function createDicePanel(
@@ -452,6 +494,11 @@ export function createDicePanel(
         const flashing = flashingAction === action.id
         drawActionButton(ctx, action, x, y, affordable, hovered, flashing)
       }
+    }
+
+    // Encounter log zone
+    if (callbacks.getCombatLog) {
+      drawEncounterLogZone(ctx, callbacks.getCombatLog())
     }
 
     ctx.restore()

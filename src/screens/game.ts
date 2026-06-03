@@ -7,11 +7,12 @@ import type { DungeonState, LogStyle, RoomOffering } from '../navigation/dungeon
 import { chebyshev, DIR_DELTA, initDungeon, OPP } from '../navigation/dungeon-state'
 import { availableDirs, dirFromPipToNeighbour, isBacktrackable, movePip } from '../navigation/movement'
 import { generateOfferings, placeRoom, CARD_TEASES } from '../navigation/room-selection'
-import { pickRandom } from '../navigation/room-pool'
+import { LOG_MESSAGES, pickRandom } from '../navigation/room-pool'
 import type { ScreenController } from './main-menu'
 import type { DicePool } from '../dice/pool'
 import { resetPool, starterPool } from '../dice/pool'
 import { createDicePanel } from '../dice/panel'
+import type { CombatLogEntry } from '../dice/panel'
 import type { CombatState } from '../combat/types'
 import { GOBLIN } from '../combat/types'
 import { applyEnemyAttack, applyEvade, applyFocus, applyStrike, rollGoldReward } from '../combat/encounter'
@@ -21,6 +22,7 @@ import { createSatchelOverlay, drawSatchelButton, isInSatchelButton } from '../s
 import type { Inventory } from '../satchel/types'
 import { COMBAT_CONFIG } from '../encounter/config'
 import { easeIn, easeOut, lerp } from '../animation/easing'
+import { whisperAlpha, WHISPER_TOTAL_MS } from '../log/whisper'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
@@ -31,15 +33,8 @@ const STATUS_BAR_H = 50
 // Map zone: 5×5 tiles at TILE_SIZE 72 = 360 px, starting at MAP_Y=50 → bottom at 50+360=410
 const MAP_BOTTOM = MAP_Y + 5 * TILE_SIZE  // 410
 
-// Log strip: starts 4 px below map
-const LOG_TOP = MAP_BOTTOM + 4            // 414
-const LOG_LINE_H = 14
-const LOG_LINES = 3
-const LOG_STRIP_H = LOG_LINES * LOG_LINE_H + 10  // ~52
-const LOG_BOTTOM = LOG_TOP + LOG_STRIP_H  // ~466
-
-// Room selection panel
-const PANEL_TOP = LOG_BOTTOM + 6          // ~472
+// Room selection panel — sits 6 px below map; map fills to bottom when panel not shown
+const PANEL_TOP = MAP_BOTTOM + 6          // 416
 const PANEL_CORNER = 8
 const PANEL_HEADER_H = 28
 const PANEL_SIDE_MARGIN = 12
@@ -170,30 +165,31 @@ function drawStatusBar(
   ctx.fillText(depthNum, rightX, barMidY)
 }
 
-function drawLogStrip(ctx: CanvasRenderingContext2D, state: DungeonState): void {
-  const opacities = [1.0, 0.7, 0.45]
-  const logColorMap: Record<string, string> = {
-    system: colors.logSystem,
-    enemy: colors.logEnemy,
-    boss: colors.logBoss,
-    shop: colors.logShop,
-    npc: colors.logNpc,
-    item: colors.logItem,
-    chest: colors.logChest,
-    normal: colors.logNormal,
-  }
+// Situated whisper: ephemeral narration overlay at the bottom of the map canvas.
+const WHISPER_SCRIM_H = 60
+const WHISPER_TEXT_BOTTOM_OFFSET = 12
 
+function drawSituatedWhisper(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  alpha: number,
+  mapBottom: number,
+): void {
+  if (alpha <= 0) return
+
+  const scrimTop = mapBottom - WHISPER_SCRIM_H
+  const grad = ctx.createLinearGradient(0, scrimTop, 0, mapBottom)
+  grad.addColorStop(0, 'rgba(0,0,0,0)')
+  grad.addColorStop(1, `rgba(15,13,10,${0.25 * alpha})`)
+  ctx.fillStyle = grad
+  ctx.fillRect(0, scrimTop, LOGICAL_W, WHISPER_SCRIM_H)
+
+  ctx.globalAlpha = alpha
   ctx.font = '11px monospace'
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'top'
-
-  const maxEntries = Math.min(LOG_LINES, state.log.length)
-  for (let i = 0; i < maxEntries; i++) {
-    const entry = state.log[i]
-    ctx.globalAlpha = opacities[i]
-    ctx.fillStyle = logColorMap[entry.style] ?? colors.logNormal
-    ctx.fillText(entry.message, 16, LOG_TOP + 5 + i * LOG_LINE_H)
-  }
+  ctx.fillStyle = colors.logNormal
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'bottom'
+  ctx.fillText(text, LOGICAL_W / 2, mapBottom - WHISPER_TEXT_BOTTOM_OFFSET)
   ctx.globalAlpha = 1
 }
 
@@ -340,32 +336,10 @@ function drawRoomPanel(
   }
 }
 
-function drawNavHint(ctx: CanvasRenderingContext2D): void {
-  const panelH = LOGICAL_H - PANEL_TOP
-  ctx.fillStyle = colors.surface
-  ctx.beginPath()
-  const ctxAny = ctx as unknown as {
-    roundRect?: (x: number, y: number, w: number, h: number, radii: number[]) => void
-  }
-  if (ctxAny.roundRect) {
-    ctxAny.roundRect(0, PANEL_TOP, LOGICAL_W, panelH, [PANEL_CORNER, PANEL_CORNER, 0, 0])
-  } else {
-    ctx.rect(0, PANEL_TOP, LOGICAL_W, panelH)
-  }
-  ctx.fill()
 
-  ctx.strokeStyle = colors.logNormal
-  ctx.lineWidth = 1
-  ctx.beginPath()
-  ctx.moveTo(0, PANEL_TOP)
-  ctx.lineTo(LOGICAL_W, PANEL_TOP)
-  ctx.stroke()
-
-  ctx.font = 'italic 13px system-ui, -apple-system, sans-serif'
-  ctx.fillStyle = colors.textMuted
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText('Tap an exit to move.', LOGICAL_W / 2, PANEL_TOP + 30)
+interface WhisperState {
+  text: string
+  startTime: number
 }
 
 export function createGame(transitionTo: (screen: string) => void): ScreenController {
@@ -376,6 +350,8 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   let hitRects: HitRect[] = []
   let dicePool: DicePool = starterPool()
   let inventory: Inventory = { gold: 0, items: [] }
+  let combatLog: CombatLogEntry[] = []
+  let whisper: WhisperState | null = null
 
   const pipMaxHp = 10
   let pipHp = pipMaxHp
@@ -399,6 +375,8 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     cardTeases = []
     hitRects = []
     inventory = { gold: 0, items: [] }
+    combatLog = []
+    whisper = null
     satchelOverlay.close()
   }
 
@@ -413,6 +391,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     {
       onStateChange: (pool) => { dicePool = pool },
       addLog: (message) => { addLogEntry(message, 'normal') },
+      getCombatLog: () => combatLog,
       onBeforeRoll: (): boolean => {
         if (combat === null) return true
         if (combat.phase === 'awaiting-roll') {
@@ -429,6 +408,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
             'enemy',
           )
           if (result.defeat) {
+            combatLog = []
             bannerStartTime = performance.now()
             return false
           }
@@ -456,6 +436,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
               newCells[state.pip.row][state.pip.col] = { ...cell, cleared: true }
             }
             state = { ...state, grid: { ...state.grid, cells: newCells } }
+            combatLog = []
             bannerStartTime = performance.now()
           }
         } else if (actionId === 'evade') {
@@ -475,18 +456,18 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     },
   )
 
-  function addLogEntry(message: string, style: LogStyle): void {
-    const newLog = [{ message, style }, ...state.log]
-    if (newLog.length > 8) newLog.length = 8
-    state = { ...state, log: newLog }
+  function addLogEntry(message: string, _style: LogStyle): void {
+    combatLog = [...combatLog.slice(-2), { message }]
   }
 
   function checkCombatTrigger(): void {
     const cell = state.grid.cells[state.pip.row][state.pip.col]
     if (cell && cell.roomType === 'enemy' && cell.cleared !== true) {
       combat = { enemy: { ...GOBLIN }, phase: 'awaiting-roll', evadeBuffer: 0, goldAwarded: 0 }
+      combatLog = []
       dicePool = resetPool(dicePool)
       bannerStartTime = null
+      whisper = null
       transition = { phase: 'rising', startTime: performance.now() }
     }
   }
@@ -494,6 +475,13 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   function startFallingTransition(fallAction: 'victory' | 'defeat'): void {
     transition = { phase: 'falling', startTime: performance.now(), fallAction }
     bannerStartTime = null
+  }
+
+  function triggerWhisper(roomType: import('../map/types').RoomType): void {
+    const messages = LOG_MESSAGES[roomType]
+    if (!messages) return
+    const text = pickRandom(messages)
+    if (text) whisper = { text, startTime: performance.now() }
   }
 
   function getCardTeases(offerings: RoomOffering[]): string[] {
@@ -525,7 +513,8 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     const pipNatY = MAP_Y + vpRow * TILE_SIZE + TILE_SIZE / 2
 
     if (combat === null && transition === null) {
-      return { currentPanelTop: PANEL_TOP, currentZoom: 1.0, pipNatX, pipNatY, pipTargetY: pipNatY }
+      const panelTop = state.uiState === 'choosing' ? PANEL_TOP : LOGICAL_H
+      return { currentPanelTop: panelTop, currentZoom: 1.0, pipNatX, pipNatY, pipTargetY: pipNatY }
     }
 
     if (transition === null) {
@@ -632,10 +621,19 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       drawStatusBar(ctx, state)
     }
 
+    // ── Situated whisper (nav register, idle only) ───────────────────────────
+    if (whisper !== null && combat === null && transition === null && state.uiState === 'idle') {
+      const elapsed = timestamp - whisper.startTime
+      if (elapsed >= WHISPER_TOTAL_MS) {
+        whisper = null
+      } else {
+        const alpha = whisperAlpha(elapsed)
+        drawSituatedWhisper(ctx, whisper.text, alpha, Math.min(currentPanelTop, LOGICAL_H))
+      }
+    }
+
     // MENU button always visible
     drawMenuButton(ctx, !menuModal.isOpen() && isMouseDevice && hoveredElement === 'menu-btn')
-
-    drawLogStrip(ctx, state)
 
     // ── Encounter register: draw satchel BEFORE panel so panel covers it ─────
     const inEncounterRegister = combat !== null || transition !== null
@@ -650,8 +648,6 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       if (transition !== null) {
         if (state.uiState === 'choosing') {
           drawRoomPanel(ctx, state, cardTeases, hoveredElement, hitRects)
-        } else {
-          drawNavHint(ctx)
         }
       }
       if (combat !== null && (combat.phase === 'victory' || combat.phase === 'defeat')) {
@@ -663,8 +659,6 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       }
     } else if (state.uiState === 'choosing') {
       drawRoomPanel(ctx, state, cardTeases, hoveredElement, hitRects)
-    } else {
-      drawNavHint(ctx)
     }
 
     // ── Satchel button (nav register — floats on top of nav panels) ──────────
@@ -726,9 +720,11 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         const offering = state.offerings[idx]
         const { dc, dr } = DIR_DELTA[state.pendingDir!]
         const targetPos = { col: state.pip.col + dc, row: state.pip.row + dr }
+        const chosenRoomType = offering.roomType
         state = placeRoom(state, offering, targetPos)
         state = { ...state, roomsEntered: state.roomsEntered + 1 }
         cardTeases = []
+        triggerWhisper(chosenRoomType)
         checkCombatTrigger()
       }
       return
@@ -760,6 +756,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
 
         const offerings = generateOfferings(state, { col: nc, row: nr }, OPP[dir])
         cardTeases = getCardTeases(offerings)
+        whisper = null
         state = {
           ...state,
           uiState: 'choosing',

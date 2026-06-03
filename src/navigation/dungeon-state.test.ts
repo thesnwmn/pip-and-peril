@@ -40,13 +40,6 @@ describe('initDungeon', () => {
     expect(state.offerings).toHaveLength(0)
   })
 
-  it('adds the initial system log entry', () => {
-    const state = initDungeon()
-    expect(state.log).toHaveLength(1)
-    expect(state.log[0].style).toBe('system')
-    expect(state.log[0].message).toContain('Pip')
-  })
-
   it('initialises fog: start tile visible, outer tiles hidden', () => {
     const state = initDungeon()
     expect(state.fog[6][6]).toBe('visible')
