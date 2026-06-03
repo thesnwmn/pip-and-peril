@@ -22,11 +22,19 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
+### 019 · Combat Victory Rewards
+
+Winning a combat grants **gold** (random roll within the enemy's reward range), giving the player
+their first source of currency and making the Satchel's Pouch real rather than always-zero. Each
+enemy carries a gold reward range; the existing victory banner (006) gains a `+ N gold ◈` line.
+See `docs/features/019-combat-victory-rewards.md` for the full spec.
+**Depends on:** 016 (inventory data model), 006 (combat victory flow).
+
 ---
 
 ## NEEDS SPEC
 
-> **Run-loop feature set.** Items 019–029 together complete the *full gameplay run loop* — every
+> **Run-loop feature set.** Items 020–029 together complete the *full gameplay run loop* — every
 > encounter type from the concept plus the major mechanics a player needs to experience a whole run
 > with basic components: earn currency, pick up and use items, survive traps, and defeat a boss to
 > end the run. They are listed in **recommended build order** (dependency-respecting; the Planner
@@ -36,17 +44,7 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 > breaking the in-run loop. Each item's *Depends on* notes carry the real ordering constraints.
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
-> model) shipping first — it is already top of READY.
-
-### 019 · Combat Victory Rewards
-
-Winning a combat grants **gold** (and, occasionally, a dropped item), giving the player their first
-source of currency and making the Satchel's gold/inventory real rather than always-zero. Each enemy
-carries a small reward value; the existing victory banner (006) gains a "+N gold" line, and
-`enemiesDefeated`/gold update on the win. Smallest piece of economy plumbing; unlocks every
-spend-gold feature downstream.
-**Depends on:** 016 (gold + item model), 006 (combat victory flow).
-**Related:** Idea 001 (a "picked clean — nothing to loot" surprise variant).
+> model) shipping first — it is already shipped.
 
 ### 020 · Item System: Consumables & Use
 
