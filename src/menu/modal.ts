@@ -70,11 +70,19 @@ function drawRoundRect(
 }
 
 export function drawMenuButton(ctx: CanvasRenderingContext2D, isHovered: boolean): void {
-  ctx.font = 'bold 12px monospace'
-  ctx.fillStyle = isHovered ? colors.textPrimary : colors.textMuted
+  const fill = isHovered ? colors.textPrimary : colors.textMuted
+  const midY = MENU_BTN_Y + MENU_BTN_H / 2
+  ctx.fillStyle = fill
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
-  ctx.fillText('≡ MENU', MENU_BTN_X, MENU_BTN_Y + MENU_BTN_H / 2)
+
+  // Icon drawn at 16px so its visual height matches the cap height of 12px bold text
+  ctx.font = 'bold 16px monospace'
+  ctx.fillText('≡', MENU_BTN_X, midY)
+
+  // Label at same size as FLOOR / Depth in the status bar
+  ctx.font = 'bold 12px monospace'
+  ctx.fillText('MENU', MENU_BTN_X + 12, midY)
 }
 
 export function isInMenuButton(x: number, y: number): boolean {
