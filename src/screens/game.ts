@@ -595,11 +595,9 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 
     // ── Map (with zoom transform during encounter register) ──────────────────
-    const mapAreaH = Math.max(0, currentPanelTop - MAP_Y)
-
     ctx.save()
     ctx.beginPath()
-    ctx.rect(0, MAP_Y, LOGICAL_W, mapAreaH)
+    ctx.rect(MAP_X, MAP_Y, VIEWPORT_COLS * TILE_SIZE, LOGICAL_H - MAP_Y)
     ctx.clip()
 
     if (combat !== null || transition !== null) {
