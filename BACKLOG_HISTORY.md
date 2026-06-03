@@ -18,7 +18,7 @@ Original one- or two-sentence summary from the backlog.
 
 ### 016 · Pip's Satchel
 
-**Shipped:** 2026-06-03 · **PR:** pending · **Spec:** [docs/features/history/016-pip-satchel.md](docs/features/history/016-pip-satchel.md)
+**Shipped:** 2026-06-03 · **PR:** [#35](https://github.com/thesnwmn/pip-and-peril/pull/35) · **Spec:** [docs/features/history/016-pip-satchel.md](docs/features/history/016-pip-satchel.md)
 
 Full-screen in-world overlay opened by a persistent bottom-right button: Pip's worn leather
 satchel with four compartments — Pouch (gold + items), Journal (stub), Tally (live run stats),

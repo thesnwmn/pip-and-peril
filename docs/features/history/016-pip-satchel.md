@@ -221,7 +221,7 @@ None — all blocking questions resolved before spec was written.
 
 ## Shipped
 
-**Date:** 2026-06-03 · **PR:** pending
+**Date:** 2026-06-03 · **PR:** [#35](https://github.com/thesnwmn/pip-and-peril/pull/35)
 
 ### What was built
 
