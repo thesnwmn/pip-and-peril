@@ -12,17 +12,20 @@ export const SATCHEL_BTN_SIZE = 44
 export const SATCHEL_BTN_X = LOGICAL_W - 8 - SATCHEL_BTN_SIZE  // 338
 export const SATCHEL_BTN_Y = LOGICAL_H - 8 - SATCHEL_BTN_SIZE  // 792
 
-// Overlay zones
-const HEADER_H = 50
+// Overlay covers only the panel zone so the map remains visible above
+// Matches PANEL_TOP in game.ts (LOG_BOTTOM + 6 ≈ 472)
+export const OVERLAY_TOP = 472
+
+const HEADER_H = 44
 const TAB_H = 40
-const TAB_TOP = LOGICAL_H - TAB_H          // 804
-const CONTENT_Y = HEADER_H                 // 50
-const CONTENT_H = LOGICAL_H - HEADER_H - TAB_H  // 754
+const TAB_TOP = LOGICAL_H - TAB_H                            // 804
+const CONTENT_Y = OVERLAY_TOP + HEADER_H                     // 516
+const CONTENT_H = LOGICAL_H - OVERLAY_TOP - HEADER_H - TAB_H // 288
 
 // Content inner padding
 const PAD = 16
 
-// Close button — top-right, 44 × 44 tap area
+// Close button — top-right of the overlay header, 44 × 44 tap area
 const CLOSE_HIT = 44
 
 // Tab geometry
@@ -124,15 +127,23 @@ export function isInSatchelButton(x: number, y: number): boolean {
 // ─── Overlay drawing helpers ─────────────────────────────────────────────────
 
 function drawHeader(ctx: CanvasRenderingContext2D, hovered: string | null): void {
-  ctx.fillStyle = colors.satchelLeather
-  ctx.fillRect(0, 0, LOGICAL_W, HEADER_H)
+  const midY = OVERLAY_TOP + HEADER_H / 2
 
-  // Stitched bottom border
+  ctx.fillStyle = colors.satchelLeather
+  ctx.fillRect(0, OVERLAY_TOP, LOGICAL_W, HEADER_H)
+
+  // Stitched borders — top seam and bottom separator
   ctx.strokeStyle = colors.satchelBrass
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  ctx.moveTo(0, OVERLAY_TOP)
+  ctx.lineTo(LOGICAL_W, OVERLAY_TOP)
+  ctx.stroke()
+
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(0, HEADER_H)
-  ctx.lineTo(LOGICAL_W, HEADER_H)
+  ctx.moveTo(0, OVERLAY_TOP + HEADER_H)
+  ctx.lineTo(LOGICAL_W, OVERLAY_TOP + HEADER_H)
   ctx.stroke()
 
   // Title
@@ -140,16 +151,15 @@ function drawHeader(ctx: CanvasRenderingContext2D, hovered: string | null): void
   ctx.fillStyle = colors.textPrimary
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
-  ctx.fillText("Pip's Satchel", PAD, HEADER_H / 2)
+  ctx.fillText("Pip's Satchel", PAD, midY)
 
   // Close button ×
   const cx = LOGICAL_W - CLOSE_HIT / 2
-  const cy = HEADER_H / 2
   ctx.font = 'bold 18px monospace'
   ctx.fillStyle = hovered === 'close' ? colors.textPrimary : colors.textMuted
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('×', cx, cy)
+  ctx.fillText('×', cx, midY)
 }
 
 function drawTabStrip(ctx: CanvasRenderingContext2D, active: SatchelTab): void {
@@ -522,11 +532,15 @@ export function createSatchelOverlay(): SatchelOverlay {
     const rawT = Math.min(1, elapsed / ANIM_DURATION)
     const scale = easeOutCubic(rawT)
 
-    // Scale the whole overlay from the satchel button centre
+    // Scale the overlay from the satchel button centre, clipped to the overlay zone
+    // so the animation never draws over the visible map above OVERLAY_TOP
     const originX = SATCHEL_BTN_X + SATCHEL_BTN_SIZE / 2
     const originY = SATCHEL_BTN_Y + SATCHEL_BTN_SIZE / 2
 
     ctx.save()
+    ctx.beginPath()
+    ctx.rect(0, OVERLAY_TOP, LOGICAL_W, LOGICAL_H - OVERLAY_TOP)
+    ctx.clip()
     ctx.translate(originX, originY)
     ctx.scale(scale, scale)
     ctx.translate(-originX, -originY)
@@ -557,8 +571,8 @@ export function createSatchelOverlay(): SatchelOverlay {
       return true
     }
 
-    // Close button
-    if (x >= LOGICAL_W - CLOSE_HIT && y >= 0 && y <= CLOSE_HIT) {
+    // Close button — top-right of the overlay header
+    if (x >= LOGICAL_W - CLOSE_HIT && y >= OVERLAY_TOP && y <= OVERLAY_TOP + CLOSE_HIT) {
       close()
       return true
     }
@@ -582,7 +596,7 @@ export function createSatchelOverlay(): SatchelOverlay {
     let next: string | null = null
 
     if (!isAnimating()) {
-      if (x >= LOGICAL_W - CLOSE_HIT && y >= 0 && y <= CLOSE_HIT) {
+      if (x >= LOGICAL_W - CLOSE_HIT && y >= OVERLAY_TOP && y <= OVERLAY_TOP + CLOSE_HIT) {
         next = 'close'
       } else if (y >= TAB_TOP) {
         const idx = Math.floor(x / TAB_W)

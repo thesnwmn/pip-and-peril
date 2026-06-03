@@ -6,6 +6,7 @@ import {
   SATCHEL_BTN_X,
   SATCHEL_BTN_Y,
   SATCHEL_BTN_SIZE,
+  OVERLAY_TOP,
 } from './overlay'
 import type { Inventory } from './types'
 import type { DungeonState } from '../navigation/dungeon-state'
@@ -179,7 +180,7 @@ describe('createSatchelOverlay — animation', () => {
     overlay.handleClick(100, 100)  // skip animation
     // After skip, a second click at the close button should close
     overlay.draw(ctx, 1200, emptyInventory, makeState())  // update lastTimestamp
-    overlay.handleClick(389, 22)  // close button area
+    overlay.handleClick(389, OVERLAY_TOP + 22)  // close button area
     expect(overlay.isOpen()).toBe(false)
   })
 
@@ -255,7 +256,7 @@ describe('createSatchelOverlay — close button', () => {
   it('tapping × closes the overlay (AC 13)', () => {
     const overlay = createSatchelOverlay()
     openAndAnimate(overlay)
-    overlay.handleClick(389, 22)  // top-right, inside 44 × 44 area
+    overlay.handleClick(389, OVERLAY_TOP + 22)  // top-right of overlay header
     expect(overlay.isOpen()).toBe(false)
   })
 

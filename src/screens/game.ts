@@ -530,13 +530,6 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     // MENU button always visible in status bar
     drawMenuButton(ctx, !menuModal.isOpen() && isMouseDevice && hoveredElement === 'menu-btn')
 
-    // Satchel button — always visible, greyed during combat
-    drawSatchelButton(
-      ctx,
-      combat !== null,
-      !menuModal.isOpen() && !satchelOverlay.isOpen() && isMouseDevice && hoveredElement === 'satchel-btn',
-    )
-
     drawLogStrip(ctx, state)
 
     // Panel zone
@@ -551,6 +544,13 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     } else {
       drawNavHint(ctx)
     }
+
+    // Satchel button — drawn after panels so it floats on top; greyed during combat
+    drawSatchelButton(
+      ctx,
+      combat !== null,
+      !menuModal.isOpen() && !satchelOverlay.isOpen() && isMouseDevice && hoveredElement === 'satchel-btn',
+    )
 
     // Satchel overlay draws on top of everything except the menu modal
     satchelOverlay.draw(ctx, timestamp, inventory, state)
