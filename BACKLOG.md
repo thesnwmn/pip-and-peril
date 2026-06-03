@@ -22,15 +22,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-### 017 · Soft Camera Follow
-
-Decouples the viewport from Pip's exact position: the camera follows through a configurable dead
-zone (default 3×3 tiles) so Pip can roam freely within the central band without the map scrolling.
-The camera only catches up when Pip exits the zone. Near the dungeon boundary the camera clamps,
-letting Pip walk toward the visible edge. Makes each step feel more alive — the world shifts in
-the direction of travel instead of pinning Pip like a crosshair.
-See `docs/features/017-soft-camera-follow.md` for the full spec.
-
 ---
 
 ## NEEDS SPEC
