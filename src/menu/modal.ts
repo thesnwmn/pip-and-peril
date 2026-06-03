@@ -70,7 +70,7 @@ function drawRoundRect(
 }
 
 export function drawMenuButton(ctx: CanvasRenderingContext2D, isHovered: boolean): void {
-  ctx.font = 'bold 11px system-ui, -apple-system, sans-serif'
+  ctx.font = 'bold 12px monospace'
   ctx.fillStyle = isHovered ? colors.textPrimary : colors.textMuted
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
