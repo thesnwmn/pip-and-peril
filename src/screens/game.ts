@@ -54,9 +54,7 @@ const ARROW_HALF = 13
 // Elastic canvas: encounter register constants
 const COMBAT_PANEL_TOP = PANEL_TOP  // combat tray aligns with nav panel top
 const TRANSITION_DURATION = 450  // ms
-
-// Y centre of the map area while the combat panel is fully risen
-const COMBAT_MAP_CENTER_Y = MAP_Y + (COMBAT_PANEL_TOP - MAP_Y) / 2  // ~248.5
+const COMBAT_MAP_GAP = 8          // extra gap between map and panel edge in combat
 
 interface HitRect {
   x: number; y: number; w: number; h: number; id: string
@@ -526,7 +524,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
 
     if (transition === null) {
       // Stable combat — panel fully risen
-      return { currentPanelTop: COMBAT_PANEL_TOP, currentZoom: COMBAT_CONFIG.cameraZoom, pipNatX, pipNatY, pipTargetY: COMBAT_MAP_CENTER_Y }
+      return { currentPanelTop: COMBAT_PANEL_TOP, currentZoom: COMBAT_CONFIG.cameraZoom, pipNatX, pipNatY, pipTargetY: pipNatY }
     }
 
     const elapsed = timestamp - transition.startTime
@@ -539,7 +537,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         currentZoom: lerp(1.0, COMBAT_CONFIG.cameraZoom, easedT),
         pipNatX,
         pipNatY,
-        pipTargetY: lerp(pipNatY, COMBAT_MAP_CENTER_Y, easedT),
+        pipTargetY: pipNatY,
       }
     } else {
       const easedT = easeIn(t)
@@ -548,7 +546,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         currentZoom: lerp(COMBAT_CONFIG.cameraZoom, 1.0, easedT),
         pipNatX,
         pipNatY,
-        pipTargetY: lerp(COMBAT_MAP_CENTER_Y, pipNatY, easedT),
+        pipTargetY: pipNatY,
       }
     }
   }
@@ -596,18 +594,16 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     ctx.fillStyle = colors.bg
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 
-    // ── Map (with zoom transform during encounter register) ──────────────────
-    const mapAreaH = Math.max(0, currentPanelTop - MAP_Y)
+    // ── Map (with optional zoom transform during encounter register) ────────────
+    const inCombatMode = combat !== null || transition !== null
+    const mapAreaH = Math.max(0, currentPanelTop - MAP_Y - (inCombatMode ? COMBAT_MAP_GAP : 0))
 
     ctx.save()
     ctx.beginPath()
     ctx.rect(0, MAP_Y, LOGICAL_W, mapAreaH)
     ctx.clip()
 
-    if (combat !== null || transition !== null) {
-      // Zoom around pip's natural position, shifting it vertically toward the map area centre.
-      // At t=0 and t=1 of either transition pipTargetY === pipNatY, so the transform is
-      // identity at both boundaries — no snap when combat starts or ends.
+    if (inCombatMode && currentZoom !== 1.0) {
       ctx.translate(pipNatX, pipTargetY)
       ctx.scale(currentZoom, currentZoom)
       ctx.translate(-pipNatX, -pipNatY)
