@@ -57,9 +57,7 @@ const VIEWPORT_ROWS = 5
 const ARROW_HALF = 13
 
 // Elastic canvas: encounter register constants
-const AVAILABLE_H = LOGICAL_H - STATUS_BAR_H                              // 794
-const COMBAT_PANEL_H = Math.round(AVAILABLE_H * COMBAT_CONFIG.panelHeightFraction) // 397
-const COMBAT_PANEL_TOP = LOGICAL_H - COMBAT_PANEL_H                       // 447
+const COMBAT_PANEL_TOP = PANEL_TOP  // combat tray aligns with nav panel top
 const TRANSITION_DURATION = 450  // ms
 
 // Y centre of the map area while the combat panel is fully risen
