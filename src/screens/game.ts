@@ -647,6 +647,15 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
 
     // ── Panel zone ───────────────────────────────────────────────────────────
     if (inEncounterRegister) {
+      // During transitions the nav panel draws first; the combat tray covers and
+      // reveals it naturally as it rises/falls rather than snapping in/out.
+      if (transition !== null) {
+        if (state.uiState === 'choosing') {
+          drawRoomPanel(ctx, state, cardTeases, hoveredElement, hitRects)
+        } else {
+          drawNavHint(ctx)
+        }
+      }
       if (combat !== null && (combat.phase === 'victory' || combat.phase === 'defeat')) {
         // Banner — shown during stable combat and during the falling transition
         const bst = bannerStartTime ?? timestamp
