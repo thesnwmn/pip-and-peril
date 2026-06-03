@@ -151,10 +151,35 @@ viewport columns (0–4) →
 
 ## Shipped
 
-**Date:** · **PR:**
+**Date:** 2026-06-03 · **PR:** #36
 
 ### What was built
 
+- `export const DEAD_ZONE = 3` and `export function updateCamera(camera, pip, gridWidth, gridHeight): GridPos` added to `src/navigation/dungeon-state.ts`. `updateCamera` implements the dead zone rule and grid-boundary clamping exactly as specified.
+- `DungeonState.camera: GridPos` field added; `initDungeon` sets it equal to `pip` at `(6,6)`.
+- `movePip` (`src/navigation/movement.ts`) calls `updateCamera` after each confirmed move and includes the new camera in the returned state.
+- `placeRoom` (`src/navigation/room-selection.ts`) likewise calls `updateCamera` so that new-room discovery moves also update the camera correctly (camera is frozen while the choosing panel is visible; it only updates when a card is confirmed).
+- `drawMap` (`src/map/renderer.ts`) gains a `pip: GridPos` parameter alongside `viewCenter` (camera). Pip is drawn at `floor(VIEWPORT_COLS/2) + (pip.col − viewCenter.col)` in viewport space, so she appears at the correct offset from the camera centre.
+- `vpPixel` in `src/screens/game.ts` renamed its arguments to `cameraCol/cameraRow` and is called with `state.camera` everywhere. `drawNavArrows` and the idle click-to-move handler both use `state.camera` as the viewport origin.
+
 ### Evidence
 
+- `npm run test`: **184 tests, 0 failed, 0 skipped**
+- `npm run typecheck`: clean (no errors)
+- New tests added:
+  - `dungeon-state.test.ts` — `initDungeon sets camera equal to pip start position`; 8 `updateCamera` tests covering: pip at camera, pip within dead zone on all 4 sides, pip exits dead zone on all 4 sides, grid-boundary clamping.
+  - `movement.test.ts` — 4 `movePip camera` tests: stays within dead zone (first step), follows on second consecutive step, backtrack within dead zone, both axes.
+  - `renderer.test.ts` — updated all `drawMap` calls to pass `pip`; added test for pip drawn at centre when pip equals camera, and pip drawn at offset when pip differs from camera.
+
 ### Play-test
+
+1. Open the game in the browser (`npm run dev`, visit `http://localhost:5173`; or use the PR preview URL).
+2. Start a new run. Pip appears at the centre of the 5×5 viewport. Camera and Pip are at the same grid cell.
+3. Tap the **North** arrow. Pip moves north one tile — **the camera should not scroll** (first step stays inside the 3×3 dead zone). Pip is no longer at the viewport centre; she is one tile above it.
+4. Tap **North** again. This is the second consecutive northward step, pushing Pip to the dead zone boundary. **The camera shifts one tile north** to catch up. Pip returns to viewport centre-row + 0 (the dead zone edge).
+5. Continue moving north. Each step should keep the camera catching up by one tile.
+6. Tap **South** once (backtrack). Pip moves south — the camera does **not** move; the offset shrinks.
+7. Repeat steps 3–6 for East, West, and South to verify all four axes scroll correctly.
+8. Explore enough rooms to push toward the corner (roughly 4+ tiles from start). Confirm the camera clamps at the dungeon grid edge: Pip can walk toward the visible wall of the screen without the viewport snapping outside the map.
+9. Walk into an enemy room and start combat. During the combat encounter, navigate arrows are hidden but **Pip should be drawn at her correct (non-centre) viewport position** if the camera had already shifted. No camera drift during combat.
+10. Win or lose the combat and continue navigating. Camera resumes normal dead zone tracking.

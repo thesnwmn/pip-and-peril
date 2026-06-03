@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chebyshev, DIR_DELTA, initDungeon, OPP } from './dungeon-state'
+import { chebyshev, DIR_DELTA, initDungeon, OPP, updateCamera } from './dungeon-state'
 import { E, N, S, W } from '../map/types'
 
 describe('initDungeon', () => {
@@ -26,6 +26,11 @@ describe('initDungeon', () => {
     const state = initDungeon()
     expect(state.pip).toEqual({ col: 6, row: 6 })
     expect(state.startPos).toEqual({ col: 6, row: 6 })
+  })
+
+  it('sets camera equal to pip start position', () => {
+    const state = initDungeon()
+    expect(state.camera).toEqual({ col: 6, row: 6 })
   })
 
   it('starts in idle state with no pending dir', () => {
@@ -93,5 +98,61 @@ describe('DIR_DELTA', () => {
     expect(DIR_DELTA[S]).toEqual({ dc: 0, dr: 1 })
     expect(DIR_DELTA[E]).toEqual({ dc: 1, dr: 0 })
     expect(DIR_DELTA[W]).toEqual({ dc: -1, dr: 0 })
+  })
+})
+
+describe('updateCamera', () => {
+  const grid = { width: 13, height: 13 }
+
+  it('returns camera unchanged when pip is at camera position', () => {
+    expect(updateCamera({ col: 6, row: 6 }, { col: 6, row: 6 }, grid.width, grid.height))
+      .toEqual({ col: 6, row: 6 })
+  })
+
+  it('returns camera unchanged when pip is within dead zone (1 tile away)', () => {
+    const camera = { col: 6, row: 6 }
+    // hz=1: pip can be at col 5,6,7 and row 5,6,7 without camera moving
+    expect(updateCamera(camera, { col: 7, row: 6 }, grid.width, grid.height)).toEqual(camera)
+    expect(updateCamera(camera, { col: 5, row: 6 }, grid.width, grid.height)).toEqual(camera)
+    expect(updateCamera(camera, { col: 6, row: 7 }, grid.width, grid.height)).toEqual(camera)
+    expect(updateCamera(camera, { col: 6, row: 5 }, grid.width, grid.height)).toEqual(camera)
+  })
+
+  it('shifts camera east when pip exits dead zone east', () => {
+    // pip.col=8 > camera.col+hz=7 → camera.col = 8-1 = 7
+    expect(updateCamera({ col: 6, row: 6 }, { col: 8, row: 6 }, grid.width, grid.height))
+      .toEqual({ col: 7, row: 6 })
+  })
+
+  it('shifts camera west when pip exits dead zone west', () => {
+    // pip.col=4 < camera.col-hz=5 → camera.col = 4+1 = 5
+    expect(updateCamera({ col: 6, row: 6 }, { col: 4, row: 6 }, grid.width, grid.height))
+      .toEqual({ col: 5, row: 6 })
+  })
+
+  it('shifts camera south when pip exits dead zone south', () => {
+    // pip.row=8 > camera.row+hz=7 → camera.row = 8-1 = 7
+    expect(updateCamera({ col: 6, row: 6 }, { col: 6, row: 8 }, grid.width, grid.height))
+      .toEqual({ col: 6, row: 7 })
+  })
+
+  it('shifts camera north when pip exits dead zone north', () => {
+    // pip.row=4 < camera.row-hz=5 → camera.row = 4+1 = 5
+    expect(updateCamera({ col: 6, row: 6 }, { col: 6, row: 4 }, grid.width, grid.height))
+      .toEqual({ col: 6, row: 5 })
+  })
+
+  it('clamps camera so dungeon west edge is flush with viewport left edge', () => {
+    // vpHalf=2, so min camera col = 2. A pip at col 0 would push camera to 0+1=1,
+    // but clamp raises it to 2, putting the dungeon west edge at viewport column 0.
+    expect(updateCamera({ col: 3, row: 6 }, { col: 0, row: 6 }, grid.width, grid.height))
+      .toEqual({ col: 2, row: 6 })
+  })
+
+  it('clamps camera so dungeon east edge is flush with viewport right edge', () => {
+    // vpHalf=2, so max camera col = 13-1-2 = 10. A pip at col 12 would push camera
+    // to 12-1=11, but clamp lowers it to 10, putting the dungeon east edge at viewport column 4.
+    expect(updateCamera({ col: 9, row: 6 }, { col: 12, row: 6 }, grid.width, grid.height))
+      .toEqual({ col: 10, row: 6 })
   })
 })

@@ -122,4 +122,39 @@ describe('movePip', () => {
     expect(state.pip).toEqual(origPip)
     expect(state.stepCount).toBe(0)
   })
+
+  it('camera stays when pip moves within dead zone (first step)', () => {
+    const state = initDungeon() // pip=(6,6), camera=(6,6)
+    // Move N → pip=(6,5). hz=1: 5 is NOT < 6-1=5, camera stays
+    const next = movePip(state, N)
+    expect(next.camera).toEqual({ col: 6, row: 6 })
+  })
+
+  it('camera follows when pip exits dead zone on second consecutive step', () => {
+    const base = initDungeon()
+    // pip at (6,7) [1 south of camera (6,6)] — dead zone edge
+    const state = { ...base, pip: { col: 6, row: 7 }, camera: { col: 6, row: 6 } }
+    // Move S → pip=(6,8). 8 > 6+1=7 → camera.row = 8-1 = 7
+    const next = movePip(state, S)
+    expect(next.camera).toEqual({ col: 6, row: 7 })
+  })
+
+  it('camera does not update when pip backtracks within dead zone', () => {
+    const base = initDungeon()
+    // pip at (6,7), camera at (6,6)
+    const state = { ...base, pip: { col: 6, row: 7 }, camera: { col: 6, row: 6 } }
+    // Backtrack N → pip=(6,6). Camera stays at (6,6)
+    const next = movePip(state, N)
+    expect(next.camera).toEqual({ col: 6, row: 6 })
+  })
+
+  it('camera updates on both axes simultaneously', () => {
+    const base = initDungeon()
+    // pip at (7,7), camera at (6,6) — both at dead zone edge
+    const state = { ...base, pip: { col: 7, row: 7 }, camera: { col: 6, row: 6 } }
+    // Move SE → pip=(8,8). 8>7 on both axes → camera=(7,7)
+    const next = movePip(state, S)
+    // Only south axis moves since we only called movePip with S
+    expect(next.camera).toEqual({ col: 6, row: 7 })
+  })
 })

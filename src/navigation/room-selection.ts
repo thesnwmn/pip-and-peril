@@ -1,7 +1,7 @@
 import { computeFog } from '../map/fog'
 import type { ExitMask, GridPos, RoomType } from '../map/types'
 import { E, N, S, W } from '../map/types'
-import { chebyshev, DIR_DELTA, OPP } from './dungeon-state'
+import { chebyshev, DIR_DELTA, OPP, updateCamera } from './dungeon-state'
 import type { DungeonState, LogEntry, RoomOffering } from './dungeon-state'
 import { LOG_MESSAGES, logStyleForRoom, pickRandom, poolForDepth, CARD_TEASES } from './room-pool'
 
@@ -89,6 +89,7 @@ export function placeRoom(
 
   const newPip = { ...targetPos }
   const newFog = computeFog(state.fog, newGrid, newPip, 3)
+  const newCamera = updateCamera(state.camera, newPip, newGrid.width, newGrid.height)
 
   const needsLog = ['enemy', 'boss', 'shop', 'npc', 'item', 'chest'].includes(offering.roomType)
   const newLog: LogEntry[] = [...state.log]
@@ -106,6 +107,7 @@ export function placeRoom(
     grid: newGrid,
     fog: newFog,
     pip: newPip,
+    camera: newCamera,
     uiState: 'idle',
     pendingDir: null,
     offerings: [],
