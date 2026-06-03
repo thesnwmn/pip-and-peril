@@ -262,7 +262,7 @@ within the intent stated above. This item is **READY**.
 
 ## Shipped
 
-**Date:** 2026-06-03 · **PR:** #TBD
+**Date:** 2026-06-03 · **PR:** [#42](https://github.com/thesnwmn/pip-and-peril/pull/42)
 
 ### What was built
 
