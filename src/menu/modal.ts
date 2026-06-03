@@ -82,7 +82,7 @@ export function drawMenuButton(ctx: CanvasRenderingContext2D, isHovered: boolean
 
   // Label at same size as FLOOR / Depth in the status bar
   ctx.font = 'bold 12px monospace'
-  ctx.fillText('MENU', MENU_BTN_X + 12, midY)
+  ctx.fillText('MENU', MENU_BTN_X + 15, midY)
 }
 
 export function isInMenuButton(x: number, y: number): boolean {
