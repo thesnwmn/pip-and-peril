@@ -168,6 +168,25 @@ tile sprite, or a stylised icon? Ties to the unresolved art approach (D8).
 
 ---
 
+## Idea 018 — Situated Whisper (Replacing the Log Strip)
+
+**Area:** UI
+**Inspiration:** `docs/concept/screen-layout-and-transitions.md` — narrative voice section; supersedes the three-line log strip from feature 004.
+
+Replace the permanent log strip below the map with a single line of narration that appears
+*inside* the map canvas at its lower edge when Pip enters a new room, lingers ~2–3 seconds,
+then fades out completely. No persistent strip; no space permanently reserved; the map is
+quiet when nothing is happening. A subtle gradient scrim appears under the text and fades
+with it, ensuring legibility against any tile background without a hard panel boundary.
+Rough shape: a `showWhisper(message, style)` function draws the text and scrim as a canvas
+overlay layer; a timer clears it; the encounter panel rising always post-dates the fade since
+room-entry events trigger before encounter panels open. The full message history migrates to
+the Satchel Journal tab (feature 016 stub). Risk: players might miss a fast message — the
+2–3s window is a deliberate minimum; urgent messages (trap firing) may warrant a longer
+linger or a different colour signal.
+
+---
+
 ## Idea 017 — Run Summary as Dungeon Sketch
 
 **Area:** UI / Flow

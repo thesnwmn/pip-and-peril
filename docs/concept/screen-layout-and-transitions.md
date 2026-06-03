@@ -297,6 +297,84 @@ was made when Pip stepped on the tile.
 
 ---
 
+## The Narrative Voice — World Narration vs Action Feedback
+
+The existing log strip (feature 004: three lines below the map, fading by recency) predates the
+elastic canvas concept. It works in the current POC but creates a structural problem in the
+full layout: where does a permanent strip live when an encounter panel rises from the bottom?
+Between map and panel it becomes a cramped sandwich; covered by the panel it loses information;
+expanded upward it compresses the map. None of these are right.
+
+More importantly: the log strip is doing **two different jobs** that belong in different places.
+
+### The two communication layers
+
+**World narration** is atmospheric, in-world, brief. "Something snarls in the dark." "The
+shelves are bare." These are the game's voice — flavour tied to a moment. The player needs
+them for roughly three seconds after entering a room, then never again. A permanent strip
+that stores three fading entries is overbuilt for this job.
+
+**Action feedback** is mechanical, immediate, critical. "Strike — 2 damage. (Goblin: 6→4)"
+This lives inside the encounter panel, one line, updating in place. It already exists in
+the combat panel (feature 006). It belongs there and nowhere else.
+
+These should not share the same element. Combining them forces the design to serve both
+jobs poorly: too persistent for narration, too sparse for feedback.
+
+### World narration: the situated whisper
+
+World narration lives **inside the map view**, not below it. When Pip enters a new room, a
+single line appears at the bottom of the visible map canvas — the game's voice speaking from
+the dungeon, not from a UI strip below it. It fades out after ~2–3 seconds and leaves no
+trace. No permanent footprint; no space wasted when silent.
+
+```
+┌─────────────────────────┐
+│                         │
+│       DUNGEON MAP       │
+│                         │
+│  "Something snarls       │  ← appears here, bottom of the map canvas
+│   in the dark."         │     faint scrim beneath the text; fades in ~2s
+└─────────────────────────┘
+```
+
+The text sits over a subtle gradient scrim (not a solid band — the tile art should breathe
+through it) so it reads against any background. When the map is silent, this zone is
+invisible. It competes with nothing.
+
+**Crucially**: by the time any encounter panel rises, the room-entry narration has already
+faded. The two elements never share the screen simultaneously.
+
+### Action feedback: stays in the panel
+
+The combat panel's one-line log (the most recent action outcome) is correct as specced.
+That pattern extends to any dice-resolved encounter. There is no separate feedback strip; the
+panel owns mechanical feedback entirely.
+
+For non-dice encounters (a shop browse, a simple chest open), there may be no log line at all
+inside the panel — the visual action (item card appearing, chest opening) is the feedback.
+
+### The complete record: Satchel Journal
+
+The full history of every narration and encounter outcome accumulates in the Journal tab of
+the Satchel (feature 016 has this as a stub). Players who want to re-read what happened can
+open the satchel. Players who don't, won't. The game does not force three fading lines of
+recent history into the primary view at all times.
+
+### What this supersedes
+
+The three-line log strip from feature 004 is a design that served the POC phase. In the
+final game this pattern should be replaced:
+- Permanent log strip → **situated whisper** (map-canvas overlay, fading)
+- Most recent entry always visible → **ephemeral** (appears on event, gone in ~3s)
+- History in the strip → **history in the Satchel Journal**
+
+This is a future reconciliation for the Designer and Engineer when the encounter system
+is rebuilt to match the elastic canvas architecture. The existing 004 implementation is not
+wrong — it is a stepping stone.
+
+---
+
 ## Transition Design
 
 All navigation-to-encounter transitions follow the same choreography:
