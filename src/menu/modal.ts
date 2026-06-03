@@ -186,7 +186,7 @@ function drawListView(
     ctx.fillRect(MODAL_CARD_X, row2Y, MODAL_CARD_W, MODAL_ROW_H)
   }
   ctx.font = '14px system-ui, -apple-system, sans-serif'
-  ctx.fillStyle = screenType === 'game' ? colors.danger : colors.textPrimary
+  ctx.fillStyle = colors.danger
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
   ctx.fillText(screenType === 'home' ? 'Quit Game' : 'End Run', MODAL_CARD_X + 16, row2Y + MODAL_ROW_H / 2)
@@ -215,23 +215,27 @@ function drawSettingsView(
 
 function drawConfirmView(
   ctx: CanvasRenderingContext2D,
+  screenType: ScreenType,
   hovered: string | null,
 ): void {
   drawCloseBtn(ctx, hovered === 'close')
+
+  const heading = screenType === 'home' ? 'Quit game?' : 'End this run?'
+  const subtext = screenType === 'home' ? 'Return to the main menu.' : 'Your progress will be lost.'
 
   const headingY = MODAL_CARD_Y + MODAL_CLOSE_ROW_H + MODAL_CONF_HEADING_H / 2
   ctx.font = 'bold 16px system-ui, -apple-system, sans-serif'
   ctx.fillStyle = colors.textPrimary
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('End this run?', MODAL_CARD_X + MODAL_CARD_W / 2, headingY)
+  ctx.fillText(heading, MODAL_CARD_X + MODAL_CARD_W / 2, headingY)
 
   const subtextY = MODAL_CARD_Y + MODAL_CLOSE_ROW_H + MODAL_CONF_HEADING_H + MODAL_CONF_SUBTEXT_H / 2
   ctx.font = '13px system-ui, -apple-system, sans-serif'
   ctx.fillStyle = colors.textMuted
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('Your progress will be lost.', MODAL_CARD_X + MODAL_CARD_W / 2, subtextY)
+  ctx.fillText(subtext, MODAL_CARD_X + MODAL_CARD_W / 2, subtextY)
 
   const sepY = MODAL_CARD_Y + MODAL_CLOSE_ROW_H + MODAL_CONF_HEADING_H + MODAL_CONF_SUBTEXT_H
   drawSep(ctx, sepY)
@@ -304,7 +308,7 @@ export function createMenuModal(
 
     if (view === 'list') drawListView(ctx, screenType, hovered)
     else if (view === 'settings') drawSettingsView(ctx, hovered)
-    else drawConfirmView(ctx, hovered)
+    else drawConfirmView(ctx, screenType, hovered)
 
     ctx.restore()
 
@@ -331,13 +335,8 @@ export function createMenuModal(
         view = 'settings'
         hovered = null
       } else if (isInSecondRow(x, y)) {
-        if (screenType === 'home') {
-          close()
-          transitionTo('main-menu')
-        } else {
-          view = 'confirm-end'
-          hovered = null
-        }
+        view = 'confirm-end'
+        hovered = null
       }
     } else if (view === 'settings') {
       if (isInBackAffordance(x, y)) {
@@ -353,7 +352,7 @@ export function createMenuModal(
         hovered = null
       } else if (isInConfirmBtn(x, y)) {
         close()
-        transitionTo('home')
+        transitionTo(screenType === 'home' ? 'main-menu' : 'home')
       }
     }
 

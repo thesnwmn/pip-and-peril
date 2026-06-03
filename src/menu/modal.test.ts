@@ -155,13 +155,31 @@ describe('createMenuModal — home screen (AC 9, 10)', () => {
     expect(modal.isOpen()).toBe(true)
   })
 
-  it('tapping Quit Game closes modal and transitions to main-menu (AC 10)', () => {
+  it('tapping Quit Game shows confirmation view', () => {
+    const modal = createMenuModal('home', vi.fn())
+    modal.open()
+    modal.handleClick(SECOND_ROW.x, SECOND_ROW.y)
+    expect(modal._getView()).toBe('confirm-end')
+    expect(modal.isOpen()).toBe(true)
+  })
+
+  it('Confirm on home screen transitions to main-menu', () => {
     const transition = vi.fn()
     const modal = createMenuModal('home', transition)
     modal.open()
     modal.handleClick(SECOND_ROW.x, SECOND_ROW.y)
+    modal.handleClick(CONFIRM_BTN.x, CONFIRM_BTN.y)
     expect(modal.isOpen()).toBe(false)
     expect(transition).toHaveBeenCalledWith('main-menu')
+  })
+
+  it('Cancel on home confirmation returns to list view', () => {
+    const modal = createMenuModal('home', vi.fn())
+    modal.open()
+    modal.handleClick(SECOND_ROW.x, SECOND_ROW.y)
+    modal.handleClick(CANCEL_BTN.x, CANCEL_BTN.y)
+    expect(modal._getView()).toBe('list')
+    expect(modal.isOpen()).toBe(true)
   })
 })
 
