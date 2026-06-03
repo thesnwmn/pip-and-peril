@@ -34,7 +34,7 @@ const STATUS_BAR_H = 50
 const MAP_BOTTOM = MAP_Y + 5 * TILE_SIZE  // 410
 
 // Room selection panel — sits 6 px below map; map fills to bottom when panel not shown
-const PANEL_TOP = MAP_BOTTOM + 6          // 416
+const PANEL_TOP = MAP_BOTTOM + 20         // 430
 const PANEL_CORNER = 8
 const PANEL_HEADER_H = 28
 const PANEL_SIDE_MARGIN = 12
@@ -61,7 +61,7 @@ interface HitRect {
 }
 
 type EncounterTransition =
-  | { phase: 'rising'; startTime: number }
+  | { phase: 'rising'; startTime: number; fromPanelTop: number }
   | { phase: 'falling'; startTime: number; fallAction: 'victory' | 'defeat' }
 
 function cardColors(roomType: import('../map/types').RoomType): {
@@ -473,7 +473,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       dicePool = resetPool(dicePool)
       bannerStartTime = null
       whisper = null
-      transition = { phase: 'rising', startTime: performance.now() }
+      transition = { phase: 'rising', startTime: performance.now(), fromPanelTop: livePanelTop }
     }
   }
 
@@ -533,7 +533,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     if (transition.phase === 'rising') {
       const easedT = easeOut(t)
       return {
-        currentPanelTop: Math.round(lerp(LOGICAL_H, COMBAT_PANEL_TOP, easedT)),
+        currentPanelTop: Math.round(lerp(transition.fromPanelTop, COMBAT_PANEL_TOP, easedT)),
         currentZoom: lerp(1.0, COMBAT_CONFIG.cameraZoom, easedT),
         pipNatX,
         pipNatY,
@@ -595,9 +595,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 
     // ── Map (with zoom transform during encounter register) ──────────────────
-    // Clip rect always uses the full map height so the viewport size never
-    // changes as the panel rises or falls; the panel draws on top of the map.
-    const mapAreaH = LOGICAL_H - MAP_Y
+    const mapAreaH = Math.max(0, currentPanelTop - MAP_Y)
 
     ctx.save()
     ctx.beginPath()

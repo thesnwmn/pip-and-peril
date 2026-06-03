@@ -7,8 +7,8 @@ import { canAfford, rollPool, spendPips } from './pool'
 const LOGICAL_W = 390
 const LOGICAL_H = 844
 
-// PANEL_TOP must match game.ts (MAP_BOTTOM + 6 = 416)
-export const PANEL_TOP = 416
+// PANEL_TOP must match game.ts (MAP_BOTTOM + 20 = 430)
+export const PANEL_TOP = 430
 const PANEL_CORNER = 8
 const SIDE_MARGIN = 16
 
@@ -53,10 +53,10 @@ const ACTION_BTN_RADIUS = 8
 
 // Encounter log zone — below action buttons
 const ACTION_ROWS = Math.ceil(3 / 2)  // 2 rows for 3 actions
-const ACTIONS_BOTTOM = ACTION_Y + ACTION_ROWS * ACTION_BTN_H + (ACTION_ROWS - 1) * 8  // = 748
-const LOG_RULE_Y = ACTIONS_BOTTOM + 8     // = 756
+const ACTIONS_BOTTOM = ACTION_Y + ACTION_ROWS * ACTION_BTN_H + (ACTION_ROWS - 1) * 8
+const LOG_RULE_Y = ACTIONS_BOTTOM + 6
 const LOG_LINE_H = 14
-const LOG_LINE1_Y = LOG_RULE_Y + 7        // = 763
+const LOG_LINE1_Y = LOG_RULE_Y + 5
 
 // ── Pip dot patterns for d6 ───────────────────────────────────────────────────
 
