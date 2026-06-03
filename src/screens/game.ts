@@ -592,7 +592,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 
     // ── Map (with zoom transform during encounter register) ──────────────────
-    const mapAreaH = currentPanelTop - MAP_Y
+    const mapAreaH = Math.max(0, currentPanelTop - MAP_Y)
     const mapAreaCenterY = MAP_Y + mapAreaH / 2
 
     ctx.save()
@@ -600,7 +600,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     ctx.rect(0, MAP_Y, LOGICAL_W, mapAreaH)
     ctx.clip()
 
-    if (currentZoom !== 1.0) {
+    if (combat !== null || transition !== null) {
       // Scale around pip tile centre so pip stays centred in the map area
       ctx.translate(PIP_CANVAS_X, mapAreaCenterY)
       ctx.scale(currentZoom, currentZoom)
