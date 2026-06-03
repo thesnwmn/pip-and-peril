@@ -52,9 +52,10 @@ const VIEWPORT_ROWS = 5
 const ARROW_HALF = 13
 
 // Elastic canvas: encounter register constants
-const COMBAT_PANEL_TOP = PANEL_TOP  // combat tray aligns with nav panel top
+const ENCOUNTER_PANEL_GAP = 8  // bg strip between map tiles and combat panel top
+const COMBAT_PANEL_TOP = PANEL_TOP + ENCOUNTER_PANEL_GAP  // 438; panel sits 8px below nav panel boundary
 const TRANSITION_DURATION = 450  // ms
-const COMBAT_MAP_CENTER_Y = MAP_Y + (COMBAT_PANEL_TOP - MAP_Y) / 2  // ~248.5
+const COMBAT_MAP_CENTER_Y = MAP_Y + (COMBAT_PANEL_TOP - MAP_Y) / 2  // ~244
 
 interface HitRect {
   x: number; y: number; w: number; h: number; id: string
@@ -597,7 +598,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     // ── Map (with zoom transform during encounter register) ──────────────────
     ctx.save()
     ctx.beginPath()
-    ctx.rect(MAP_X, MAP_Y, VIEWPORT_COLS * TILE_SIZE, LOGICAL_H - MAP_Y)
+    ctx.rect(0, MAP_Y, LOGICAL_W, LOGICAL_H - MAP_Y)
     ctx.clip()
 
     if (combat !== null || transition !== null) {
@@ -646,12 +647,17 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
           drawRoomPanel(ctx, state, cardTeases, hoveredElement, hitRects)
         }
       }
-      if (combat !== null && (combat.phase === 'victory' || combat.phase === 'defeat')) {
+      if (combat !== null) {
+        // Gap strip — bg colour between map and the combat panel surface
+        ctx.fillStyle = colors.bg
+        ctx.fillRect(0, currentPanelTop - ENCOUNTER_PANEL_GAP, LOGICAL_W, ENCOUNTER_PANEL_GAP)
         // Banner — shown during stable combat and during the falling transition
-        const bst = bannerStartTime ?? timestamp
-        drawCombatBanner(ctx, timestamp, combat, bst, currentPanelTop)
-      } else if (combat !== null) {
-        dicePanel.draw(ctx, timestamp)
+        if (combat.phase === 'victory' || combat.phase === 'defeat') {
+          const bst = bannerStartTime ?? timestamp
+          drawCombatBanner(ctx, timestamp, combat, bst, currentPanelTop)
+        } else {
+          dicePanel.draw(ctx, timestamp)
+        }
       }
     } else if (state.uiState === 'choosing') {
       drawRoomPanel(ctx, state, cardTeases, hoveredElement, hitRects)

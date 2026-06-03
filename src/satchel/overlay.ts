@@ -12,9 +12,8 @@ export const SATCHEL_BTN_SIZE = 44
 export const SATCHEL_BTN_X = LOGICAL_W - 8 - SATCHEL_BTN_SIZE  // 338
 export const SATCHEL_BTN_Y = LOGICAL_H - 8 - SATCHEL_BTN_SIZE  // 792
 
-// Overlay covers only the panel zone so the map remains visible above
-// Matches PANEL_TOP in game.ts (LOG_BOTTOM + 6 ≈ 472)
-export const OVERLAY_TOP = 472
+// Overlay covers the same zone as the combat panel (PANEL_TOP + ENCOUNTER_PANEL_GAP = 438)
+export const OVERLAY_TOP = 438
 
 const HEADER_H = 44
 const TAB_H = 40
