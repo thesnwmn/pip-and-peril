@@ -157,7 +157,7 @@ None. Gold range (2–4) and the decision to exclude item drops from this spec a
 
 ## Shipped
 
-**Date:** 2026-06-03 · **PR:** #
+**Date:** 2026-06-03 · **PR:** [#41](https://github.com/thesnwmn/pip-and-peril/pull/41)
 
 ### What was built
 

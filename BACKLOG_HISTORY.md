@@ -18,7 +18,7 @@ Original one- or two-sentence summary from the backlog.
 
 ### 019 · Combat Victory Rewards
 
-**Shipped:** 2026-06-03 · **PR:** # · **Spec:** [docs/features/history/019-combat-victory-rewards.md](docs/features/history/019-combat-victory-rewards.md)
+**Shipped:** 2026-06-03 · **PR:** [#41](https://github.com/thesnwmn/pip-and-peril/pull/41) · **Spec:** [docs/features/history/019-combat-victory-rewards.md](docs/features/history/019-combat-victory-rewards.md)
 
 Winning a combat grants **gold** (random roll within the enemy's reward range), giving the player
 their first source of currency and making the Satchel's Pouch real rather than always-zero. Each
