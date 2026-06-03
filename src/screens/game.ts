@@ -16,14 +16,10 @@ import type { CombatState } from '../combat/types'
 import { GOBLIN } from '../combat/types'
 import { applyEnemyAttack, applyEvade, applyFocus, applyStrike } from '../combat/encounter'
 import { drawCombatBanner, drawCombatStatusBar } from '../combat/panel'
+import { createMenuModal, drawMenuButton, isInMenuButton } from '../menu/modal'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
-
-const BACK_LINK_X = 16
-const BACK_LINK_Y = 16
-const BACK_LINK_W = 150
-const BACK_LINK_H = 32
 
 // Status bar
 const STATUS_BAR_H = 50
@@ -139,15 +135,7 @@ function drawNavArrows(
 function drawStatusBar(
   ctx: CanvasRenderingContext2D,
   state: DungeonState,
-  isMouseDevice: boolean,
-  hoveredElement: string | null,
 ): void {
-  ctx.font = '12px system-ui, -apple-system, sans-serif'
-  ctx.fillStyle = isMouseDevice && hoveredElement === 'back' ? colors.textPrimary : colors.textMuted
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'middle'
-  ctx.fillText('← Quit Run', BACK_LINK_X, BACK_LINK_Y + BACK_LINK_H / 2)
-
   const barMidY = STATUS_BAR_H / 2
 
   ctx.font = 'bold 12px monospace'
@@ -380,6 +368,21 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   let combat: CombatState | null = null
   let bannerStartTime: number | null = null
 
+  function resetRunState(): void {
+    state = initDungeon()
+    dicePool = starterPool()
+    pipHp = pipMaxHp
+    combat = null
+    bannerStartTime = null
+    cardTeases = []
+    hitRects = []
+  }
+
+  const menuModal = createMenuModal('game', (screen) => {
+    resetRunState()
+    transitionTo(screen)
+  })
+
   const dicePanel = createDicePanel(
     () => dicePool,
     {
@@ -472,15 +475,6 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     })
   }
 
-  function isInBackLink(x: number, y: number): boolean {
-    return (
-      x >= BACK_LINK_X &&
-      x <= BACK_LINK_X + BACK_LINK_W &&
-      y >= BACK_LINK_Y &&
-      y <= BACK_LINK_Y + BACK_LINK_H
-    )
-  }
-
   function hitTest(x: number, y: number): string | null {
     for (const rect of hitRects) {
       if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) {
@@ -499,6 +493,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         if (combat.phase === 'victory') {
           endCombatVictory()
         } else {
+          resetRunState()
           transitionTo('home')
           return
         }
@@ -519,10 +514,13 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
 
     // Status bar
     if (combat !== null) {
-      drawCombatStatusBar(ctx, pipHp, pipMaxHp, combat, isMouseDevice, hoveredElement)
+      drawCombatStatusBar(ctx, pipHp, pipMaxHp, combat)
     } else {
-      drawStatusBar(ctx, state, isMouseDevice, hoveredElement)
+      drawStatusBar(ctx, state)
     }
+
+    // MENU button always visible in status bar
+    drawMenuButton(ctx, !menuModal.isOpen() && isMouseDevice && hoveredElement === 'menu-btn')
 
     drawLogStrip(ctx, state)
 
@@ -538,12 +536,18 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     } else {
       drawNavHint(ctx)
     }
+
+    menuModal.draw(ctx)
   }
 
   function handleClick(x: number, y: number): void {
-    // Back link is always active
-    if (isInBackLink(x, y)) {
-      transitionTo('home')
+    // Modal consumes all input when open
+    if (menuModal.handleClick(x, y)) return
+
+    // MENU button
+    if (isInMenuButton(x, y)) {
+      dicePanel.handlePointerMove(-1, -1)  // clear any stale dice hover under the scrim
+      menuModal.open()
       return
     }
 
@@ -553,6 +557,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         if (combat.phase === 'victory') {
           endCombatVictory()
         } else if (combat.phase === 'defeat') {
+          resetRunState()
           transitionTo('home')
         } else {
           dicePanel.handleClick(x, y)
@@ -597,7 +602,6 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       const neighbour = state.grid.cells[nr][nc]
 
       if (neighbour === null) {
-        // Check this dir has a nav arrow (exit from pip + in bounds + null)
         const pipCell = state.grid.cells[state.pip.row][state.pip.col]
         if (!pipCell || !(pipCell.exits & dir)) return
 
@@ -619,8 +623,14 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   function handlePointerMove(x: number, y: number): void {
     isMouseDevice = true
 
-    if (isInBackLink(x, y)) {
-      hoveredElement = 'back'
+    // Modal blocks hover when open
+    if (menuModal.handlePointerMove(x, y)) {
+      hoveredElement = null
+      return
+    }
+
+    if (isInMenuButton(x, y)) {
+      hoveredElement = 'menu-btn'
       return
     }
 

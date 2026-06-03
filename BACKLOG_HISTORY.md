@@ -16,6 +16,17 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 008 · Menu Button & Pause Modal
+
+**Shipped:** 2026-06-02 · **PR:** [#31](https://github.com/thesnwmn/pip-and-peril/pull/31) · **Spec:** [docs/features/history/008-menu-button-pause-modal.md](docs/features/history/008-menu-button-pause-modal.md)
+
+Replaces the raw text back-links on the Home and Game screens with a proper MENU button in the
+status bar. Tapping it opens a modal with meta actions: Settings (stub) and a context-labelled
+End Run / Back to Menu. End Run requires a confirmation step. All in-game info (stats, map,
+inventory) belongs to the future Satchel — this menu is deliberately administrative only.
+
+---
+
 ### 006 · Combat Encounter
 
 **Shipped:** 2026-06-02 · **PR:** [#25](https://github.com/thesnwmn/pip-and-peril/pull/25) · **Spec:** [docs/features/history/006-combat-encounter.md](docs/features/history/006-combat-encounter.md)

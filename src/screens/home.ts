@@ -1,13 +1,9 @@
 import { colors } from '../colors'
 import { ScreenController } from './main-menu'
+import { createMenuModal, drawMenuButton, isInMenuButton } from '../menu/modal'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
-
-const BACK_LINK_X = 16
-const BACK_LINK_Y = 16
-const BACK_LINK_W = 150
-const BACK_LINK_H = 32
 
 const BUTTON_W = 280
 const BUTTON_H = 55
@@ -18,14 +14,7 @@ export function createHome(transitionTo: (screen: string) => void): ScreenContro
   let hoveredElement: string | null = null
   let isMouseDevice = false
 
-  function isInBackLink(x: number, y: number): boolean {
-    return (
-      x >= BACK_LINK_X &&
-      x <= BACK_LINK_X + BACK_LINK_W &&
-      y >= BACK_LINK_Y &&
-      y <= BACK_LINK_Y + BACK_LINK_H
-    )
-  }
+  const menuModal = createMenuModal('home', transitionTo)
 
   function isInStartRunButton(x: number, y: number): boolean {
     return (
@@ -40,11 +29,7 @@ export function createHome(transitionTo: (screen: string) => void): ScreenContro
     ctx.fillStyle = colors.bg
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 
-    ctx.font = '12px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = isMouseDevice && hoveredElement === 'back' ? colors.textPrimary : colors.textMuted
-    ctx.textAlign = 'left'
-    ctx.textBaseline = 'middle'
-    ctx.fillText('← Main Menu', BACK_LINK_X, BACK_LINK_Y + BACK_LINK_H / 2)
+    drawMenuButton(ctx, !menuModal.isOpen() && isMouseDevice && hoveredElement === 'menu-btn')
 
     ctx.font = 'bold 24px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.textPrimary
@@ -77,27 +62,33 @@ export function createHome(transitionTo: (screen: string) => void): ScreenContro
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText('START RUN', LOGICAL_W / 2, BUTTON_Y + BUTTON_H / 2)
+
+    menuModal.draw(ctx)
   }
 
   function handleClick(x: number, y: number): void {
-    if (isInBackLink(x, y)) {
-      transitionTo('main-menu')
-    } else if (isInStartRunButton(x, y)) {
+    if (menuModal.handleClick(x, y)) return
+    if (isInMenuButton(x, y)) {
+      menuModal.open()
+      return
+    }
+    if (isInStartRunButton(x, y)) {
       transitionTo('game')
     }
   }
 
   function handlePointerMove(x: number, y: number): void {
     isMouseDevice = true
-    let newHovered: string | null = null
-    if (isInBackLink(x, y)) {
-      newHovered = 'back'
-    } else if (isInStartRunButton(x, y)) {
-      newHovered = 'start-run'
+    if (menuModal.handlePointerMove(x, y)) {
+      hoveredElement = null
+      return
     }
-
-    if (newHovered !== hoveredElement) {
-      hoveredElement = newHovered
+    if (isInMenuButton(x, y)) {
+      hoveredElement = 'menu-btn'
+    } else if (isInStartRunButton(x, y)) {
+      hoveredElement = 'start-run'
+    } else {
+      hoveredElement = null
     }
   }
 
