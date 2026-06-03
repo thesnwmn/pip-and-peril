@@ -11,7 +11,7 @@ import { pickRandom } from '../navigation/room-pool'
 import type { ScreenController } from './main-menu'
 import type { DicePool } from '../dice/pool'
 import { resetPool, starterPool } from '../dice/pool'
-import { createDicePanel, PANEL_TOP as DICE_PANEL_TOP } from '../dice/panel'
+import { createDicePanel } from '../dice/panel'
 import type { CombatState } from '../combat/types'
 import { GOBLIN } from '../combat/types'
 import { applyEnemyAttack, applyEvade, applyFocus, applyStrike, rollGoldReward } from '../combat/encounter'
@@ -19,6 +19,8 @@ import { drawCombatBanner, drawCombatStatusBar } from '../combat/panel'
 import { createMenuModal, drawMenuButton, isInMenuButton } from '../menu/modal'
 import { createSatchelOverlay, drawSatchelButton, isInSatchelButton } from '../satchel/overlay'
 import type { Inventory } from '../satchel/types'
+import { COMBAT_CONFIG } from '../encounter/config'
+import { easeIn, easeOut, lerp } from '../animation/easing'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
@@ -54,11 +56,23 @@ const VIEWPORT_ROWS = 5
 // Nav arrow
 const ARROW_HALF = 13
 
+// Elastic canvas: encounter register constants
+const AVAILABLE_H = LOGICAL_H - STATUS_BAR_H                              // 794
+const COMBAT_PANEL_H = Math.round(AVAILABLE_H * COMBAT_CONFIG.panelHeightFraction) // 397
+const COMBAT_PANEL_TOP = LOGICAL_H - COMBAT_PANEL_H                       // 447
+const TRANSITION_DURATION = 300  // ms
+
+// Pip tile centre in canvas space (camera centred on pip → pip always at viewport centre)
+const PIP_CANVAS_X = MAP_X + Math.floor(VIEWPORT_COLS / 2) * TILE_SIZE + TILE_SIZE / 2  // 190
+const PIP_CANVAS_Y = MAP_Y + Math.floor(VIEWPORT_ROWS / 2) * TILE_SIZE + TILE_SIZE / 2  // 230
+
 interface HitRect {
   x: number; y: number; w: number; h: number; id: string
 }
 
-const ALL_DIRS: ExitMask[] = [N, E, S, W]
+type EncounterTransition =
+  | { phase: 'rising'; startTime: number }
+  | { phase: 'falling'; startTime: number; fallAction: 'victory' | 'defeat' }
 
 function cardColors(roomType: import('../map/types').RoomType): {
   border: string; bg: string; text: string
@@ -370,6 +384,10 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   let pipHp = pipMaxHp
   let combat: CombatState | null = null
   let bannerStartTime: number | null = null
+  let transition: EncounterTransition | null = null
+
+  // Last-computed panel top, updated every frame — used by dice panel hit detection
+  let livePanelTop = PANEL_TOP
 
   const satchelOverlay = createSatchelOverlay()
 
@@ -379,6 +397,8 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     pipHp = pipMaxHp
     combat = null
     bannerStartTime = null
+    transition = null
+    livePanelTop = PANEL_TOP
     cardTeases = []
     hitRects = []
     inventory = { gold: 0, items: [] }
@@ -392,6 +412,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
 
   const dicePanel = createDicePanel(
     () => dicePool,
+    () => livePanelTop,
     {
       onStateChange: (pool) => { dicePool = pool },
       addLog: (message) => { addLogEntry(message, 'normal') },
@@ -466,16 +487,17 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   function checkCombatTrigger(): void {
     const cell = state.grid.cells[state.pip.row][state.pip.col]
     if (cell && cell.roomType === 'enemy' && cell.cleared !== true) {
+      // Lock camera on Pip's tile before the zoom transition begins
+      state = { ...state, camera: { ...state.pip } }
       combat = { enemy: { ...GOBLIN }, phase: 'awaiting-roll', evadeBuffer: 0, goldAwarded: 0 }
       dicePool = resetPool(dicePool)
       bannerStartTime = null
+      transition = { phase: 'rising', startTime: performance.now() }
     }
   }
 
-  function endCombatVictory(): void {
-    state = { ...state, enemiesDefeated: state.enemiesDefeated + 1 }
-    combat = null
-    dicePool = resetPool(dicePool)
+  function startFallingTransition(fallAction: 'victory' | 'defeat'): void {
+    transition = { phase: 'falling', startTime: performance.now(), fallAction }
     bannerStartTime = null
   }
 
@@ -495,51 +517,129 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     return null
   }
 
+  function computeCanvasState(timestamp: DOMHighResTimeStamp): {
+    currentPanelTop: number
+    currentZoom: number
+  } {
+    if (combat === null && transition === null) {
+      return { currentPanelTop: PANEL_TOP, currentZoom: 1.0 }
+    }
+
+    if (transition === null) {
+      // Stable combat — panel fully risen
+      return { currentPanelTop: COMBAT_PANEL_TOP, currentZoom: COMBAT_CONFIG.cameraZoom }
+    }
+
+    const elapsed = timestamp - transition.startTime
+    const t = Math.min(1, Math.max(0, elapsed / TRANSITION_DURATION))
+
+    if (transition.phase === 'rising') {
+      const easedT = easeOut(t)
+      return {
+        currentPanelTop: Math.round(lerp(LOGICAL_H, COMBAT_PANEL_TOP, easedT)),
+        currentZoom: lerp(1.0, COMBAT_CONFIG.cameraZoom, easedT),
+      }
+    } else {
+      const easedT = easeIn(t)
+      return {
+        currentPanelTop: Math.round(lerp(COMBAT_PANEL_TOP, LOGICAL_H, easedT)),
+        currentZoom: lerp(COMBAT_CONFIG.cameraZoom, 1.0, easedT),
+      }
+    }
+  }
+
   function draw(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
-    // Banner auto-advance
-    if (combat !== null && bannerStartTime !== null &&
-        (combat.phase === 'victory' || combat.phase === 'defeat')) {
-      const timeout = combat.phase === 'victory' ? 1500 : 2000
-      if (timestamp - bannerStartTime >= timeout) {
-        if (combat.phase === 'victory') {
-          endCombatVictory()
+    // ── Transition completion ────────────────────────────────────────────────
+    if (transition !== null) {
+      const elapsed = timestamp - transition.startTime
+      if (elapsed >= TRANSITION_DURATION) {
+        if (transition.phase === 'rising') {
+          transition = null  // combat stable
         } else {
-          resetRunState()
-          transitionTo('home')
-          return
+          const { fallAction } = transition
+          transition = null
+          livePanelTop = PANEL_TOP
+          if (fallAction === 'victory') {
+            state = { ...state, enemiesDefeated: state.enemiesDefeated + 1 }
+            combat = null
+            dicePool = resetPool(dicePool)
+            bannerStartTime = null
+          } else {
+            resetRunState()
+            transitionTo('home')
+            return
+          }
         }
       }
     }
+
+    // ── Banner auto-advance → start falling transition ──────────────────────
+    if (combat !== null && bannerStartTime !== null && transition === null &&
+        (combat.phase === 'victory' || combat.phase === 'defeat')) {
+      const timeout = combat.phase === 'victory' ? 1500 : 2000
+      if (timestamp - bannerStartTime >= timeout) {
+        startFallingTransition(combat.phase)
+      }
+    }
+
+    // ── Compute animated canvas state ────────────────────────────────────────
+    const { currentPanelTop, currentZoom } = computeCanvasState(timestamp)
+    livePanelTop = currentPanelTop
 
     hitRects = []
 
     ctx.fillStyle = colors.bg
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 
-    drawMap(ctx, state.grid, state.fog, state.camera, state.pip, DUNGEON)
+    // ── Map (with zoom transform during encounter register) ──────────────────
+    const mapAreaH = currentPanelTop - MAP_Y
+    const mapAreaCenterY = MAP_Y + mapAreaH / 2
 
-    // Nav arrows only when not in combat
-    if (state.uiState === 'idle' && combat === null) {
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(0, MAP_Y, LOGICAL_W, mapAreaH)
+    ctx.clip()
+
+    if (currentZoom !== 1.0) {
+      // Scale around pip tile centre so pip stays centred in the map area
+      ctx.translate(PIP_CANVAS_X, mapAreaCenterY)
+      ctx.scale(currentZoom, currentZoom)
+      ctx.translate(-PIP_CANVAS_X, -PIP_CANVAS_Y)
+    }
+
+    drawMap(ctx, state.grid, state.fog, state.camera, state.pip, DUNGEON)
+    ctx.restore()
+
+    // ── Nav arrows (nav register only, not during transition) ────────────────
+    if (state.uiState === 'idle' && combat === null && transition === null) {
       drawNavArrows(ctx, state, hitRects)
     }
 
-    // Status bar
-    if (combat !== null) {
-      drawCombatStatusBar(ctx, pipHp, pipMaxHp, combat)
+    // ── Status bar ───────────────────────────────────────────────────────────
+    if (combat !== null || transition !== null) {
+      drawCombatStatusBar(ctx, pipHp, pipMaxHp, combat ?? { enemy: GOBLIN, phase: 'awaiting-roll', evadeBuffer: 0, goldAwarded: 0 })
     } else {
       drawStatusBar(ctx, state)
     }
 
-    // MENU button always visible in status bar
+    // MENU button always visible
     drawMenuButton(ctx, !menuModal.isOpen() && isMouseDevice && hoveredElement === 'menu-btn')
 
     drawLogStrip(ctx, state)
 
-    // Panel zone
-    if (combat !== null) {
-      if (combat.phase === 'victory' || combat.phase === 'defeat') {
-        drawCombatBanner(ctx, timestamp, combat, bannerStartTime ?? timestamp)
-      } else {
+    // ── Encounter register: draw satchel BEFORE panel so panel covers it ─────
+    const inEncounterRegister = combat !== null || transition !== null
+    if (inEncounterRegister) {
+      drawSatchelButton(ctx, true, false)
+    }
+
+    // ── Panel zone ───────────────────────────────────────────────────────────
+    if (inEncounterRegister) {
+      if (combat !== null && (combat.phase === 'victory' || combat.phase === 'defeat')) {
+        // Banner — shown during stable combat and during the falling transition
+        const bst = bannerStartTime ?? timestamp
+        drawCombatBanner(ctx, timestamp, combat, bst, currentPanelTop)
+      } else if (combat !== null) {
         dicePanel.draw(ctx, timestamp)
       }
     } else if (state.uiState === 'choosing') {
@@ -548,16 +648,17 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       drawNavHint(ctx)
     }
 
-    // Satchel button — drawn after panels so it floats on top; greyed during combat
-    drawSatchelButton(
-      ctx,
-      combat !== null,
-      !menuModal.isOpen() && !satchelOverlay.isOpen() && isMouseDevice && hoveredElement === 'satchel-btn',
-    )
+    // ── Satchel button (nav register — floats on top of nav panels) ──────────
+    if (!inEncounterRegister) {
+      drawSatchelButton(
+        ctx,
+        false,
+        !menuModal.isOpen() && !satchelOverlay.isOpen() && isMouseDevice && hoveredElement === 'satchel-btn',
+      )
+    }
 
-    // Satchel overlay draws on top of everything except the menu modal
+    // Satchel overlay and menu modal always on top
     satchelOverlay.draw(ctx, timestamp, inventory, state)
-
     menuModal.draw(ctx)
   }
 
@@ -568,14 +669,17 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     // Satchel overlay consumes all input when open
     if (satchelOverlay.handleClick(x, y)) return
 
+    // Block all game input during transitions
+    if (transition !== null) return
+
     // MENU button
     if (isInMenuButton(x, y)) {
-      dicePanel.handlePointerMove(-1, -1)  // clear any stale dice hover under the scrim
+      dicePanel.handlePointerMove(-1, -1)
       menuModal.open()
       return
     }
 
-    // Satchel button — navigation only, not during combat
+    // Satchel button — navigation only, not during combat or transition
     if (isInSatchelButton(x, y) && combat === null) {
       satchelOverlay.open()
       return
@@ -583,12 +687,11 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
 
     // Combat active
     if (combat !== null) {
-      if (y >= DICE_PANEL_TOP) {
+      if (y >= livePanelTop) {
         if (combat.phase === 'victory') {
-          endCombatVictory()
+          startFallingTransition('victory')
         } else if (combat.phase === 'defeat') {
-          resetRunState()
-          transitionTo('home')
+          startFallingTransition('defeat')
         } else {
           dicePanel.handleClick(x, y)
         }
@@ -677,10 +780,11 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       return
     }
 
-    // Combat active
-    if (combat !== null) {
-      if (y >= DICE_PANEL_TOP &&
-          combat.phase !== 'victory' && combat.phase !== 'defeat') {
+    // Combat active (or transitioning)
+    if (combat !== null || transition !== null) {
+      if (y >= livePanelTop && combat !== null &&
+          combat.phase !== 'victory' && combat.phase !== 'defeat' &&
+          transition === null) {
         dicePanel.handlePointerMove(x, y)
       }
       hoveredElement = null

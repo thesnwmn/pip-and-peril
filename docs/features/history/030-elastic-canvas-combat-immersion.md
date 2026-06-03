@@ -262,10 +262,31 @@ within the intent stated above. This item is **READY**.
 
 ## Shipped
 
-**Date:** · **PR:** #
+**Date:** 2026-06-03 · **PR:** #TBD
 
 ### What was built
 
+- **`src/animation/easing.ts`** — `easeOut`, `easeIn`, `lerp` pure math functions (cubic easing).
+- **`src/encounter/config.ts`** — `EncounterConfig` interface + `COMBAT_CONFIG` (panelHeightFraction 0.50, cameraZoom 2.3×, cameraTarget `'room'`, transitionSpeed `'normal'`). Zoom of 2.3× calibrated so the active room tile occupies ~42% of map area height (within the 40–60% target).
+- **`src/screens/game.ts`** — Elastic canvas state machine: `EncounterTransition` discriminated union, `computeCanvasState()` interpolator, full draw-loop orchestration. Rising uses ease-out; falling uses ease-in; both complete in 300 ms. Canvas transform (clip + scale anchored at pip-canvas centre → map-area centre) handles camera zoom without modifying `renderer.ts`. Nav input and dice interaction are blocked during transitions.
+- **`src/dice/panel.ts`** — `getPanelTop: () => number` getter added to factory; draw applies `ctx.translate(0, offset)` and hit rects shift by the same offset so click/hover stay aligned.
+- **`src/combat/panel.ts`** — `drawCombatBanner` accepts required `panelTopOverride: number` and applies the same translate pattern.
+
+All 006 combat AC (1–21) continue to pass unchanged. New animation math tests in `src/animation/easing.test.ts`.
+
 ### Evidence
 
+- `npm run test` — 197 tests pass (13 test files), including the full 006 combat suite and new easing unit tests.
+- `npm run typecheck` — zero errors on source files.
+- New tests: `easeOut` at t=0/0.5/1; `easeIn` at t=0/0.5/1; `lerp` at t=0/0.5/1 and descending range.
+
 ### Play-test
+
+1. Open the game (`npm run dev` → http://localhost:5173). Start a new run.
+2. Confirm the map fills the full canvas below the status bar and nav arrows work as before.
+3. Navigate to an **enemy** room (enter via room-selection card, or backtrack into a cleared enemy room).
+4. **Rise animation**: combat panel slides up from screen bottom in ~300 ms with ease-out. Map simultaneously zooms in; active room tile fills ~40–50% of map area above panel. Confirm no snap or jump.
+5. Play combat: roll dice, use Strike/Evade/Focus. Confirm HP bars, dice, and action buttons work.
+6. **Win**: observe victory banner. Wait ~1.5 s or tap — panel sinks in ~300 ms with ease-in, map zooms back to 1×, soft-follow resumes. Nav arrows reappear.
+7. Enter a second enemy room — confirm each combat is a clean enter/exit cycle.
+8. **Lose** (let Pip reach 0 HP): observe defeat banner, panel sinks, game transitions to home screen.
