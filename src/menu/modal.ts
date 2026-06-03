@@ -70,18 +70,11 @@ function drawRoundRect(
 }
 
 export function drawMenuButton(ctx: CanvasRenderingContext2D, isHovered: boolean): void {
-  drawRoundRect(ctx, MENU_BTN_X, MENU_BTN_Y, MENU_BTN_W, MENU_BTN_H, MENU_BTN_RADIUS)
-  ctx.fillStyle = isHovered ? colors.surfaceRaised : colors.surface
-  ctx.fill()
-  ctx.strokeStyle = colors.gold
-  ctx.lineWidth = 1
-  ctx.stroke()
-
   ctx.font = 'bold 11px system-ui, -apple-system, sans-serif'
-  ctx.fillStyle = colors.gold
-  ctx.textAlign = 'center'
+  ctx.fillStyle = isHovered ? colors.textPrimary : colors.textMuted
+  ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
-  ctx.fillText('≡ MENU', MENU_BTN_X + MENU_BTN_W / 2, MENU_BTN_Y + MENU_BTN_H / 2)
+  ctx.fillText('≡ MENU', MENU_BTN_X, MENU_BTN_Y + MENU_BTN_H / 2)
 }
 
 export function isInMenuButton(x: number, y: number): boolean {
@@ -196,7 +189,7 @@ function drawListView(
   ctx.fillStyle = screenType === 'game' ? colors.danger : colors.textPrimary
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
-  ctx.fillText(screenType === 'home' ? 'Back to Menu' : 'End Run', MODAL_CARD_X + 16, row2Y + MODAL_ROW_H / 2)
+  ctx.fillText(screenType === 'home' ? 'Quit Game' : 'End Run', MODAL_CARD_X + 16, row2Y + MODAL_ROW_H / 2)
 }
 
 function drawSettingsView(

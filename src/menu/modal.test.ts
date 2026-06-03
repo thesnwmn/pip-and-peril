@@ -155,7 +155,7 @@ describe('createMenuModal — home screen (AC 9, 10)', () => {
     expect(modal.isOpen()).toBe(true)
   })
 
-  it('tapping Back to Menu closes modal and transitions to main-menu (AC 10)', () => {
+  it('tapping Quit Game closes modal and transitions to main-menu (AC 10)', () => {
     const transition = vi.fn()
     const modal = createMenuModal('home', transition)
     modal.open()
