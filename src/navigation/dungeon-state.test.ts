@@ -142,21 +142,17 @@ describe('updateCamera', () => {
       .toEqual({ col: 6, row: 5 })
   })
 
-  it('clamps camera to grid west boundary', () => {
-    // camera at (1,6), pip at (0,6): pip.col=0 < col-hz=0 → col = 0+1=1, then clamp → 0... wait
-    // Actually: pip.col=0 < camera.col-hz = 1-1=0 is NOT less than 0, so no update.
-    // Let's use camera at (0,6) and pip at (0,6) to test zero boundary is preserved.
-    expect(updateCamera({ col: 0, row: 6 }, { col: 0, row: 6 }, grid.width, grid.height))
-      .toEqual({ col: 0, row: 6 })
+  it('clamps camera so dungeon west edge is flush with viewport left edge', () => {
+    // vpHalf=2, so min camera col = 2. A pip at col 0 would push camera to 0+1=1,
+    // but clamp raises it to 2, putting the dungeon west edge at viewport column 0.
+    expect(updateCamera({ col: 3, row: 6 }, { col: 0, row: 6 }, grid.width, grid.height))
+      .toEqual({ col: 2, row: 6 })
   })
 
-  it('clamps camera to grid east boundary', () => {
-    // camera at (11,6), pip at (12,6): pip.col=12 > col+hz=12 is NOT greater, no update
-    // Use camera at (12,6) with pip that would push beyond: impossible since grid is 13 wide (0..12)
-    // Verify clamping by forcing: camera (11,6), pip (12,6): 12 > 11+1=12? No. Camera stays.
-    // Instead test a case where camera would be pushed to boundary:
-    // camera (10,6), pip (12,6): 12 > 10+1=11 → col = 12-1=11. Still within bounds.
-    expect(updateCamera({ col: 10, row: 6 }, { col: 12, row: 6 }, grid.width, grid.height))
-      .toEqual({ col: 11, row: 6 })
+  it('clamps camera so dungeon east edge is flush with viewport right edge', () => {
+    // vpHalf=2, so max camera col = 13-1-2 = 10. A pip at col 12 would push camera
+    // to 12-1=11, but clamp lowers it to 10, putting the dungeon east edge at viewport column 4.
+    expect(updateCamera({ col: 9, row: 6 }, { col: 12, row: 6 }, grid.width, grid.height))
+      .toEqual({ col: 10, row: 6 })
   })
 })

@@ -92,6 +92,10 @@ export function updateCamera(
   gridHeight: number,
 ): GridPos {
   const hz = Math.floor(DEAD_ZONE / 2)
+  // Camera clamp range: keep the viewport fully inside the grid so the dungeon
+  // edge is flush with the screen edge (not floating in the middle of the viewport).
+  // vpHalf = floor(5/2) = 2, matching VIEWPORT_COLS/ROWS = 5 in renderer.ts.
+  const vpHalf = 2
   let col = camera.col
   let row = camera.row
 
@@ -100,8 +104,8 @@ export function updateCamera(
   if (pip.row > row + hz) row = pip.row - hz
   if (pip.row < row - hz) row = pip.row + hz
 
-  col = Math.max(0, Math.min(col, gridWidth - 1))
-  row = Math.max(0, Math.min(row, gridHeight - 1))
+  col = Math.max(vpHalf, Math.min(col, gridWidth - 1 - vpHalf))
+  row = Math.max(vpHalf, Math.min(row, gridHeight - 1 - vpHalf))
 
   return { col, row }
 }
