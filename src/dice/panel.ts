@@ -15,7 +15,7 @@ const SIDE_MARGIN = 16
 // HP bars — two side-by-side columns, each half the screen
 const HP_BAR_H = 8
 const HP_BAR_EMPTY = '#2a2a3a'
-const ENEMY_RED = '#7a1a1a'
+const ENEMY_RED = colors.logEnemy
 const HP_COL_GAP = 8
 const HP_COL_W = (LOGICAL_W - SIDE_MARGIN * 2 - HP_COL_GAP) / 2  // = 175
 const HP_COL1_X = SIDE_MARGIN                                      // = 16
@@ -372,7 +372,7 @@ function drawEncounterLogZone(
 
   for (let i = 0; i < entries.length; i++) {
     ctx.globalAlpha = LOG_OPACITIES[i] ?? 1
-    ctx.fillStyle = colors.logNormal
+    ctx.fillStyle = colors.textPrimary
     ctx.fillText(entries[i].message, SIDE_MARGIN, LOG_LINE1_Y + i * LOG_LINE_H)
   }
   ctx.globalAlpha = 1
