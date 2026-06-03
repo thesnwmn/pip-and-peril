@@ -60,11 +60,10 @@ const ARROW_HALF = 13
 const AVAILABLE_H = LOGICAL_H - STATUS_BAR_H                              // 794
 const COMBAT_PANEL_H = Math.round(AVAILABLE_H * COMBAT_CONFIG.panelHeightFraction) // 397
 const COMBAT_PANEL_TOP = LOGICAL_H - COMBAT_PANEL_H                       // 447
-const TRANSITION_DURATION = 300  // ms
+const TRANSITION_DURATION = 450  // ms
 
-// Pip tile centre in canvas space (camera centred on pip → pip always at viewport centre)
-const PIP_CANVAS_X = MAP_X + Math.floor(VIEWPORT_COLS / 2) * TILE_SIZE + TILE_SIZE / 2  // 190
-const PIP_CANVAS_Y = MAP_Y + Math.floor(VIEWPORT_ROWS / 2) * TILE_SIZE + TILE_SIZE / 2  // 230
+// Y centre of the map area while the combat panel is fully risen
+const COMBAT_MAP_CENTER_Y = MAP_Y + (COMBAT_PANEL_TOP - MAP_Y) / 2  // ~248.5
 
 interface HitRect {
   x: number; y: number; w: number; h: number; id: string
@@ -487,8 +486,6 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   function checkCombatTrigger(): void {
     const cell = state.grid.cells[state.pip.row][state.pip.col]
     if (cell && cell.roomType === 'enemy' && cell.cleared !== true) {
-      // Lock camera on Pip's tile before the zoom transition begins
-      state = { ...state, camera: { ...state.pip } }
       combat = { enemy: { ...GOBLIN }, phase: 'awaiting-roll', evadeBuffer: 0, goldAwarded: 0 }
       dicePool = resetPool(dicePool)
       bannerStartTime = null
@@ -520,14 +517,22 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   function computeCanvasState(timestamp: DOMHighResTimeStamp): {
     currentPanelTop: number
     currentZoom: number
+    pipNatX: number
+    pipNatY: number
+    pipTargetY: number
   } {
+    const vpCol = state.pip.col - (state.camera.col - Math.floor(VIEWPORT_COLS / 2))
+    const vpRow = state.pip.row - (state.camera.row - Math.floor(VIEWPORT_ROWS / 2))
+    const pipNatX = MAP_X + vpCol * TILE_SIZE + TILE_SIZE / 2
+    const pipNatY = MAP_Y + vpRow * TILE_SIZE + TILE_SIZE / 2
+
     if (combat === null && transition === null) {
-      return { currentPanelTop: PANEL_TOP, currentZoom: 1.0 }
+      return { currentPanelTop: PANEL_TOP, currentZoom: 1.0, pipNatX, pipNatY, pipTargetY: pipNatY }
     }
 
     if (transition === null) {
       // Stable combat — panel fully risen
-      return { currentPanelTop: COMBAT_PANEL_TOP, currentZoom: COMBAT_CONFIG.cameraZoom }
+      return { currentPanelTop: COMBAT_PANEL_TOP, currentZoom: COMBAT_CONFIG.cameraZoom, pipNatX, pipNatY, pipTargetY: COMBAT_MAP_CENTER_Y }
     }
 
     const elapsed = timestamp - transition.startTime
@@ -538,12 +543,18 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       return {
         currentPanelTop: Math.round(lerp(LOGICAL_H, COMBAT_PANEL_TOP, easedT)),
         currentZoom: lerp(1.0, COMBAT_CONFIG.cameraZoom, easedT),
+        pipNatX,
+        pipNatY,
+        pipTargetY: lerp(pipNatY, COMBAT_MAP_CENTER_Y, easedT),
       }
     } else {
       const easedT = easeIn(t)
       return {
         currentPanelTop: Math.round(lerp(COMBAT_PANEL_TOP, LOGICAL_H, easedT)),
         currentZoom: lerp(COMBAT_CONFIG.cameraZoom, 1.0, easedT),
+        pipNatX,
+        pipNatY,
+        pipTargetY: lerp(COMBAT_MAP_CENTER_Y, pipNatY, easedT),
       }
     }
   }
@@ -583,7 +594,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     }
 
     // ── Compute animated canvas state ────────────────────────────────────────
-    const { currentPanelTop, currentZoom } = computeCanvasState(timestamp)
+    const { currentPanelTop, currentZoom, pipNatX, pipNatY, pipTargetY } = computeCanvasState(timestamp)
     livePanelTop = currentPanelTop
 
     hitRects = []
@@ -593,7 +604,6 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
 
     // ── Map (with zoom transform during encounter register) ──────────────────
     const mapAreaH = Math.max(0, currentPanelTop - MAP_Y)
-    const mapAreaCenterY = MAP_Y + mapAreaH / 2
 
     ctx.save()
     ctx.beginPath()
@@ -601,10 +611,12 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     ctx.clip()
 
     if (combat !== null || transition !== null) {
-      // Scale around pip tile centre so pip stays centred in the map area
-      ctx.translate(PIP_CANVAS_X, mapAreaCenterY)
+      // Zoom around pip's natural position, shifting it vertically toward the map area centre.
+      // At t=0 and t=1 of either transition pipTargetY === pipNatY, so the transform is
+      // identity at both boundaries — no snap when combat starts or ends.
+      ctx.translate(pipNatX, pipTargetY)
       ctx.scale(currentZoom, currentZoom)
-      ctx.translate(-PIP_CANVAS_X, -PIP_CANVAS_Y)
+      ctx.translate(-pipNatX, -pipNatY)
     }
 
     drawMap(ctx, state.grid, state.fog, state.camera, state.pip, DUNGEON)
