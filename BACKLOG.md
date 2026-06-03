@@ -47,15 +47,13 @@ See `docs/features/017-soft-camera-follow.md` for the full spec.
 > encounter type from the concept plus the major mechanics a player needs to experience a whole run
 > with basic components: earn currency, pick up and use items, survive traps, and defeat a boss to
 > end the run. They are listed in **recommended build order** (dependency-respecting; the Planner
-> sets final priority). The split into phases below is deliberate: **019–024 reach a minimal but
-> complete loop as early as possible** (earn → equip → descend → boss → summary); **025–028 add
-> encounter breadth**; **029 is the optional between-runs outer loop**, which the manager may defer
-> without breaking the in-run loop.
+> sets final priority). The order is deliberate: **019–024 reach a minimal but complete loop as
+> early as possible** (earn → equip → descend → boss → summary), then **025–028 add encounter
+> breadth**, with **029** the optional between-runs outer loop the manager may defer without
+> breaking the in-run loop. Each item's *Depends on* notes carry the real ordering constraints.
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) shipping first — it is already top of READY.
-
-### Phase A — Economy & items foundation
 
 ### 019 · Combat Victory Rewards
 
@@ -86,8 +84,6 @@ The green **Item** room type: Pip enters, finds a single item, and it goes into 
 to make item 020 visible in play. Reuses the encounter register (panel rises, brief reveal).
 **Depends on:** 020 (item acquire/use), 004 (room offer + entry trigger).
 **Related:** Idea 001 (an "already taken — bare pedestal" surprise).
-
-### Phase B — Close the loop (a minimal complete run)
 
 ### 022 · Dungeon Structure: Depth Pacing & Boss Gate
 
@@ -124,8 +120,6 @@ element is the run's record, not a stats grid.
 **Suggested stepping (for the Designer):** ① a stats-based summary that both outcomes route into;
 ② upgrade the centrepiece to the hand-drawn **dungeon sketch** of the explored run.
 **Related:** Idea 017 (Run Summary as Dungeon Sketch), Idea 014 (Dungeon Sketch).
-
-### Phase C — Encounter breadth
 
 ### 025 · Trap Encounter
 
@@ -165,8 +159,6 @@ and world voice; completes the encounter-type set.
 responses with rewards/consequences.
 **Related:** Idea 016 (Dialogue-Primary NPC Panel), Idea 015 (camera signal), Idea 018 (situated
 whisper for world voice).
-
-### Phase D — Outer loop (optional / deferrable)
 
 ### 029 · Meta-Progression: Shiny Scraps & Dice Upgrades
 
