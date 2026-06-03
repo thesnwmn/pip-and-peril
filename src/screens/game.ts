@@ -16,7 +16,7 @@ import type { CombatLogEntry } from '../dice/panel'
 import type { CombatState } from '../combat/types'
 import { GOBLIN } from '../combat/types'
 import { applyEnemyAttack, applyEvade, applyFocus, applyStrike, rollGoldReward } from '../combat/encounter'
-import { drawCombatBanner, drawCombatStatusBar } from '../combat/panel'
+import { drawCombatBanner } from '../combat/panel'
 import { createMenuModal, drawMenuButton, isInMenuButton } from '../menu/modal'
 import { createSatchelOverlay, drawSatchelButton, isInSatchelButton } from '../satchel/overlay'
 import type { Inventory } from '../satchel/types'
@@ -165,31 +165,31 @@ function drawStatusBar(
   ctx.fillText(depthNum, rightX, barMidY)
 }
 
-// Situated whisper: ephemeral narration overlay at the bottom of the map canvas.
+// Situated whisper: ephemeral narration overlay, anchored just below the panel separator.
+// The scrim overlaps the bottom tile row; text appears in the panel-header zone.
 const WHISPER_SCRIM_H = 60
-const WHISPER_TEXT_BOTTOM_OFFSET = 12
+const WHISPER_ANCHOR = PANEL_TOP + 36  // = 452; bottom of scrim / text reference point
 
 function drawSituatedWhisper(
   ctx: CanvasRenderingContext2D,
   text: string,
   alpha: number,
-  mapBottom: number,
 ): void {
   if (alpha <= 0) return
 
-  const scrimTop = mapBottom - WHISPER_SCRIM_H
-  const grad = ctx.createLinearGradient(0, scrimTop, 0, mapBottom)
+  const scrimTop = WHISPER_ANCHOR - WHISPER_SCRIM_H  // = 392
+  const grad = ctx.createLinearGradient(0, scrimTop, 0, WHISPER_ANCHOR)
   grad.addColorStop(0, 'rgba(0,0,0,0)')
   grad.addColorStop(1, `rgba(15,13,10,${0.25 * alpha})`)
   ctx.fillStyle = grad
   ctx.fillRect(0, scrimTop, LOGICAL_W, WHISPER_SCRIM_H)
 
   ctx.globalAlpha = alpha
-  ctx.font = '11px monospace'
+  ctx.font = '13px monospace'
   ctx.fillStyle = colors.logNormal
   ctx.textAlign = 'center'
   ctx.textBaseline = 'bottom'
-  ctx.fillText(text, LOGICAL_W / 2, mapBottom - WHISPER_TEXT_BOTTOM_OFFSET)
+  ctx.fillText(text, LOGICAL_W / 2, WHISPER_ANCHOR - 14)
   ctx.globalAlpha = 1
 }
 
@@ -392,6 +392,13 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       onStateChange: (pool) => { dicePool = pool },
       addLog: (message) => { addLogEntry(message, 'normal') },
       getCombatLog: () => combatLog,
+      getHpInfo: () => combat ? {
+        pipHp,
+        pipMaxHp,
+        enemyHp: combat.enemy.hp,
+        enemyMaxHp: combat.enemy.maxHp,
+        enemyName: combat.enemy.name,
+      } : null,
       onBeforeRoll: (): boolean => {
         if (combat === null) return true
         if (combat.phase === 'awaiting-roll') {
@@ -615,11 +622,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     }
 
     // ── Status bar ───────────────────────────────────────────────────────────
-    if (combat !== null || transition !== null) {
-      drawCombatStatusBar(ctx, pipHp, pipMaxHp, combat ?? { enemy: GOBLIN, phase: 'awaiting-roll', evadeBuffer: 0, goldAwarded: 0 })
-    } else {
-      drawStatusBar(ctx, state)
-    }
+    drawStatusBar(ctx, state)
 
     // ── Situated whisper (nav register, idle only) ───────────────────────────
     if (whisper !== null && combat === null && transition === null && state.uiState === 'idle') {
@@ -627,8 +630,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       if (elapsed >= WHISPER_TOTAL_MS) {
         whisper = null
       } else {
-        const alpha = whisperAlpha(elapsed)
-        drawSituatedWhisper(ctx, whisper.text, alpha, Math.min(currentPanelTop, LOGICAL_H))
+        drawSituatedWhisper(ctx, whisper.text, whisperAlpha(elapsed))
       }
     }
 

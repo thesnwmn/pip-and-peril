@@ -12,29 +12,42 @@ export const PANEL_TOP = 416
 const PANEL_CORNER = 8
 const SIDE_MARGIN = 16
 
-// Die faces
+// HP bars section (top of combat panel)
+const HP_MID_Y = PANEL_TOP + 16          // vertical centre of HP row = 432
+const HP_BAR_H = 8
+const HP_BAR_EMPTY = '#2a2a3a'
+const ENEMY_RED = '#7a1a1a'
+const HP_SECTION_BOTTOM = HP_MID_Y + HP_BAR_H / 2 + 8  // = 444
+
+// Encounter log zone (below HP bars)
+const LOG_RULE_Y = HP_SECTION_BOTTOM + 6   // = 450
+const LOG_LINE_H = 14
+const LOG_LINE1_Y = LOG_RULE_Y + 8         // = 458
+const LOG_SECTION_BOTTOM = LOG_LINE1_Y + 3 * LOG_LINE_H + 6  // = 506
+
+// Die faces (no heading label)
 const DIE_SIZE = 68
 const DIE_GAP = 10
 const DIE_RADIUS = 12
-const DIE_ROW_Y = PANEL_TOP + 36         // top of die faces
-const PIP_DOT_R = 4.5                    // pip circle radius
+const DIE_ROW_Y = LOG_SECTION_BOTTOM + 6   // = 512
+const PIP_DOT_R = 4.5                      // pip circle radius
 
 // Colour label row
-const LABEL_Y = DIE_ROW_Y + DIE_SIZE + 8
+const LABEL_Y = DIE_ROW_Y + DIE_SIZE + 6   // = 586
 
 // Badge row
-const BADGE_Y = LABEL_Y + 18
+const BADGE_Y = LABEL_Y + 16               // = 602
 const BADGE_H = 26
 const BADGE_PAD_X = 8
 
 // ROLL button
-const ROLL_BTN_Y = BADGE_Y + BADGE_H + 12
+const ROLL_BTN_Y = BADGE_Y + BADGE_H + 10  // = 638
 const ROLL_BTN_H = 44
 const ROLL_BTN_X = SIDE_MARGIN
 const ROLL_BTN_W = LOGICAL_W - SIDE_MARGIN * 2
 
 // Action buttons (2-column grid)
-const ACTION_Y = ROLL_BTN_Y + ROLL_BTN_H + 12
+const ACTION_Y = ROLL_BTN_Y + ROLL_BTN_H + 10  // = 692
 const ACTION_BTN_H = 46
 const ACTION_BTN_W = (LOGICAL_W - SIDE_MARGIN * 2 - 10) / 2
 const ACTION_BTN_RADIUS = 8
@@ -288,12 +301,57 @@ function drawActionButton(
   ctx.globalAlpha = 1
 }
 
-// ── Encounter log zone ────────────────────────────────────────────────────────
+// ── HP bars ───────────────────────────────────────────────────────────────────
 
-const LOG_ZONE_ACTION_BOTTOM = ACTION_Y + ACTION_BTN_H  // bottom of last action button row
-const LOG_ZONE_RULE_Y = LOG_ZONE_ACTION_BOTTOM + 10
-const LOG_ZONE_LINE_H = 14
-const LOG_ZONE_LINE1_Y = LOG_ZONE_RULE_Y + 8
+function drawHpBars(ctx: CanvasRenderingContext2D, info: HpInfo): void {
+  const midY = HP_MID_Y
+  const barY = midY - HP_BAR_H / 2
+
+  ctx.font = 'bold 10px monospace'
+  ctx.textBaseline = 'middle'
+
+  // PIP
+  const pipLabelX = 110
+  ctx.fillStyle = colors.textMuted
+  ctx.textAlign = 'left'
+  ctx.fillText('PIP', pipLabelX, midY)
+  const pipLabelW = ctx.measureText('PIP').width
+
+  const pipBarX = pipLabelX + pipLabelW + 6
+  const pipBarW = 80
+  ctx.fillStyle = HP_BAR_EMPTY
+  ctx.fillRect(pipBarX, barY, pipBarW, HP_BAR_H)
+  ctx.fillStyle = colors.gold
+  ctx.fillRect(pipBarX, barY, Math.max(0, info.pipHp / info.pipMaxHp) * pipBarW, HP_BAR_H)
+
+  ctx.font = '10px monospace'
+  ctx.fillStyle = colors.textPrimary
+  ctx.textAlign = 'left'
+  ctx.fillText(`${info.pipHp}/${info.pipMaxHp}`, pipBarX + pipBarW + 4, midY)
+
+  // Enemy
+  const enemyLabelX = 260
+  const enemyName = info.enemyName.toUpperCase()
+  ctx.font = 'bold 10px monospace'
+  ctx.fillStyle = ENEMY_RED
+  ctx.textAlign = 'left'
+  ctx.fillText(enemyName, enemyLabelX, midY)
+  const enemyLabelW = ctx.measureText(enemyName).width
+
+  const enemyBarX = enemyLabelX + enemyLabelW + 6
+  const enemyBarW = 60
+  ctx.fillStyle = HP_BAR_EMPTY
+  ctx.fillRect(enemyBarX, barY, enemyBarW, HP_BAR_H)
+  ctx.fillStyle = ENEMY_RED
+  ctx.fillRect(enemyBarX, barY, Math.max(0, info.enemyHp / info.enemyMaxHp) * enemyBarW, HP_BAR_H)
+
+  ctx.font = '10px monospace'
+  ctx.fillStyle = colors.textPrimary
+  ctx.textAlign = 'left'
+  ctx.fillText(`${info.enemyHp}/${info.enemyMaxHp}`, enemyBarX + enemyBarW + 4, midY)
+}
+
+// ── Encounter log zone ────────────────────────────────────────────────────────
 
 const LOG_OPACITIES = [0.45, 0.70, 1.00]
 
@@ -301,17 +359,17 @@ function drawEncounterLogZone(
   ctx: CanvasRenderingContext2D,
   entries: CombatLogEntry[],
 ): void {
-  if (entries.length === 0) return
-
-  // Hairline rule
+  // Hairline rule always visible (separates HP bars from log/dice area)
   ctx.globalAlpha = 0.5
   ctx.strokeStyle = colors.logNormal
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(SIDE_MARGIN, LOG_ZONE_RULE_Y)
-  ctx.lineTo(LOGICAL_W - SIDE_MARGIN, LOG_ZONE_RULE_Y)
+  ctx.moveTo(SIDE_MARGIN, LOG_RULE_Y)
+  ctx.lineTo(LOGICAL_W - SIDE_MARGIN, LOG_RULE_Y)
   ctx.stroke()
   ctx.globalAlpha = 1
+
+  if (entries.length === 0) return
 
   ctx.font = '11px monospace'
   ctx.textAlign = 'left'
@@ -320,7 +378,7 @@ function drawEncounterLogZone(
   for (let i = 0; i < entries.length; i++) {
     ctx.globalAlpha = LOG_OPACITIES[i] ?? 1
     ctx.fillStyle = colors.logNormal
-    ctx.fillText(entries[i].message, SIDE_MARGIN, LOG_ZONE_LINE1_Y + i * LOG_ZONE_LINE_H)
+    ctx.fillText(entries[i].message, SIDE_MARGIN, LOG_LINE1_Y + i * LOG_LINE_H)
   }
   ctx.globalAlpha = 1
 }
@@ -345,12 +403,21 @@ export interface CombatLogEntry {
   message: string
 }
 
+export interface HpInfo {
+  pipHp: number
+  pipMaxHp: number
+  enemyHp: number
+  enemyMaxHp: number
+  enemyName: string
+}
+
 export interface DicePanelCallbacks {
   onStateChange: (pool: DicePool) => void
   addLog: (message: string) => void
   onAction?: (actionId: string) => void
   onBeforeRoll?: () => boolean
   getCombatLog?: () => CombatLogEntry[]
+  getHpInfo?: () => HpInfo | null
 }
 
 export function createDicePanel(
@@ -446,12 +513,14 @@ export function createDicePanel(
     ctx.lineTo(LOGICAL_W, PANEL_TOP)
     ctx.stroke()
 
-    // "DICE" label
-    ctx.font = '12px monospace'
-    ctx.fillStyle = colors.textMuted
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText('DICE', LOGICAL_W / 2, PANEL_TOP + 18)
+    // HP bars
+    if (callbacks.getHpInfo) {
+      const hpInfo = callbacks.getHpInfo()
+      if (hpInfo) drawHpBars(ctx, hpInfo)
+    }
+
+    // Encounter log zone (below HP bars, above dice)
+    drawEncounterLogZone(ctx, callbacks.getCombatLog ? callbacks.getCombatLog() : [])
 
     // Die faces
     const centres = dieCentres(pool.dice.length)
@@ -494,11 +563,6 @@ export function createDicePanel(
         const flashing = flashingAction === action.id
         drawActionButton(ctx, action, x, y, affordable, hovered, flashing)
       }
-    }
-
-    // Encounter log zone
-    if (callbacks.getCombatLog) {
-      drawEncounterLogZone(ctx, callbacks.getCombatLog())
     }
 
     ctx.restore()
