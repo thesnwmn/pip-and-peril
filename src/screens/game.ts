@@ -464,7 +464,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   )
 
   function addLogEntry(message: string, _style: LogStyle): void {
-    combatLog = [...combatLog.slice(-2), { message }]
+    combatLog = [{ message }, ...combatLog.slice(0, 4)]
   }
 
   function checkCombatTrigger(): void {

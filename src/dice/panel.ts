@@ -348,7 +348,7 @@ function drawHpBars(ctx: CanvasRenderingContext2D, info: HpInfo): void {
 
 // ── Encounter log zone ────────────────────────────────────────────────────────
 
-const LOG_OPACITIES = [0.45, 0.70, 1.00]
+const LOG_OPACITIES = [1.00, 0.70, 0.50, 0.30, 0.15]
 
 function drawEncounterLogZone(
   ctx: CanvasRenderingContext2D,
