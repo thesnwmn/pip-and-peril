@@ -53,7 +53,7 @@ inline before opening any PR**.
 
 9. **Push and open the PR** against `main` on the session's feature branch. Then tell the manager
    it's ready for merge, including play-test steps. **Also include the PR preview URL** —
-   `https://thesnwmn.github.io/pip-and-peril/pr-<N>/` — so the manager can review it live
+   `https://thesnwmn.github.io/pip-and-peril/preview/pr-<N>/` — so the manager can review it live
    *before* merging. The preview deploys automatically when the PR is opened; the workflow also
    posts it as a comment on the PR. Do not say the changes won't be visible until merge — they
    are already live on the preview URL.
