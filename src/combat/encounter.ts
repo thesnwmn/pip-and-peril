@@ -1,4 +1,8 @@
-import type { CombatState } from './types'
+import type { CombatState, Enemy } from './types'
+
+export function rollGoldReward(enemy: Enemy): number {
+  return Math.floor(Math.random() * (enemy.goldMax - enemy.goldMin + 1)) + enemy.goldMin
+}
 
 export interface StrikeResult {
   combat: CombatState

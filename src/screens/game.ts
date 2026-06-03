@@ -14,7 +14,7 @@ import { resetPool, starterPool } from '../dice/pool'
 import { createDicePanel, PANEL_TOP as DICE_PANEL_TOP } from '../dice/panel'
 import type { CombatState } from '../combat/types'
 import { GOBLIN } from '../combat/types'
-import { applyEnemyAttack, applyEvade, applyFocus, applyStrike } from '../combat/encounter'
+import { applyEnemyAttack, applyEvade, applyFocus, applyStrike, rollGoldReward } from '../combat/encounter'
 import { drawCombatBanner, drawCombatStatusBar } from '../combat/panel'
 import { createMenuModal, drawMenuButton, isInMenuButton } from '../menu/modal'
 import { createSatchelOverlay, drawSatchelButton, isInSatchelButton } from '../satchel/overlay'
@@ -429,6 +429,9 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
             'enemy',
           )
           if (result.victory) {
+            const goldEarned = rollGoldReward(combat.enemy)
+            inventory = { ...inventory, gold: inventory.gold + goldEarned }
+            combat = { ...result.combat, goldAwarded: goldEarned }
             const newCells = state.grid.cells.map(row => [...row])
             const cell = newCells[state.pip.row][state.pip.col]
             if (cell) {
@@ -463,7 +466,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   function checkCombatTrigger(): void {
     const cell = state.grid.cells[state.pip.row][state.pip.col]
     if (cell && cell.roomType === 'enemy' && cell.cleared !== true) {
-      combat = { enemy: { ...GOBLIN }, phase: 'awaiting-roll', evadeBuffer: 0 }
+      combat = { enemy: { ...GOBLIN }, phase: 'awaiting-roll', evadeBuffer: 0, goldAwarded: 0 }
       dicePool = resetPool(dicePool)
       bannerStartTime = null
     }

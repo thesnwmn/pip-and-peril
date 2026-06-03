@@ -157,10 +157,31 @@ None. Gold range (2–4) and the decision to exclude item drops from this spec a
 
 ## Shipped
 
-**Date:** · **PR:** #
+**Date:** 2026-06-03 · **PR:** [#41](https://github.com/thesnwmn/pip-and-peril/pull/41)
 
 ### What was built
 
+- `Enemy` gained `goldMin`/`goldMax` fields; `GOBLIN` set to `goldMin: 2, goldMax: 4`.
+- `CombatState` gained `goldAwarded: number`, initialised to `0` on encounter start.
+- `rollGoldReward(enemy)` pure function exported from `encounter.ts`; no side effects.
+- Victory handler in `game.ts` calls `rollGoldReward`, credits `inventory.gold`, sets `combat.goldAwarded`.
+- Victory banner in `panel.ts` gains a `+ N gold ◈` line in `--gold` bold 14 px monospace, appearing immediately (no fade). "Tap to continue" shifts down on victory only; defeat layout unchanged.
+- Reviewer inline pass caught and fixed a layout regression: "Tap to continue" was shifted unconditionally — fixed to shift only when `isVictory`.
+
 ### Evidence
 
+- 187 tests pass (`npm run test`), including 3 new `rollGoldReward` tests:
+  - 200-iteration range check: always returns integer in [`goldMin`, `goldMax`].
+  - Fixed-value case: `goldMin === goldMax` always returns that value.
+  - Accumulation: three victories at 3 gold each sum to 9.
+- `npm run typecheck` exits zero errors.
+
 ### Play-test
+
+1. Start a new run from the Main Menu.
+2. Navigate to an Enemy room and enter combat.
+3. Roll dice and use Strike until the Goblin is defeated (6 HP, takes three 2-damage strikes).
+4. The victory banner should show `── VICTORY ──`, then `Goblin defeated!`, then `+ N gold ◈` where N is 2, 3, or 4, then (after 0.5 s) `Tap to continue`. The gold line appears immediately in gold colour.
+5. Tap the banner (or wait 1.5 s for auto-advance). Open the Satchel (bottom-right button) → Pouch tab. Gold total should equal N from step 4.
+6. Fight a second Goblin. After victory, the Pouch gold should be the sum of both combat awards.
+7. Confirm the defeat banner is unaffected: enter combat and let the Goblin reduce Pip to 0 HP. The `── DEFEATED ──` banner should show no gold line, and "Tap to continue" should appear at the same position as before this feature.
