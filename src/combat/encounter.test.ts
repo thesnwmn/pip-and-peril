@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { applyStrike, applyEvade, applyFocus, applyEnemyAttack } from './encounter'
+import { applyStrike, applyEvade, applyFocus, applyEnemyAttack, rollGoldReward } from './encounter'
 import type { CombatState } from './types'
 import { GOBLIN } from './types'
 
@@ -8,6 +8,7 @@ function makeCombat(overrides: Partial<CombatState> = {}): CombatState {
     enemy: { ...GOBLIN },
     phase: 'player-turn',
     evadeBuffer: 0,
+    goldAwarded: 0,
     ...overrides,
   }
 }
@@ -136,5 +137,33 @@ describe('applyEnemyAttack', () => {
   it('Pip HP is floored at 0 on lethal hit', () => {
     const result = applyEnemyAttack(makeCombat(), 1)
     expect(result.pipHp).toBe(0)
+  })
+})
+
+describe('rollGoldReward', () => {
+  it('always returns an integer in [goldMin, goldMax] for the Goblin range', () => {
+    const enemy = { ...GOBLIN }
+    for (let i = 0; i < 200; i++) {
+      const result = rollGoldReward(enemy)
+      expect(Number.isInteger(result)).toBe(true)
+      expect(result).toBeGreaterThanOrEqual(enemy.goldMin)
+      expect(result).toBeLessThanOrEqual(enemy.goldMax)
+    }
+  })
+
+  it('returns the fixed value when goldMin === goldMax', () => {
+    const enemy = { ...GOBLIN, goldMin: 5, goldMax: 5 }
+    for (let i = 0; i < 50; i++) {
+      expect(rollGoldReward(enemy)).toBe(5)
+    }
+  })
+
+  it('accumulates gold correctly across successive victories', () => {
+    const enemy = { ...GOBLIN, goldMin: 3, goldMax: 3 }
+    let gold = 0
+    for (let i = 0; i < 3; i++) {
+      gold += rollGoldReward(enemy)
+    }
+    expect(gold).toBe(9)
   })
 })

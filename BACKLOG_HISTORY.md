@@ -16,6 +16,16 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 019 · Combat Victory Rewards
+
+**Shipped:** 2026-06-03 · **PR:** # · **Spec:** [docs/features/history/019-combat-victory-rewards.md](docs/features/history/019-combat-victory-rewards.md)
+
+Winning a combat grants **gold** (random roll within the enemy's reward range), giving the player
+their first source of currency and making the Satchel's Pouch real rather than always-zero. Each
+enemy carries a gold reward range; the existing victory banner (006) gains a `+ N gold ◈` line.
+
+---
+
 ### 017 · Soft Camera Follow
 
 **Shipped:** 2026-06-03 · **PR:** [#36](https://github.com/thesnwmn/pip-and-peril/pull/36) · **Spec:** [docs/features/history/017-soft-camera-follow.md](docs/features/history/017-soft-camera-follow.md)

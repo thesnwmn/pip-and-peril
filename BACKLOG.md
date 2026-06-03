@@ -22,14 +22,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-### 019 · Combat Victory Rewards
-
-Winning a combat grants **gold** (random roll within the enemy's reward range), giving the player
-their first source of currency and making the Satchel's Pouch real rather than always-zero. Each
-enemy carries a gold reward range; the existing victory banner (006) gains a `+ N gold ◈` line.
-See `docs/features/019-combat-victory-rewards.md` for the full spec.
-**Depends on:** 016 (inventory data model), 006 (combat victory flow).
-
 ### 030 · Elastic Canvas & Combat Immersion
 
 Establishes the **elastic canvas** as the game's structural architecture — the dungeon map is

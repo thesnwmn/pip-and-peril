@@ -126,6 +126,15 @@ export function drawCombatBanner(
   ctx.textBaseline = 'middle'
   ctx.fillText(subtitleText, cx, midY)
 
+  // Gold reward line (victory only)
+  if (isVictory) {
+    ctx.font = 'bold 14px monospace'
+    ctx.fillStyle = colors.gold
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(`+ ${combat.goldAwarded} gold  ◈`, cx, midY + 26)
+  }
+
   // "Tap to continue" fades in after 0.5 s
   const elapsed = timestamp - bannerStartTime
   const fadeAlpha = Math.min(1, Math.max(0, (elapsed - 500) / 300))
@@ -135,7 +144,7 @@ export function drawCombatBanner(
     ctx.fillStyle = colors.textMuted
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('Tap to continue', cx, midY + 40)
+    ctx.fillText('Tap to continue', cx, isVictory ? midY + 52 : midY + 40)
     ctx.globalAlpha = 1
   }
 }
