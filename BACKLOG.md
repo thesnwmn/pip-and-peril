@@ -30,6 +30,17 @@ enemy carries a gold reward range; the existing victory banner (006) gains a `+ 
 See `docs/features/019-combat-victory-rewards.md` for the full spec.
 **Depends on:** 016 (inventory data model), 006 (combat victory flow).
 
+### 030 · Elastic Canvas & Combat Immersion
+
+Establishes the **elastic canvas** as the game's structural architecture — the dungeon map is
+always present, encounter panels **rise from the screen bottom** while the camera adjusts above,
+both simultaneous at 200–350ms. Combat is retrofitted as the first consumer: Pip entering an
+enemy room now triggers an animated panel rise and a smooth medium-close camera zoom, making the
+dungeon the stage for every encounter. The panel API this feature introduces is the foundation all
+subsequent encounter types (021, 023, 025–028) plug into.
+See `docs/features/030-elastic-canvas-combat-immersion.md` for the full spec.
+**Depends on:** 006 (combat encounter + panel), 017 (soft camera follow).
+
 ---
 
 ## NEEDS SPEC
@@ -53,7 +64,7 @@ consumable item category (e.g. cheese = restore HP, a charm = one free reroll), 
 **acquiring** an item into the Satchel pouch, and **using** one — both during navigation and inside
 a combat encounter (the Satchel explicitly defers in-combat use to a later spec; this is it). One
 shared system that the item room, chest, and shop all plug into.
-**Depends on:** 016 (item model + pouch UI), 006 (combat, for in-combat use).
+**Depends on:** 016 (item model + pouch UI), 006 (combat, for in-combat use), 030 (encounter panel, for in-combat use).
 **Suggested stepping (for the Designer):** ① consumables — acquire + use (heal/reroll) in nav and
 combat; ② equipment / passive gear — a small "worn" slot that modifies the dice pool (ties toward
 meta-progression, item 029). Ship ① alone; ② can follow once shops/chests give gear worth wearing.
@@ -63,7 +74,7 @@ meta-progression, item 029). Ship ① alone; ② can follow once shops/chests gi
 The green **Item** room type: Pip enters, finds a single item, and it goes into the pouch
 (auto-collect or a one-tap "take" beat). The simplest *source* in the economy and the cheapest way
 to make item 020 visible in play. Reuses the encounter register (panel rises, brief reveal).
-**Depends on:** 020 (item acquire/use), 004 (room offer + entry trigger).
+**Depends on:** 020 (item acquire/use), 004 (room offer + entry trigger), 030 (encounter panel).
 **Related:** Idea 001 (an "already taken — bare pedestal" surprise).
 
 ### 022 · Dungeon Structure: Depth Pacing & Boss Gate
@@ -86,7 +97,7 @@ A single, named **boss** fight — a tougher enemy with one signature behaviour 
 loop (006) with the boss-camera drama from the screen-layout concept. Defeating it **completes the
 run** (a new "run complete" outcome distinct from the existing defeat→menu path). One boss and one
 end condition now; more boss types and end triggers are explicitly later work.
-**Depends on:** 006 (combat), 022 (a reachable boss room).
+**Depends on:** 006 (combat), 022 (a reachable boss room), 030 (encounter panel + camera infra for boss drama).
 **Suggested stepping (for the Designer):** ① boss combat (stats, name, one special move, boss HP
 display); ② the run-complete state + transition out of the run. Feeds directly into 024.
 **Related:** `docs/concept/screen-layout-and-transitions.md` (Combat — Boss).
@@ -108,7 +119,7 @@ A **forced** encounter: stepping onto a trapped tile fires a single agility chec
 no-Leave trap panel from the screen-layout concept). Fail → HP loss; pass → Pip slips clear. Cheap
 to build (reuses dice + encounter register), adds real peril variety, and is the prerequisite for
 the *trapped* chest variant in 026.
-**Depends on:** 005 (dice), 004 (entry trigger).
+**Depends on:** 005 (dice), 004 (entry trigger), 030 (encounter panel + snap camera mode).
 **Related:** Idea 011 (Feature Tiles as Interactions — chasm/bridge agility checks share this
 mechanic and could be flavoured re-skins of it).
 
@@ -116,7 +127,7 @@ mechanic and could be flavoured re-skins of it).
 
 The amber **Chest**: the concept's two-beat reveal (anticipation → loot), paying out gold and/or an
 item. The richest single-room reward moment in the game.
-**Depends on:** 019 (gold), 020 (items), 025 (for the trapped variant).
+**Depends on:** 019 (gold), 020 (items), 025 (for the trapped variant), 030 (encounter panel).
 **Suggested stepping (for the Designer):** ① basic chest — open → loot reveal; ② locked chest — a
 dice check before it opens; ③ trapped chest — the trap (025) fires before the reveal.
 **Related:** `docs/concept/screen-layout-and-transitions.md` (Opening a Chest), Idea 001 (empty
@@ -126,7 +137,7 @@ chest surprise).
 
 The gold **Shop**: a warm merchant panel where Pip spends earned gold on items — the *sink* that
 gives currency a purpose. Optional encounter (a "Leave" exit), browse-and-buy.
-**Depends on:** 019 (gold to spend), 020 (items to sell).
+**Depends on:** 019 (gold to spend), 020 (items to sell), 030 (encounter panel).
 **Suggested stepping (for the Designer):** ① buy items with gold; ② sell / a haggle dice-check.
 **Related:** `docs/concept/screen-layout-and-transitions.md` (Shop), Idea 001 (sold-out surprise).
 
@@ -135,7 +146,7 @@ gives currency a purpose. Optional encounter (a "Leave" exit), browse-and-buy.
 The blue **NPC**: dialogue-first, the inverse of combat — text and choices primary, a dice check
 appearing *inside* the dialogue only when a response calls for one. Delivers hints, small rewards,
 and world voice; completes the encounter-type set.
-**Depends on:** 005 (dice for checks), 004 (entry trigger).
+**Depends on:** 005 (dice for checks), 004 (entry trigger), 030 (encounter panel).
 **Suggested stepping (for the Designer):** ① dialogue + branching choices (no dice); ② check-gated
 responses with rewards/consequences.
 **Related:** Idea 016 (Dialogue-Primary NPC Panel), Idea 015 (camera signal), Idea 018 (situated
