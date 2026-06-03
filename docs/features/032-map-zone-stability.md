@@ -7,42 +7,55 @@ redesign — whisper anchored within the map zone)
 
 ## Summary
 
-Right now the map canvas clip region shrinks when combat begins: navigation idle draws the map at
-full height (~794 px); once the encounter panel rises, the map is clipped to the upper ~380 px.
-This makes the dungeon feel spatially unstable — the stage itself shrinks when the stakes go up.
-This feature fixes that: the map zone is a **fixed constant** at all times. Encounter panels (and
-the room-selection panel) render on top of the map, overlaying its lower portion rather than
-compressing it. Camera zoom is unchanged — the dungeon zooms in within the same physical area,
-so the player's spatial anchor never moves.
+The map canvas clip region is currently inconsistent in both dimensions between navigation and
+combat. In height: navigation idle clips the map at full screen height (~794 px); once the
+encounter panel rises, the map is clipped to the upper ~380 px — the dungeon stage shrinks when
+the stakes go up. In width: the horizontal clip has always been the full logical canvas width
+(390 px), but at navigation zoom (1×) the 5-tile grid (5 × 72 = 360 px, starting at `MAP_X = 10`)
+leaves 10 px of background on the left and 20 px on the right, whereas at combat zoom (2.3×) the
+scaled tiles overflow those margins and fill the full 390 px — the map appears wider in combat.
+
+This feature fixes both: the map zone is a **fixed rectangle** at all times — always `MAP_X` to
+`MAP_X + (5 × TILE_SIZE)` horizontally (10–370 px, 360 px wide) and `MAP_Y` to `LOGICAL_H`
+vertically. Encounter panels overlay the lower portion of the map rather than compressing it.
+Camera zoom is unchanged — the dungeon zooms in within the same fixed area, so the player's
+spatial anchor never moves in either axis.
 
 ## Acceptance criteria
 
-1. The map canvas clip region is constant in every game state: navigation idle, navigation
-   choosing, encounter transition, and active encounter (combat or otherwise). It is always
-   `MAP_Y` to `LOGICAL_H` — the full height below the status bar.
-2. In navigation idle state the visual result is unchanged: the map fills the full screen below
-   the status bar. No encounter panel is visible.
-3. In navigation choosing state the room-selection panel renders on top of the map, overlaying
-   the map from `PANEL_TOP` downward. The map tile rendering extends to full screen height; the
+1. The map canvas clip rectangle is constant in every game state — navigation idle, navigation
+   choosing, encounter transition, and active encounter. Both axes are fixed:
+   - **Horizontal:** always `MAP_X` to `MAP_X + (VIEWPORT_COLS × TILE_SIZE)` (10 px – 370 px,
+     360 px wide).
+   - **Vertical:** always `MAP_Y` to `LOGICAL_H` (50 px – 844 px, 794 px tall).
+2. In navigation idle state the tile grid occupies the same horizontal extent (10–370 px) as it
+   does today. The 10 px left strip and 20 px right strip outside the tile grid show background
+   colour, as they do now.
+3. In stable combat state the tile grid is still clipped at x = 10 and x = 370 despite the
+   2.3× zoom. The zoomed tiles overflow those boundaries and are clipped; the left and right
+   background strips remain visible at the same width as in navigation. The combat view is no
+   longer wider than the navigation view.
+4. In navigation choosing state the room-selection panel renders on top of the map, overlaying
+   it from `PANEL_TOP` downward. The map tile rendering extends to full screen height; the
    panel's solid background covers the tiles below `PANEL_TOP`. The panel's appearance is
    visually unchanged from the current implementation.
-4. When combat begins the encounter panel rises from the screen bottom and overlays the lower
+5. When combat begins the encounter panel rises from the screen bottom and overlays the lower
    portion of the map. The map canvas clip does not change during the transition — only the
    panel position changes.
-5. In stable combat state the combat panel occupies approximately the lower 50 % of the screen.
+6. In stable combat state the combat panel occupies approximately the lower 50 % of the screen.
    The map fills the full height behind it; the panel's solid background hides the dungeon tiles
    beneath it. The panel's appearance is visually unchanged from the current implementation.
-6. The camera zoom behaviour during combat is unchanged from feature 030: the camera still
+7. The camera zoom behaviour during combat is unchanged from feature 030: the camera still
    transitions to centre the active room tile in the visible area above the panel, at the same
    zoom level. `COMBAT_MAP_CENTER_Y` remains the vertical midpoint of the area from `MAP_Y` to
    `COMBAT_PANEL_TOP`.
-7. All transition animations (panel rise/fall, camera zoom in/out) are smooth and visually
+8. All transition animations (panel rise/fall, camera zoom in/out) are smooth and visually
    identical to the current behaviour, except that the map no longer clips to follow the rising
    or falling panel edge.
-8. The situated whisper (031) continues to appear and fade correctly during navigation idle; it
+9. The situated whisper (031) continues to appear and fade correctly during navigation idle; it
    is not visible during any encounter state (unchanged guard conditions).
-9. `npm run typecheck` exits zero errors.
-10. `npm run test` passes. All existing tests continue to pass without modification.
+10. `npm run typecheck` exits zero errors.
+11. `npm run test` passes. All existing tests continue to pass without modification.
 
 ## Scope / non-goals
 
@@ -58,9 +71,9 @@ so the player's spatial anchor never moves.
 
 ## Design detail
 
-### The root cause
+### The root causes
 
-In `src/screens/game.ts`, the draw loop computes:
+**Height:** In `src/screens/game.ts`, the draw loop computes:
 
 ```
 mapAreaH = max(0, currentPanelTop − MAP_Y)
@@ -70,62 +83,64 @@ mapAreaH = max(0, currentPanelTop − MAP_Y)
 as the encounter panel rises. The clip rectangle shrinks with it: the map literally gets smaller
 on screen.
 
+**Width:** The clip rectangle has always been `ctx.rect(0, MAP_Y, LOGICAL_W, mapAreaH)` — the
+full 390 px logical width. At 1× navigation zoom the 5 tiles occupy only 360 px (10–370 px),
+leaving two background-colour strips outside the tile grid. At 2.3× combat zoom the tiles scale
+up and overflow the full 390 px, so those strips disappear — the map appears to change width.
+
 ### The fix
 
-Replace the dynamic clip with a fixed one:
+Replace the dynamic clip with a single fixed rectangle covering the tile grid exactly:
 
 ```
-mapAreaH = LOGICAL_H − MAP_Y   ← constant; never changes
+ctx.rect(MAP_X, MAP_Y, VIEWPORT_COLS × TILE_SIZE, LOGICAL_H − MAP_Y)
+     ↑ 10px        ↑ 50px    ↑ 360px wide                ↑ 794px tall
+     never changes            never changes
 ```
 
 The panels draw after the map (they already do), so they naturally overlay the map canvas. The
-map renders at full height; the panel's solid `--surface` background hides everything beneath it.
-The draw order (map → panels → floating UI) is unchanged.
+map renders at full height within a fixed-width boundary; the panel's solid `--surface`
+background hides everything beneath it. The draw order (map → panels → floating UI) is
+unchanged.
 
 ### Two registers — after the fix
 
+In all three states the map clip rectangle is identical: x = 10–370, y = 50–844.
+
 ```
-NAVIGATION REGISTER (idle)
-─────────────────────────────
- [status bar ~50px]
-─────────────────────────────
+←10px→←─────── 360 px tile grid ────────→←20px→
+      ┌─────────────────────────────────┐
+      │        [status bar ~50px]       │        ← y = 0–50 (outside clip)
+      ├─────────────────────────────────┤
+      │                                 │        ↑
+      │          DUNGEON MAP            │        │ fixed clip region
+      │    (soft-follow cam; 1× zoom)   │        │ y = 50–844
+      │                                 │        ↓
+      └─────────────────────────────────┘
+            NAVIGATION REGISTER (idle)
 
-      DUNGEON MAP              full height (MAP_Y → LOGICAL_H)
- (soft-follow cam; 1× zoom)
+      ┌─────────────────────────────────┐
+      │        [status bar ~50px]       │
+      ├─────────────────────────────────┤
+      │          DUNGEON MAP            │        ← same fixed clip region
+      │    (soft-follow cam; 1× zoom)   │
+      ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄
+      │     [room selection cards]      │        ← panel overlays from PANEL_TOP
+      └─────────────────────────────────┘
+            NAVIGATION REGISTER (choosing)
 
-
-─────────────────────────────
- [≡ menu]          [bag]
-
-NAVIGATION REGISTER (choosing)
-─────────────────────────────
- [status bar ~50px]
-─────────────────────────────
-
-      DUNGEON MAP              same full-height canvas
- (soft-follow cam; 1× zoom)
-                               ← map renders here too, hidden by panel below
-┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄    panel edge (PANEL_TOP); overlays map from here
- [room selection cards]        solid panel background hides map below edge
-─────────────────────────────
-
-ENCOUNTER REGISTER (combat)
-─────────────────────────────
- [status bar ~50px]
-─────────────────────────────
-
-      DUNGEON MAP              same full-height canvas
-   (zoomed; room centred in    ← camera still targets upper visible zone
-    area above panel edge)
-                               ← map renders here too, hidden by panel below
-┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄    panel edge (~50 %); overlays map from here
- PIP ████    GOBLIN ████       solid panel background hides map below edge
- [dice] [actions]
-─────────────────────────────
+      ┌─────────────────────────────────┐
+      │        [status bar ~50px]       │
+      ├─────────────────────────────────┤
+      │          DUNGEON MAP            │        ← same fixed clip region
+      │    (zoomed; room centred in     │          tiles clipped at x=10 and x=370
+      │     visible area above panel)   │          same bg strips as nav
+      ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄ ┄
+      │  PIP ████     GOBLIN ████      │        ← panel overlays from COMBAT_PANEL_TOP
+      │  [dice] [actions]               │
+      └─────────────────────────────────┘
+            ENCOUNTER REGISTER (combat)
 ```
-
-The critical property: the map clip rectangle in all three diagrams above is **identical**. Only
-the panel overlay changes between them.
 
 ### Camera target is unchanged
 
@@ -153,7 +168,31 @@ reads more clearly as "the panel is a surface that slides in front of the world.
 
 No new visual elements. The change is structural (clip region) rather than aesthetic.
 
-**Before vs. after — map height during combat transition:**
+**Before vs. after — width at stable states:**
+
+```
+BEFORE (current)                        AFTER (this feature)
+
+Navigation (1× zoom)                    Navigation (1× zoom)
+┌──────────────────────────┐            ┌──────────────────────────┐
+│      [status bar]        │            │      [status bar]        │
+├──────────────────────────┤            ├──────────────────────────┤
+│·│                    │···│  ← bg gap  │·│                    │···│  ← same gaps
+│·│   tile grid 360px  │···│            │·│   tile grid 360px  │···│
+└──────────────────────────┘            └──────────────────────────┘
+
+Combat (2.3× zoom)                      Combat (2.3× zoom)
+┌──────────────────────────┐            ┌──────────────────────────┐
+│      [status bar]        │            │      [status bar]        │
+├──────────────────────────┤            ├──────────────────────────┤
+│    tiles fill 390px      │ ← wider!   │·│   tiles clipped    │···│  ← same gaps
+│   (no side bg strips)    │            │·│   at same boundary │···│    as nav
+┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄            ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│      [combat panel]      │            │      [combat panel]      │
+└──────────────────────────┘            └──────────────────────────┘
+```
+
+**Before vs. after — height during combat transition:**
 
 ```
 BEFORE (current)               AFTER (this feature)
@@ -162,19 +201,14 @@ BEFORE (current)               AFTER (this feature)
  ┌─────────────────┐            ┌─────────────────┐
  │ [status bar]    │            │ [status bar]     │
  ├─────────────────┤            ├─────────────────┤
- │                 │            │                 │
  │ MAP (794 px)    │            │ MAP (794 px)    │
- │                 │            │                 │
- │                 │            │                 │
  └─────────────────┘            └─────────────────┘
 
  t = 150 ms (mid-transition)    t = 150 ms (mid-transition)
  ┌─────────────────┐            ┌─────────────────┐
  │ [status bar]    │            │ [status bar]     │
  ├─────────────────┤            ├─────────────────┤
- │                 │            │                 │
  │ MAP (587 px)    │ ← shrinks  │ MAP (794 px)    │ ← unchanged
- │                 │            │                 │
  │ ┌─────────────┐ │            │ ┌─────────────┐ │
  │ │(panel mid)  │ │            │ │(panel mid)  │ │
  └─┴─────────────┴─┘            └─┴─────────────┴─┘
@@ -183,9 +217,7 @@ BEFORE (current)               AFTER (this feature)
  ┌─────────────────┐            ┌─────────────────┐
  │ [status bar]    │            │ [status bar]     │
  ├─────────────────┤            ├─────────────────┤
- │                 │            │                 │
  │ MAP (380 px)    │ ← small    │ MAP (794 px)    │ ← unchanged
- │                 │            │                 │
  ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┤            ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┤
  │ [combat panel]  │            │ [combat panel]  │
  └─────────────────┘            └─────────────────┘
