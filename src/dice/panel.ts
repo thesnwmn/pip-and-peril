@@ -649,9 +649,6 @@ export function createDicePanel(
         const hovered = hoveredElement === `action-${action.id}`
         const flashing = flashingAction === action.id
 
-        // Don't show ITEM button if no combat items
-        if (action.id === 'item' && !hasCombatItems) continue
-
         drawActionButton(ctx, action, x, y, affordable, hovered, flashing)
       }
     }
@@ -719,6 +716,14 @@ export function createDicePanel(
       if (!action) return
 
       if (action.id === 'item') {
+        const inventory = callbacks.getInventory ? callbacks.getInventory() : null
+        const itemUsedThisTurn = callbacks.getItemUsedThisTurn ? callbacks.getItemUsedThisTurn() : false
+        const hasCombatItems = inventory && inventory.items.some((i: any) => i.usableInCombat)
+        if (!hasCombatItems || itemUsedThisTurn) {
+          flashingAction = 'item'
+          flashEndTime = performance.now() + 300
+          return
+        }
         showItemPicker = !showItemPicker
         return
       }
