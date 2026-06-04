@@ -4,7 +4,10 @@ import { canAfford, rollPool, spendPips } from './pool'
 
 // ── Layout constants ─────────────────────────────────────────────────────────
 
-const LOGICAL_W = 390
+// Panel occupies the map tile zone: MAP_X (10) to MAP_X + MAP_W (370), width 360 px.
+// Must match MAP_X and MAP_W (VIEWPORT_COLS × TILE_SIZE) in src/map/renderer.ts.
+const MAP_X = 10
+const MAP_W = 360
 const LOGICAL_H = 844
 
 // PANEL_TOP must match game.ts (MAP_BOTTOM + 20 = 430)
@@ -12,14 +15,14 @@ export const PANEL_TOP = 430
 const PANEL_CORNER = 8
 const SIDE_MARGIN = 16
 
-// HP bars — two side-by-side columns, each half the screen
+// HP bars — two side-by-side columns within the 360 px panel
 const HP_BAR_H = 8
 const HP_BAR_EMPTY = '#2a2a3a'
 const ENEMY_RED = colors.logEnemy
 const HP_COL_GAP = 8
-const HP_COL_W = (LOGICAL_W - SIDE_MARGIN * 2 - HP_COL_GAP) / 2  // = 175
-const HP_COL1_X = SIDE_MARGIN                                      // = 16
-const HP_COL2_X = SIDE_MARGIN + HP_COL_W + HP_COL_GAP             // = 199
+const HP_COL_W = (MAP_W - SIDE_MARGIN * 2 - HP_COL_GAP) / 2  // = 160
+const HP_COL1_X = MAP_X + SIDE_MARGIN                          // = 26
+const HP_COL2_X = HP_COL1_X + HP_COL_W + HP_COL_GAP           // = 194
 const HP_LABEL_Y = PANEL_TOP + 10                                  // = 426, top of name/total text
 const HP_BAR_Y = HP_LABEL_Y + 14                                   // = 440, top of bar
 const HP_SECTION_BOTTOM = HP_BAR_Y + HP_BAR_H + 12                // = 460
@@ -42,13 +45,13 @@ const BADGE_PAD_X = 8
 // ROLL button
 const ROLL_BTN_Y = BADGE_Y + BADGE_H + 10  // = 594
 const ROLL_BTN_H = 44
-const ROLL_BTN_X = SIDE_MARGIN
-const ROLL_BTN_W = LOGICAL_W - SIDE_MARGIN * 2
+const ROLL_BTN_X = MAP_X + SIDE_MARGIN      // = 26
+const ROLL_BTN_W = MAP_W - SIDE_MARGIN * 2  // = 328
 
 // Action buttons (2-column grid)
 const ACTION_Y = ROLL_BTN_Y + ROLL_BTN_H + 10  // = 648
 const ACTION_BTN_H = 46
-const ACTION_BTN_W = (LOGICAL_W - SIDE_MARGIN * 2 - 10) / 2
+const ACTION_BTN_W = (MAP_W - SIDE_MARGIN * 2 - 10) / 2  // = 159
 const ACTION_BTN_RADIUS = 8
 
 // Encounter log zone — below action buttons
@@ -145,7 +148,7 @@ function roundRect(
 
 function dieCentres(diceCount: number): number[] {
   const totalW = diceCount * DIE_SIZE + (diceCount - 1) * DIE_GAP
-  const startX = (LOGICAL_W - totalW) / 2
+  const startX = MAP_X + (MAP_W - totalW) / 2
   return Array.from({ length: diceCount }, (_, i) => startX + i * (DIE_SIZE + DIE_GAP))
 }
 
@@ -244,7 +247,7 @@ function drawRollButton(
   ctx.fillStyle = colors.gold
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('ROLL DICE', LOGICAL_W / 2, ROLL_BTN_Y + ROLL_BTN_H / 2)
+  ctx.fillText('ROLL DICE', MAP_X + MAP_W / 2, ROLL_BTN_Y + ROLL_BTN_H / 2)
   ctx.globalAlpha = 1
 }
 
@@ -359,8 +362,8 @@ function drawEncounterLogZone(
   ctx.strokeStyle = colors.logNormal
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(SIDE_MARGIN, LOG_RULE_Y)
-  ctx.lineTo(LOGICAL_W - SIDE_MARGIN, LOG_RULE_Y)
+  ctx.moveTo(MAP_X + SIDE_MARGIN, LOG_RULE_Y)
+  ctx.lineTo(MAP_X + MAP_W - SIDE_MARGIN, LOG_RULE_Y)
   ctx.stroke()
   ctx.globalAlpha = 1
 
@@ -373,7 +376,7 @@ function drawEncounterLogZone(
   for (let i = 0; i < entries.length; i++) {
     ctx.globalAlpha = LOG_OPACITIES[i] ?? 1
     ctx.fillStyle = colors.textPrimary
-    ctx.fillText(entries[i].message, SIDE_MARGIN, LOG_LINE1_Y + i * LOG_LINE_H)
+    ctx.fillText(entries[i].message, MAP_X + SIDE_MARGIN, LOG_LINE1_Y + i * LOG_LINE_H)
   }
   ctx.globalAlpha = 1
 }
@@ -435,7 +438,7 @@ export function createDicePanel(
     const col = i % 2
     const row = Math.floor(i / 2)
     return {
-      x: SIDE_MARGIN + col * (ACTION_BTN_W + 10),
+      x: MAP_X + SIDE_MARGIN + col * (ACTION_BTN_W + 10),
       y: ACTION_Y + row * (ACTION_BTN_H + 8),
     }
   }
@@ -498,14 +501,14 @@ export function createDicePanel(
     // Panel background — extend height to cover screen bottom regardless of offset
     const extraH = Math.max(0, -off)
     const panelH = LOGICAL_H - PANEL_TOP + extraH
-    roundRect(ctx, 0, PANEL_TOP, LOGICAL_W, panelH, PANEL_CORNER)
+    roundRect(ctx, MAP_X, PANEL_TOP, MAP_W, panelH, PANEL_CORNER)
     ctx.fillStyle = colors.surface
     ctx.fill()
     ctx.strokeStyle = colors.logNormal
     ctx.lineWidth = 1
     ctx.beginPath()
-    ctx.moveTo(0, PANEL_TOP)
-    ctx.lineTo(LOGICAL_W, PANEL_TOP)
+    ctx.moveTo(MAP_X, PANEL_TOP)
+    ctx.lineTo(MAP_X + MAP_W, PANEL_TOP)
     ctx.stroke()
 
     // HP bars

@@ -2,7 +2,10 @@ import { colors } from '../colors'
 import type { CombatState } from './types'
 import { PANEL_TOP } from '../dice/panel'
 
-const LOGICAL_W = 390
+// Panel occupies the map tile zone: MAP_X (10) to MAP_X + MAP_W (370), width 360 px.
+// Must match MAP_X and MAP_W in src/map/renderer.ts.
+const MAP_X = 10
+const MAP_W = 360
 const LOGICAL_H = 844
 
 const STATUS_MID_Y = 25
@@ -99,9 +102,9 @@ export function drawCombatBanner(
     roundRect?: (x: number, y: number, w: number, h: number, radii: number[]) => void
   }
   if (ctxAny.roundRect) {
-    ctxAny.roundRect(0, PANEL_TOP, LOGICAL_W, panelH, [8, 8, 0, 0])
+    ctxAny.roundRect(MAP_X, PANEL_TOP, MAP_W, panelH, [8, 8, 0, 0])
   } else {
-    ctx.rect(0, PANEL_TOP, LOGICAL_W, panelH)
+    ctx.rect(MAP_X, PANEL_TOP, MAP_W, panelH)
   }
   ctx.fill()
 
@@ -109,11 +112,11 @@ export function drawCombatBanner(
   ctx.strokeStyle = borderColor
   ctx.lineWidth = 2
   ctx.beginPath()
-  ctx.moveTo(0, PANEL_TOP)
-  ctx.lineTo(LOGICAL_W, PANEL_TOP)
+  ctx.moveTo(MAP_X, PANEL_TOP)
+  ctx.lineTo(MAP_X + MAP_W, PANEL_TOP)
   ctx.stroke()
 
-  const cx = LOGICAL_W / 2
+  const cx = MAP_X + MAP_W / 2
   const midY = PANEL_TOP + (LOGICAL_H - PANEL_TOP) / 2
 
   // Title

@@ -9,6 +9,7 @@ const VIEWPORT_COLS = 5
 const VIEWPORT_ROWS = 5
 export const MAP_X = 10
 export const MAP_Y = 50
+export const MAP_W = VIEWPORT_COLS * TILE_SIZE  // 360 — width of the 5-tile viewport
 
 const COURSE_HEIGHT = 6
 const BRICK_JOINT_WIDTH = 1
@@ -315,7 +316,7 @@ export function drawMap(
   const startRow = viewCenter.row - Math.floor(VIEWPORT_ROWS / 2)
 
   for (let vr = 0; vr < VIEWPORT_ROWS; vr++) {
-    for (let vc = -1; vc <= VIEWPORT_COLS; vc++) {
+    for (let vc = 0; vc < VIEWPORT_COLS; vc++) {
       const mapCol = startCol + vc
       const mapRow = startRow + vr
 
