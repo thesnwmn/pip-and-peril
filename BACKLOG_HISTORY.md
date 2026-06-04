@@ -18,7 +18,7 @@ Original one- or two-sentence summary from the backlog.
 
 ### 033 · Navigation Panel Extract
 
-**Shipped:** 2026-06-04 · **PR:** (link below) · **Spec:** [docs/features/history/033-navigation-panel-extract.md](docs/features/history/033-navigation-panel-extract.md)
+**Shipped:** 2026-06-04 · **PR:** [#51](https://github.com/thesnwmn/pip-and-peril/pull/51) · **Spec:** [docs/features/history/033-navigation-panel-extract.md](docs/features/history/033-navigation-panel-extract.md)
 
 Pure file-organisation refactor — no behaviour change. Extracts canvas layout constants into a dedicated module and pulls all navigation-mode UI (status bar, nav arrows, whisper overlay, room selection cards) out of `screens/game.ts` into `navigation/panel.ts`, following the established panel factory pattern. `game.ts` drops from 822 lines to under 500.
 

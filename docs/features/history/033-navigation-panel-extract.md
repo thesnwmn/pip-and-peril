@@ -144,4 +144,4 @@ All of the above is pure behaviour verification — the refactor introduces no n
 
 ### PR
 
-PR link to be added after push.
+[#51](https://github.com/thesnwmn/pip-and-peril/pull/51)
