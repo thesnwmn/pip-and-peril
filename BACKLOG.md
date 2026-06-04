@@ -22,6 +22,15 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
+### 026 · Chest Encounter
+
+The amber **Chest**: the concept's two-beat reveal (anticipation → loot), paying out gold and/or
+an item. Three variants — basic (open freely), locked (Blue dice check), and trapped (agility
+check before loot) — plus three new chest-tier items (Stout Flask, Rabbit's Foot, Iron Thimble)
+that make chests feel like a genuine reward tier above item rooms.
+**Depends on:** 019 (gold), 020 (items), 025 (trapped variant), 030 (encounter panel), 034 (encounter registry).
+See `docs/features/026-chest-encounter.md` for the full spec.
+
 ### 025 · Trap Encounter
 
 A **forced** encounter: stepping onto a trapped tile fires a single agility check (snap-camera,
@@ -76,16 +85,6 @@ See `docs/features/024-run-summary-screen.md` for the full spec.
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) shipping first — it is already shipped.
-
-### 026 · Chest Encounter
-
-The amber **Chest**: the concept's two-beat reveal (anticipation → loot), paying out gold and/or an
-item. The richest single-room reward moment in the game.
-**Depends on:** 019 (gold), 020 (items), 025 (for the trapped variant), 030 (encounter panel).
-**Suggested stepping (for the Designer):** ① basic chest — open → loot reveal; ② locked chest — a
-dice check before it opens; ③ trapped chest — the trap (025) fires before the reveal.
-**Related:** `docs/concept/screen-layout-and-transitions.md` (Opening a Chest), Idea 001 (empty
-chest surprise).
 
 ### 027 · Shop Encounter
 
