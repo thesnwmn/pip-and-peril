@@ -20,6 +20,20 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
+## READY
+
+### 020 · Item System: Consumables & Use
+
+The engine for items as *objects Pip carries and uses*, not just inventory rows. Defines the
+consumable item category, a shared `acquireItem` function, five starting items (Crumb of Cheese,
+Wedge of Gouda, Lucky Acorn, Smoke Pellet, Glowstone Dust), and the act of **using** one — both
+from the Satchel during navigation and from a new ITEM action button in the combat panel (free
+action, once per turn). Introduces the fled tile state for the Smoke Pellet escape mechanic.
+See `docs/features/020-item-system-consumables.md` for the full spec.
+**Depends on:** 016 (item model + pouch UI), 005 (dice pool — reroll), 006 (combat), 034 (encounter registry).
+
+---
+
 ## NEEDS SPEC
 
 > **Run-loop feature set.** Items 020–029 together complete the *full gameplay run loop* — every
@@ -33,18 +47,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) shipping first — it is already shipped.
-
-### 020 · Item System: Consumables & Use
-
-The engine for items as *objects Pip carries and uses*, not just inventory rows. Defines the
-consumable item category (e.g. cheese = restore HP, a charm = one free reroll), the act of
-**acquiring** an item into the Satchel pouch, and **using** one — both during navigation and inside
-a combat encounter (the Satchel explicitly defers in-combat use to a later spec; this is it). One
-shared system that the item room, chest, and shop all plug into.
-**Depends on:** 016 (item model + pouch UI), 006 (combat, for in-combat use), 030 (encounter panel, for in-combat use).
-**Suggested stepping (for the Designer):** ① consumables — acquire + use (heal/reroll) in nav and
-combat; ② equipment / passive gear — a small "worn" slot that modifies the dice pool (ties toward
-meta-progression, item 029). Ship ① alone; ② can follow once shops/chests give gear worth wearing.
 
 ### 021 · Item Room Encounter
 
@@ -141,6 +143,16 @@ wants the outer loop closed.
 upgrades (swap d6→d8, add a die); ③ engrave faces / passive skills.
 **Related:** `docs/concept.md` (Meta Progression), `docs/concept/screen-layout-and-transitions.md`
 (Meta-Progression Hub direction sketch).
+
+### 036 · Raw Flee: Combat Escape Action
+
+A **Flee** option in the combat panel that lets Pip escape any non-boss fight without an item —
+but at a cost: the enemy lands one unblocked hit before she goes, and Pip is pushed back to the
+tile she entered the room from (not the room she's fleeing). The room is left in the **fled state**
+introduced by feature 020 (red enemy marker, combat restarts on re-entry). The cost distinction
+makes the Smoke Pellet meaningfully better: no free attack, stay in the room. Flee is available
+any turn, requires no pips, and cannot be used against a boss.
+**Depends on:** 020 (fled tile state), 006 (combat phase), 034 (encounter panel — Flee button placement).
 
 ---
 
