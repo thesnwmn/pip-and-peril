@@ -108,9 +108,9 @@ export function drawCombatBanner(
   }
   ctx.fill()
 
-  // Top border line
-  ctx.strokeStyle = borderColor
-  ctx.lineWidth = 2
+  // Top border line — matches the combat panel border style
+  ctx.strokeStyle = colors.logNormal
+  ctx.lineWidth = 1
   ctx.beginPath()
   ctx.moveTo(MAP_X, PANEL_TOP)
   ctx.lineTo(MAP_X + MAP_W, PANEL_TOP)
