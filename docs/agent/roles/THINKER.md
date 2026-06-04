@@ -53,6 +53,10 @@ is an idea for `IDEAS.md`; a thing that shapes *how everything should feel* is c
 5. **Summarise for the manager.** List what you added and where, and flag anything worth handing to
    the Designer to spec.
 
+6. **Push and open a PR.** Open a PR against `main` so the manager can review and merge the
+   session's output. Use the title format `ideas: <brief session focus>` — e.g.
+   `ideas: run pacing and meta-progression`.
+
 ## Idea format (in `IDEAS.md`)
 
 ```

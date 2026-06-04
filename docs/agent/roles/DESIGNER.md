@@ -67,6 +67,9 @@ arriving at a *sharper* spec after productive friction is the goal.
    discarded (and why), the key decisions you made, anything you deliberately deferred, and any
    open questions still outstanding.
 
+7. **Push and open a PR.** Open a PR against `main` so the manager can review and merge the spec.
+   Use the title format `spec(NNN): <Feature Title>` — e.g. `spec(003): Dungeon Tile Generation`.
+
 ## What a good spec contains
 
 A spec is done when an Engineer could build it and a Reviewer could verify it without asking you
