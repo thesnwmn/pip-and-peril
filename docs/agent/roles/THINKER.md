@@ -54,8 +54,8 @@ is an idea for `IDEAS.md`; a thing that shapes *how everything should feel* is c
    the Designer to spec.
 
 6. **Push and open a PR.** Open a PR against `main` so the manager can review and merge the
-   session's output. Use the title format `ideas: <brief session focus>` — e.g.
-   `ideas: run pacing and meta-progression`.
+   session's output. Use the title format `idea: <brief session focus>` — e.g.
+   `idea: run pacing and meta-progression`.
 
 ## Idea format (in `IDEAS.md`)
 
