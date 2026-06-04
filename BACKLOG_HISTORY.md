@@ -18,7 +18,7 @@ Original one- or two-sentence summary from the backlog.
 
 ### 034 · Encounter Registry
 
-**Shipped:** 2026-06-04 · **PR:** (link pending) · **Spec:** [docs/features/history/034-encounter-registry.md](docs/features/history/034-encounter-registry.md)
+**Shipped:** 2026-06-04 · **PR:** [#56](https://github.com/thesnwmn/pip-and-peril/pull/56) · **Spec:** [docs/features/history/034-encounter-registry.md](docs/features/history/034-encounter-registry.md)
 
 Defines what an encounter panel *is* — a full-canvas module that can draw anywhere (including
 over the map zone), declare a map-view configuration (zoom, pip centering), and signal outcomes

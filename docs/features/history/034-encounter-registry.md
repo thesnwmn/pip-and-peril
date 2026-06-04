@@ -259,7 +259,7 @@ Engineer picks the specific interface shapes.
 ## Shipped
 
 **Date:** 2026-06-04
-**PR:** (link pending push)
+**PR:** [#56](https://github.com/thesnwmn/pip-and-peril/pull/56)
 
 ### What was built
 
