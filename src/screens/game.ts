@@ -56,6 +56,7 @@ const ENCOUNTER_PANEL_GAP = 8  // bg strip between map tiles and combat panel to
 const COMBAT_PANEL_TOP = PANEL_TOP + ENCOUNTER_PANEL_GAP  // 438; panel sits 8px below nav panel boundary
 const TRANSITION_DURATION = 450  // ms
 const COMBAT_MAP_CENTER_Y = MAP_Y + (COMBAT_PANEL_TOP - MAP_Y) / 2  // ~244
+const COMBAT_MAP_CENTER_X = MAP_X + MAP_W / 2  // 190
 
 interface HitRect {
   x: number; y: number; w: number; h: number; id: string
@@ -511,6 +512,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     currentZoom: number
     pipNatX: number
     pipNatY: number
+    pipTargetX: number
     pipTargetY: number
   } {
     const vpCol = state.pip.col - (state.camera.col - Math.floor(VIEWPORT_COLS / 2))
@@ -520,12 +522,12 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
 
     if (combat === null && transition === null) {
       const panelTop = state.uiState === 'choosing' ? PANEL_TOP : LOGICAL_H
-      return { currentPanelTop: panelTop, currentZoom: 1.0, pipNatX, pipNatY, pipTargetY: pipNatY }
+      return { currentPanelTop: panelTop, currentZoom: 1.0, pipNatX, pipNatY, pipTargetX: pipNatX, pipTargetY: pipNatY }
     }
 
     if (transition === null) {
       // Stable combat — panel fully risen
-      return { currentPanelTop: COMBAT_PANEL_TOP, currentZoom: COMBAT_CONFIG.cameraZoom, pipNatX, pipNatY, pipTargetY: COMBAT_MAP_CENTER_Y }
+      return { currentPanelTop: COMBAT_PANEL_TOP, currentZoom: COMBAT_CONFIG.cameraZoom, pipNatX, pipNatY, pipTargetX: COMBAT_MAP_CENTER_X, pipTargetY: COMBAT_MAP_CENTER_Y }
     }
 
     const elapsed = timestamp - transition.startTime
@@ -538,6 +540,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         currentZoom: lerp(1.0, COMBAT_CONFIG.cameraZoom, easedT),
         pipNatX,
         pipNatY,
+        pipTargetX: lerp(pipNatX, COMBAT_MAP_CENTER_X, easedT),
         pipTargetY: lerp(pipNatY, COMBAT_MAP_CENTER_Y, easedT),
       }
     } else {
@@ -547,6 +550,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         currentZoom: lerp(COMBAT_CONFIG.cameraZoom, 1.0, easedT),
         pipNatX,
         pipNatY,
+        pipTargetX: lerp(COMBAT_MAP_CENTER_X, pipNatX, easedT),
         pipTargetY: lerp(COMBAT_MAP_CENTER_Y, pipNatY, easedT),
       }
     }
@@ -587,7 +591,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     }
 
     // ── Compute animated canvas state ────────────────────────────────────────
-    const { currentPanelTop, currentZoom, pipNatX, pipNatY, pipTargetY } = computeCanvasState(timestamp)
+    const { currentPanelTop, currentZoom, pipNatX, pipNatY, pipTargetX, pipTargetY } = computeCanvasState(timestamp)
     livePanelTop = currentPanelTop
 
     hitRects = []
@@ -602,8 +606,11 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     ctx.clip()
 
     if (combat !== null || transition !== null) {
-      // Zoom around pip's natural position, shifting it vertically toward the map area centre.
-      ctx.translate(pipNatX, pipTargetY)
+      // Fill so areas outside the dungeon boundary match the void tile colour.
+      ctx.fillStyle = DUNGEON.voidFill
+      ctx.fillRect(MAP_X, MAP_Y, MAP_W, VIEWPORT_ROWS * TILE_SIZE)
+      // Zoom around pip's natural position, centering it toward the map area centre.
+      ctx.translate(pipTargetX, pipTargetY)
       ctx.scale(currentZoom, currentZoom)
       ctx.translate(-pipNatX, -pipNatY)
     }
