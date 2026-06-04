@@ -22,14 +22,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-### 033 · Navigation Panel Extract
-
-Pure file-organisation refactor — no behaviour change. Extracts canvas layout constants into a
-dedicated module and pulls all navigation-mode UI (status bar, nav arrows, whisper overlay, room
-selection cards) out of `screens/game.ts` into `navigation/panel.ts`, following the established
-panel factory pattern. `game.ts` drops from 822 lines to under 500.
-See `docs/features/033-navigation-panel-extract.md` for the full spec.
-
 ### 034 · Encounter Registry
 
 Defines what an encounter panel *is* — a full-canvas module that can draw anywhere (including

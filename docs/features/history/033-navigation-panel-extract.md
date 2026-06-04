@@ -1,6 +1,6 @@
 # 033 · Navigation Panel Extract
 
-**Status:** READY
+**Status:** SHIPPED
 **Source idea:** Manager request
 **Depends on:** none
 
@@ -111,3 +111,37 @@ down into the panel for rendering, player actions up from the panel as signals.
 ## Open questions
 
 None. This is a file reorganisation; all behaviour is already decided.
+
+## Shipped
+
+**Shipped:** 2026-06-04
+
+### What was built
+
+- **`src/screens/game-layout.ts`** (new, 33 lines) — all canvas layout constants extracted from `game.ts` as flat named exports: `LOGICAL_W`, `LOGICAL_H`, `STATUS_BAR_H`, `MAP_BOTTOM`, `PANEL_TOP` and all card/viewport/encounter constants.
+- **`src/navigation/panel.ts`** (new, 381 lines) — `createNavigationPanel()` factory returning `{ draw, handleClick, handlePointerMove, setTeases, clearTeases, triggerWhisper, clearWhisper }`. Owns internal state: `cardTeases`, `hoveredElement`, `whisper`, `hitRects`. Draws status bar, nav arrows, situated whisper, and room selection panel. Signals card choices upward via `onCardChosen` callback.
+- **`src/screens/game.ts`** reduced from 829 → 480 lines. Now imports layout constants from `game-layout.ts` and delegates all navigation-mode rendering and card hit-testing to `navPanel`. Whisper state fully moved to the panel (trigger/clear via panel methods).
+
+### Test evidence
+
+All 14 test files, 201 tests pass. `npm run typecheck` clean. `npm run build` succeeds (30 modules, 44.88 kB bundle). `bash init.sh` passes end-to-end.
+
+### Inline Reviewer pass
+
+Reviewer raised: unused imports (`E`, `N`, `S`, `W`, `ExitMask`, `RoomOffering`, `chebyshev`, `availableDirs`) left in `game.ts` after the refactor. Fixed before push. All other candidates (room-panel guard during encounter register, hitRects initialisation race, draw-order z-layering) were refuted as either unreachable via the current state machine or pre-existing non-regressions.
+
+### Play-test instructions
+
+1. `npm run dev` → open http://localhost:5173
+2. From Main Menu → New Game. Verify status bar shows "FLOOR 1" and "Depth 0".
+3. Tap a map tile adjacent to Pip. Three room-selection cards should appear in the panel. Hover each card (mouse) to confirm hover highlight. Tap a card to place the room and move Pip.
+4. The whisper overlay should appear briefly after entering a new room (fades in ~2.5 s).
+5. Enter an enemy room — the combat tray should rise with the elastic animation. Play through combat (Roll → Strike/Evade/Focus). Victory/defeat should work as before.
+6. Open the Menu (top-left) and open the Satchel (bottom-right) — both overlays should behave normally.
+7. Navigate several rooms and confirm depth counter increments correctly.
+
+All of the above is pure behaviour verification — the refactor introduces no new player-facing features.
+
+### PR
+
+[#51](https://github.com/thesnwmn/pip-and-peril/pull/51)
