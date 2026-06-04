@@ -65,3 +65,30 @@ path? Pairs naturally with backtracking and any future "chase" pressure.
 
 ---
 
+## Idea 011 — Boss Foreshadowing
+
+**Area:** World
+**Inspiration:** Enemies & Bosses concept; the boss-reveal intro already gives any boss instant presence via title card.
+
+The boss is randomised at run start, but small echoes surface during the descent: an NPC mentions
+a terrible hiss from below; a corridor has raven feathers on the floor; a shopkeeper whispers a
+name. The randomisation is unchanged — the hints are just its echo, seeded in the world as
+atmosphere. The effect: the boss reveal feels like a discovery rather than a lottery. Risk: hints
+must be vague enough not to feel like promises if the player never reaches the boss.
+
+---
+
+## Idea 012 — Creature Personality Traits
+
+**Area:** System
+**Inspiration:** Enemies & Bosses concept; the weasel, toad, and adder all have distinct personalities that want distinct combat feel.
+
+Each creature type gets one **personality trait** — a single behavioural note that makes it read
+differently in the combat log and panel, without requiring new systems. Examples: the Weasel Scout
+*presses advantage* (its attack message sharpens when Pip's HP is low); Old Gloop *hunkers*
+(occasionally does nothing for a turn, then hits harder); the Pale Adder *strikes once, waits*
+(regular attack, then a long pause in the log before the next). These are flavour, not rule changes
+— they cost text and timing, not new mechanics. The sum is a roster that feels hand-made.
+
+---
+
