@@ -156,19 +156,4 @@ decline timeout avoids breaking trap tension for players who have no intention o
 
 ---
 
-## Idea 023 — Guaranteed Item in the Boss Room
-
-**Area:** Flow / System
-**Inspiration:** Boss fight as run climax; current boss spec (023) rewards only gold; `docs/concept/in-run-items.md`.
-
-The boss room contains one guaranteed item in addition to the boss encounter — visible on a side
-pedestal or in a small chest in a corner of the room, collectable *before* triggering the boss
-fight. Pip enters, can see both the lurking boss and the loot nearby. Grabbing it before engaging
-the boss is the natural move; the item comes from a higher-tier pool than ordinary rooms (comparable
-to a good chest reward) and is directly useful in the upcoming fight. Thematically: the Rat King's
-stolen hoard is in his lair; Pip finds something useful among it. Creates a small micro-decision —
-go for the loot first, or charge the boss immediately? The Designer should decide whether this is
-a standalone chest/pedestal interaction or baked into the boss room layout.
-
----
 

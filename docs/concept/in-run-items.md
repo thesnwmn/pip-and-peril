@@ -2,7 +2,7 @@
 
 *Things Pip finds in the dungeon. Things he carries in his satchel. Lost when the run ends.*
 
-This document sets the direction for in-run items as a system: the philosophy, structure, how they interact with different encounter types, and where they come from. Individual specable ideas are seeded in `IDEAS.md` (Ideas 019–023). This document shapes how all of them should feel and behave.
+This document sets the direction for in-run items as a system: the philosophy, structure, how they interact with different encounter types, and where they come from. Individual specable ideas are seeded in `IDEAS.md` (Ideas 019–022). This document shapes how all of them should feel and behave.
 
 ---
 
@@ -192,7 +192,7 @@ Items enter a run through several channels:
 | **Shops** | Deliberate purchase — curated selection for gold | Backlog (027) |
 | **NPC rewards** | Narrative, one-off — given as payment, thanks, or trade | Future (028) |
 | **Enemy drops** | Opportunistic, rare | Currently gold only; could introduce item drops for specific enemy types (a goblin carrying a stolen vial) — flavourful but should stay rare, not a primary source |
-| **Boss room** | Run-climax reward — a guaranteed item findable before or after the boss fight | Not yet in concept; see Idea 023 |
+| **Boss kill** | Post-run reward — feeds meta-progression (shiny scraps or equivalent), not the in-run item layer | Future; ties to 029 meta-progression |
 
 **Merchant specialisation**: a shop's stock should feel like a real merchant, not a vending machine. A Weapons Merchant sells coatings and die boosts; a Field Medic sells healing items; a Curiosity Shop stocks utility items at random. This gives each shop encounter distinct character and makes the decision to visit one feel meaningful. The Designer should consider this when speccing 027.
 
