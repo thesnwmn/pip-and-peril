@@ -232,7 +232,7 @@ None — all blocking questions resolved. This item is **READY**.
 
 ## Shipped
 
-**Date:** 2026-06-04 · **PR:** #(filled after push)
+**Date:** 2026-06-04 · **PR:** [#61](https://github.com/thesnwmn/pip-and-peril/pull/61)
 
 ### What was built
 

@@ -18,7 +18,7 @@ Original one- or two-sentence summary from the backlog.
 
 ### 021 · Item Room Encounter
 
-**Shipped:** 2026-06-04 · **PR:** #(filled after push) · **Spec:** [docs/features/history/021-item-room-encounter.md](docs/features/history/021-item-room-encounter.md)
+**Shipped:** 2026-06-04 · **PR:** [#61](https://github.com/thesnwmn/pip-and-peril/pull/61) · **Spec:** [docs/features/history/021-item-room-encounter.md](docs/features/history/021-item-room-encounter.md)
 
 The green **Item** room type: Pip enters, finds a single item on a stone pedestal, and taps to
 take it. Item is fixed to the tile at placement time (same item on re-entry). Panel rises briefly,
