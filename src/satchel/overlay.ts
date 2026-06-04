@@ -3,6 +3,7 @@ import type { Inventory, Item } from './types'
 import type { DungeonState } from '../navigation/dungeon-state'
 import { chebyshev } from '../navigation/dungeon-state'
 import { PANEL_TOP } from '../screens/game-layout'
+import { iconGlyph } from './icon'
 
 // Overlay occupies the map tile zone: MAP_X (10) to MAP_X + MAP_W (370), width 360 px.
 // Must match MAP_X and MAP_W in src/map/renderer.ts.
@@ -280,18 +281,6 @@ function drawItemCell(
   ctx.globalAlpha = 1
 }
 
-function iconGlyph(iconType: string): string {
-  switch (iconType) {
-    case 'cheese':    return '⬡'
-    case 'charm':     return '◈'
-    case 'potion':    return '⚗'
-    case 'gouda':     return '⬡'
-    case 'acorn':     return '◐'
-    case 'smoke':     return '✦'
-    case 'glowstone': return '★'
-    default:          return '?'
-  }
-}
 
 function drawPouchTab(
   ctx: CanvasRenderingContext2D,

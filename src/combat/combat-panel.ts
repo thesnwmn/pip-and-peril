@@ -111,7 +111,7 @@ export function createCombatEncounterPanel(
             const newCells = dungeonState.grid.cells.map(row => [...row])
             const cell = newCells[dungeonState.pip.row][dungeonState.pip.col]
             if (cell) {
-              newCells[dungeonState.pip.row][dungeonState.pip.col] = { ...cell, cleared: true }
+              newCells[dungeonState.pip.row][dungeonState.pip.col] = { ...cell, cleared: true, fled: false }
             }
             ctx.setDungeonState({ ...dungeonState, grid: { ...dungeonState.grid, cells: newCells } })
             combatLog = []
@@ -155,6 +155,7 @@ export function createCombatEncounterPanel(
 
         if (result.poolAfter !== undefined) {
           ctx.setPool(result.poolAfter)
+          dicePanel.startRollAnimation()
           addLogEntry(`${item.name} — Rerolled all dice!`)
         }
 

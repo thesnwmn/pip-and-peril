@@ -1,9 +1,10 @@
 import { computeFog } from '../map/fog'
-import type { ExitMask, GridPos, RoomType } from '../map/types'
+import type { ExitMask, GridPos, RoomType, TileCell } from '../map/types'
 import { E, N, S, W } from '../map/types'
 import { chebyshev, DIR_DELTA, OPP, updateCamera } from './dungeon-state'
 import type { DungeonState, RoomOffering } from './dungeon-state'
 import { pickRandom, poolForDepth, CARD_TEASES } from './room-pool'
+import { CATALOG_ITEMS } from '../satchel/catalog'
 
 export { CARD_TEASES }
 
@@ -84,7 +85,11 @@ export function placeRoom(
   targetPos: GridPos,
 ): DungeonState {
   const newCells = state.grid.cells.map(row => [...row])
-  newCells[targetPos.row][targetPos.col] = { roomType: offering.roomType, exits: offering.exits }
+  const cell: TileCell = { roomType: offering.roomType, exits: offering.exits }
+  if (offering.roomType === 'item') {
+    cell.itemId = CATALOG_ITEMS[Math.floor(Math.random() * CATALOG_ITEMS.length)].id
+  }
+  newCells[targetPos.row][targetPos.col] = cell
   const newGrid = { ...state.grid, cells: newCells }
 
   const newPip = { ...targetPos }

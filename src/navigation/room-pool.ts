@@ -45,9 +45,7 @@ export const LOG_MESSAGES: Partial<Record<RoomType, string[]>> = {
     'A robed figure stares.',
   ],
   item: [
-    'Something glints in the rubble.',
-    'Discarded by a previous delver.',
-    'Left here for a reason.',
+    'Something glints on a stone pedestal.',
   ],
   chest: [
     'A locked chest catches your eye.',

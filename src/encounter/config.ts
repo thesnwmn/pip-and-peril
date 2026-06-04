@@ -14,3 +14,10 @@ export const COMBAT_CONFIG: EncounterConfig = {
   cameraTarget: 'room',
   transitionSpeed: 'normal',
 }
+
+export const ITEM_CONFIG: EncounterConfig = {
+  panelHeightFraction: 0.50,
+  cameraZoom: 1.2,
+  cameraTarget: 'room',
+  transitionSpeed: 'normal',
+}
