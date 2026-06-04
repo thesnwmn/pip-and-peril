@@ -16,6 +16,18 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 020 · Item System: Consumables & Use
+
+**Shipped:** 2026-06-04 · **PR:** [#59](https://github.com/thesnwmn/pip-and-peril/pull/59) · **Spec:** [docs/features/history/020-item-system-consumables.md](docs/features/history/020-item-system-consumables.md)
+
+The engine for items as *objects Pip carries and uses*, not just inventory rows. Defines the
+consumable item category, a shared `acquireItem` function, five starting items (Crumb of Cheese,
+Wedge of Gouda, Lucky Acorn, Smoke Pellet, Glowstone Dust), and the act of **using** one — both
+from the Satchel during navigation and from a new ITEM action button in the combat panel (free
+action, once per turn). Introduces the fled tile state for the Smoke Pellet escape mechanic.
+
+---
+
 ### 034 · Encounter Registry
 
 **Shipped:** 2026-06-04 · **PR:** [#56](https://github.com/thesnwmn/pip-and-peril/pull/56) · **Spec:** [docs/features/history/034-encounter-registry.md](docs/features/history/034-encounter-registry.md)

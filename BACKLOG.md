@@ -22,16 +22,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-### 020 · Item System: Consumables & Use
-
-The engine for items as *objects Pip carries and uses*, not just inventory rows. Defines the
-consumable item category, a shared `acquireItem` function, five starting items (Crumb of Cheese,
-Wedge of Gouda, Lucky Acorn, Smoke Pellet, Glowstone Dust), and the act of **using** one — both
-from the Satchel during navigation and from a new ITEM action button in the combat panel (free
-action, once per turn). Introduces the fled tile state for the Smoke Pellet escape mechanic.
-See `docs/features/020-item-system-consumables.md` for the full spec.
-**Depends on:** 016 (item model + pouch UI), 005 (dice pool — reroll), 006 (combat), 034 (encounter registry).
-
 ### 021 · Item Room Encounter
 
 The green **Item** room type: Pip enters, finds a single item on a stone pedestal, and taps to

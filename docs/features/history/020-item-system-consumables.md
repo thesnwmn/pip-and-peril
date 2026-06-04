@@ -307,10 +307,27 @@ None — all blocking questions resolved with the manager before this spec was w
 
 ## Shipped
 
-**Date:** · **PR:** #
+**Date:** 2026-06-04 · **PR:** [#59](https://github.com/thesnwmn/pip-and-peril/pull/59)
 
 ### What was built
 
+- `src/items/types.ts` — extended `Item` type with `kind`, `usableInNav`, `usableInCombat`, `effect`; `ItemEffect` discriminated union (`heal`, `reroll-dice`, `flee-combat`, `reveal-fog`); `applyItemEffect` pure function
+- `src/items/catalog.ts` — five item constants: `CHEESE_CRUMB`, `GOUDA_WEDGE`, `LUCKY_ACORN`, `SMOKE_PELLET`, `GLOWSTONE_DUST`
+- `src/items/acquire.ts` — `acquireItem(inventory, item)` pure stacking function
+- `src/combat/combat-panel.ts` — ITEM action button (hidden when no combat-usable items); item picker overlay with dismiss control; free-action once-per-turn guard via `itemUsedThisTurn`
+- `src/satchel/pouch.ts` — nav-use flow (tap fires effect, whisper feedback); combat-only items rendered greyed with "combat only" label
+- `src/navigation/dungeon-state.ts` — `TileCell.fled?: boolean` field; fled tile red enemy marker in map renderer
+- `src/encounter/registry.ts` — new `'fled'` combat phase routes to navigation-idle (panel falls) without marking room cleared
+- Unit tests covering `acquireItem`, all four `ItemEffect` variants, edge cases (heal at max HP, flee state propagation, fog reveal boundary)
+
 ### Evidence
 
+`npm run test` and `npm run typecheck` both pass clean. All acceptance criteria verified.
+
 ### Play-test
+
+1. Start a new run — open Satchel → Pouch tab; should be empty (no seeding items left in shipped code).
+2. To test nav use: temporarily give Pip a Crumb of Cheese in starting inventory, open Satchel, tap it — whisper `"Pip nibbles the crumb. +2 HP."` should appear; item quantity decrements.
+3. To test combat use: enter an enemy room with a combat-usable item — ITEM button appears in action row; tap opens picker; tap item fires effect and greys ITEM until next ROLL.
+4. To test Smoke Pellet: use in combat — panel falls, Pip remains in room, red `!` marker appears on tile face; re-enter room to confirm combat restarts normally.
+5. Glowstone Dust (nav only): use from Satchel — tiles within radius 2 reveal; item is absent from combat ITEM overlay.
