@@ -70,6 +70,15 @@ sketch centrepiece is deferred.
 **Depends on:** 023 (run-complete trigger and banner), 006 (defeat signal routing), 034 (encounter registry).
 See `docs/features/024-run-summary-screen.md` for the full spec.
 
+### 027 · Shop Encounter
+
+The gold **Shop**: a warm merchant panel where Pip spends earned gold on items — the *sink* that
+gives currency a purpose. Optional encounter (a "Leave" exit), browse-and-buy. Up to 3 items
+stocked at placement; purchased items removed permanently. Merchant names, item prices, and
+parchment-warm panel styling all specced.
+**Depends on:** 019 (gold), 020 (items, `acquireItem`), 034 (encounter registry).
+See `docs/features/027-shop-encounter.md` for the full spec.
+
 ---
 
 ## NEEDS SPEC
@@ -85,14 +94,6 @@ See `docs/features/024-run-summary-screen.md` for the full spec.
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) shipping first — it is already shipped.
-
-### 027 · Shop Encounter
-
-The gold **Shop**: a warm merchant panel where Pip spends earned gold on items — the *sink* that
-gives currency a purpose. Optional encounter (a "Leave" exit), browse-and-buy.
-**Depends on:** 019 (gold to spend), 020 (items to sell), 030 (encounter panel).
-**Suggested stepping (for the Designer):** ① buy items with gold; ② sell / a haggle dice-check.
-**Related:** `docs/concept/screen-layout-and-transitions.md` (Shop), Idea 001 (sold-out surprise).
 
 ### 028 · NPC Encounter
 
