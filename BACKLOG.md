@@ -32,6 +32,15 @@ action, once per turn). Introduces the fled tile state for the Smoke Pellet esca
 See `docs/features/020-item-system-consumables.md` for the full spec.
 **Depends on:** 016 (item model + pouch UI), 005 (dice pool — reroll), 006 (combat), 034 (encounter registry).
 
+### 021 · Item Room Encounter
+
+The green **Item** room type: Pip enters, finds a single item on a stone pedestal, and taps to
+take it. Item is fixed to the tile at placement time (same item on re-entry). Panel rises briefly,
+shows icon/name/description, "Take" and "Leave" options. Taking it calls `acquireItem` and marks
+the room cleared.
+See `docs/features/021-item-room-encounter.md` for the full spec.
+**Depends on:** 020 (item catalog, `acquireItem`), 034 (encounter registry).
+
 ---
 
 ## NEEDS SPEC
@@ -47,14 +56,6 @@ See `docs/features/020-item-system-consumables.md` for the full spec.
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) shipping first — it is already shipped.
-
-### 021 · Item Room Encounter
-
-The green **Item** room type: Pip enters, finds a single item, and it goes into the pouch
-(auto-collect or a one-tap "take" beat). The simplest *source* in the economy and the cheapest way
-to make item 020 visible in play. Reuses the encounter register (panel rises, brief reveal).
-**Depends on:** 020 (item acquire/use), 004 (room offer + entry trigger), 030 (encounter panel).
-**Related:** Idea 001 (an "already taken — bare pedestal" surprise).
 
 ### 022 · Dungeon Structure: Depth Pacing & Boss Gate
 
