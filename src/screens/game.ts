@@ -606,8 +606,8 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     ctx.clip()
 
     if (combat !== null || transition !== null) {
-      // Black fill so areas outside the dungeon boundary appear black, not the canvas bg colour.
-      ctx.fillStyle = '#000'
+      // Fill so areas outside the dungeon boundary match the void tile colour.
+      ctx.fillStyle = DUNGEON.voidFill
       ctx.fillRect(MAP_X, MAP_Y, MAP_W, VIEWPORT_ROWS * TILE_SIZE)
       // Zoom around pip's natural position, centering it toward the map area centre.
       ctx.translate(pipTargetX, pipTargetY)
