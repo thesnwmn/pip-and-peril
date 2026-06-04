@@ -59,3 +59,7 @@ export const GLOWSTONE_DUST: Item = {
   usableInCombat: false,
   effect: { type: 'reveal-fog', radius: 2 },
 }
+
+export const CATALOG_ITEMS: Item[] = [
+  CHEESE_CRUMB, GOUDA_WEDGE, LUCKY_ACORN, SMOKE_PELLET, GLOWSTONE_DUST,
+]

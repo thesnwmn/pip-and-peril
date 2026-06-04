@@ -20,19 +20,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-## READY
-
-### 021 · Item Room Encounter
-
-The green **Item** room type: Pip enters, finds a single item on a stone pedestal, and taps to
-take it. Item is fixed to the tile at placement time (same item on re-entry). Panel rises briefly,
-shows icon/name/description, "Take" and "Leave" options. Taking it calls `acquireItem` and marks
-the room cleared.
-See `docs/features/021-item-room-encounter.md` for the full spec.
-**Depends on:** 020 (item catalog, `acquireItem`), 034 (encounter registry).
-
----
-
 ## NEEDS SPEC
 
 > **Run-loop feature set.** Items 020–029 together complete the *full gameplay run loop* — every

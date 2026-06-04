@@ -18,6 +18,7 @@ export interface TileCell {
   exits: ExitMask
   cleared?: boolean
   fled?: boolean
+  itemId?: string
 }
 
 export interface GameMap {

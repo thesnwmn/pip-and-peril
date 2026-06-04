@@ -232,10 +232,33 @@ None — all blocking questions resolved. This item is **READY**.
 
 ## Shipped
 
-**Date:** · **PR:** #
+**Date:** 2026-06-04 · **PR:** #(filled after push)
 
 ### What was built
 
+- `src/map/types.ts`: `TileCell` gains optional `itemId?: string`.
+- `src/satchel/catalog.ts`: exports `CATALOG_ITEMS` array of all five items.
+- `src/satchel/icon.ts` (new): shared `iconGlyph` helper extracted from overlay; `overlay.ts` now imports from here.
+- `src/navigation/room-selection.ts`: `placeRoom` assigns a random `CATALOG_ITEMS` id to `cell.itemId` when `roomType === 'item'`.
+- `src/navigation/room-pool.ts`: item room `LOG_MESSAGES` updated to `'Something glints on a stone pedestal.'`.
+- `src/encounter/config.ts`: `ITEM_CONFIG` added (`zoom: 1.2`).
+- `src/encounter/item-panel.ts` (new): `createItemEncounterPanel` — draws panel (Found! header, icon, name, description, Take/Leave buttons), handles clicks, sets `cleared` and calls `acquireItem` on Take.
+- `src/screens/game.ts`: item room encounter registered; factory captures pip screen position for 1.2× room-lock zoom.
+
 ### Evidence
 
+- 262 tests pass (17 test files); 14 new tests added across `item-panel.test.ts` and `room-selection.test.ts`.
+- TypeScript typecheck: 0 errors.
+- `npm run build`: clean, 55.65 kB bundle.
+
 ### Play-test
+
+1. Run `npm run dev` and open `http://localhost:5173`.
+2. Start a new run. Navigate until a green **Item** room card is offered.
+3. Select the Item room. The nav panel should show the whisper **"Something glints on a stone pedestal."** and an item panel should rise from the bottom.
+4. Confirm the panel shows **"Found!"** header, an icon, the item name (bold), and a one-line description (italic).
+5. Tap **Leave**. The panel falls; return to navigation. Open the satchel overlay — item was **not** added.
+6. Re-enter the same item room. The **same item** appears on the pedestal again (itemId fixed at placement).
+7. Tap **Take**. The panel falls. Open the satchel overlay and confirm the item now appears in Pip's pouch.
+8. Re-enter the item room a third time. No panel rises — Pip walks through (room is cleared).
+9. Over several runs, confirm all five item types can appear: Crumb of Cheese, Wedge of Gouda, Lucky Acorn, Smoke Pellet, Glowstone Dust.

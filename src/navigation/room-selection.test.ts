@@ -171,4 +171,46 @@ describe('placeRoom', () => {
     expect(next.fog).not.toBe(base.fog)
   })
 
+  describe('item room itemId assignment', () => {
+    const CATALOG_IDS = ['cheese-crumb', 'gouda-wedge', 'lucky-acorn', 'smoke-pellet', 'glowstone-dust']
+
+    it('assigns a non-null itemId for item rooms', () => {
+      const base = initDungeon()
+      const offering = { roomType: 'item' as const, exits: S }
+      const next = placeRoom(base, offering, { col: 6, row: 5 })
+      const cell = next.grid.cells[5][6]
+      expect(cell?.itemId).toBeDefined()
+      expect(typeof cell?.itemId).toBe('string')
+    })
+
+    it('assigns an itemId from the catalog', () => {
+      const base = initDungeon()
+      const offering = { roomType: 'item' as const, exits: S }
+      // Run multiple times to cover probability
+      for (let i = 0; i < 20; i++) {
+        const next = placeRoom(base, offering, { col: 6, row: 5 })
+        const cell = next.grid.cells[5][6]
+        expect(CATALOG_IDS).toContain(cell?.itemId)
+      }
+    })
+
+    it('does not assign itemId for non-item room types', () => {
+      const base = initDungeon()
+      for (const roomType of ['enemy', 'corridor', 'shop', 'npc', 'chest', 'boss'] as const) {
+        const offering = { roomType, exits: S }
+        const next = placeRoom(base, offering, { col: 6, row: 5 })
+        const cell = next.grid.cells[5][6]
+        expect(cell?.itemId).toBeUndefined()
+      }
+    })
+
+    it('itemId is fixed on the tile across state reads', () => {
+      const base = initDungeon()
+      const offering = { roomType: 'item' as const, exits: S }
+      const next = placeRoom(base, offering, { col: 6, row: 5 })
+      const cell = next.grid.cells[5][6]
+      // Same state read twice — itemId never changes
+      expect(next.grid.cells[5][6]?.itemId).toBe(cell?.itemId)
+    })
+  })
 })
