@@ -20,18 +20,7 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-## READY
-
-### 035 · Navigation Panel Content Modes & Direction Buttons
-
-The nav panel becomes a permanent, always-visible layer with three content modes — IDLE
-(a cross of four directional buttons), CHOOSING (room selection cards), and WHISPER (room
-text) — that cross-fade as play progresses. Direction input moves from map-zone arrows into
-touch-friendly panel buttons, improving one-handed thumb reach. Fog exits are marked with a
-low-contrast "?" glyph on the map; backtrack exits have no map marker. The situated whisper
-moves from the map zone into the top of the panel zone so it is covered last when an encounter
-panel rises over it.
-See `docs/features/035-nav-panel-content-modes.md` for the full spec.
+## IN PROGRESS
 
 ### 034 · Encounter Registry
 

@@ -3,7 +3,7 @@ import { DUNGEON } from '../map/biome'
 import { drawMap, MAP_X, MAP_W, MAP_Y, TILE_SIZE } from '../map/renderer'
 import type { DungeonState, LogStyle } from '../navigation/dungeon-state'
 import { DIR_DELTA, initDungeon, OPP } from '../navigation/dungeon-state'
-import { dirFromPipToNeighbour, isBacktrackable, movePip } from '../navigation/movement'
+import { movePip } from '../navigation/movement'
 import { generateOfferings, placeRoom, CARD_TEASES } from '../navigation/room-selection'
 import { LOG_MESSAGES, pickRandom } from '../navigation/room-pool'
 import { createNavigationPanel } from '../navigation/panel'
@@ -163,13 +163,32 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         const offering = state.offerings[idx]
         const { dc, dr } = DIR_DELTA[state.pendingDir!]
         const targetPos = { col: state.pip.col + dc, row: state.pip.row + dr }
-        const chosenRoomType = offering.roomType
         state = placeRoom(state, offering, targetPos)
         state = { ...state, roomsEntered: state.roomsEntered + 1 }
         navPanel.clearTeases()
-        triggerWhisper(chosenRoomType)
+        triggerWhisper(state.grid.cells[state.pip.row][state.pip.col]!.roomType)
         checkCombatTrigger()
       },
+      onDirButton: (dir, dirState) => {
+        if (dirState === 'fog') {
+          const { dc, dr } = DIR_DELTA[dir]
+          const nc = state.pip.col + dc
+          const nr = state.pip.row + dr
+          const offerings = generateOfferings(state, { col: nc, row: nr }, OPP[dir])
+          navPanel.setTeases(offerings.map(o => {
+            const teaseList = CARD_TEASES[o.roomType]
+            return teaseList ? pickRandom(teaseList) : ''
+          }))
+          state = { ...state, uiState: 'choosing', pendingDir: dir, offerings }
+        } else {
+          // Backtrack: room already placed, move pip directly
+          state = movePip(state, dir)
+          state = { ...state, roomsEntered: state.roomsEntered + 1 }
+          triggerWhisper(state.grid.cells[state.pip.row][state.pip.col]!.roomType)
+          checkCombatTrigger()
+        }
+      },
+      onWhisperEnd: () => {},
     },
   )
 
@@ -184,7 +203,6 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       combatLog = []
       dicePool = resetPool(dicePool)
       bannerStartTime = null
-      navPanel.clearWhisper()
       transition = { phase: 'rising', startTime: performance.now(), fromPanelTop: livePanelTop }
     }
   }
@@ -215,8 +233,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     const pipNatY = MAP_Y + vpRow * TILE_SIZE + TILE_SIZE / 2
 
     if (combat === null && transition === null) {
-      const panelTop = state.uiState === 'choosing' ? COMBAT_PANEL_TOP : LOGICAL_H
-      return { currentPanelTop: panelTop, currentZoom: 1.0, pipNatX, pipNatY, pipTargetX: pipNatX, pipTargetY: pipNatY }
+      return { currentPanelTop: LOGICAL_H, currentZoom: 1.0, pipNatX, pipNatY, pipTargetX: pipNatX, pipTargetY: pipNatY }
     }
 
     if (transition === null) {
@@ -262,10 +279,11 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
           transition = null
           livePanelTop = COMBAT_PANEL_TOP
           if (fallAction === 'victory') {
-            state = { ...state, enemiesDefeated: state.enemiesDefeated + 1 }
+            state = { ...state, enemiesDefeated: state.enemiesDefeated + 1, uiState: 'idle' }
             combat = null
             dicePool = resetPool(dicePool)
             bannerStartTime = null
+            navPanel.clearWhisper()
           } else {
             resetRunState()
             transitionTo('home')
@@ -387,54 +405,8 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       return
     }
 
-    // Room selection — delegated to navigation panel
-    if (state.uiState === 'choosing') {
-      navPanel.handleClick(x, y)
-      return
-    }
-
-    // Idle navigation
-    if (state.uiState === 'idle') {
-      const startCol = state.camera.col - Math.floor(VIEWPORT_COLS / 2)
-      const startRow = state.camera.row - Math.floor(VIEWPORT_ROWS / 2)
-
-      const vc = Math.floor((x - MAP_X) / TILE_SIZE)
-      const vr = Math.floor((y - MAP_Y) / TILE_SIZE)
-
-      if (vc < 0 || vc >= VIEWPORT_COLS || vr < 0 || vr >= VIEWPORT_ROWS) return
-
-      const nc = startCol + vc
-      const nr = startRow + vr
-
-      if (nc < 0 || nc >= state.grid.width || nr < 0 || nr >= state.grid.height) return
-
-      const dir = dirFromPipToNeighbour(state, nc, nr)
-      if (dir === null) return
-
-      const neighbour = state.grid.cells[nr][nc]
-
-      if (neighbour === null) {
-        const pipCell = state.grid.cells[state.pip.row][state.pip.col]
-        if (!pipCell || !(pipCell.exits & dir)) return
-
-        const offerings = generateOfferings(state, { col: nc, row: nr }, OPP[dir])
-        navPanel.setTeases(offerings.map(o => {
-          const teaseList = CARD_TEASES[o.roomType]
-          return teaseList ? pickRandom(teaseList) : ''
-        }))
-        navPanel.clearWhisper()
-        state = {
-          ...state,
-          uiState: 'choosing',
-          pendingDir: dir,
-          offerings,
-        }
-      } else if (isBacktrackable(state, dir)) {
-        state = movePip(state, dir)
-        state = { ...state, roomsEntered: state.roomsEntered + 1 }
-        checkCombatTrigger()
-      }
-    }
+    // Direction buttons (IDLE) and room selection cards (CHOOSING) — handled by nav panel
+    navPanel.handleClick(x, y)
   }
 
   function handlePointerMove(x: number, y: number): void {

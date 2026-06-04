@@ -24,8 +24,8 @@ export const VIEWPORT_ROWS = 5
 export const ARROW_HALF = 13
 
 // Encounter register geometry
-export const ENCOUNTER_PANEL_GAP = 8
-export const COMBAT_PANEL_TOP = PANEL_TOP + ENCOUNTER_PANEL_GAP  // 438
+export const ENCOUNTER_PANEL_GAP = 0
+export const COMBAT_PANEL_TOP = PANEL_TOP  // 430 — aligns exactly with nav panel top
 export const TRANSITION_DURATION = 450
 export const COMBAT_MAP_CENTER_Y = MAP_Y + (COMBAT_PANEL_TOP - MAP_Y) / 2
 export const COMBAT_MAP_CENTER_X = MAP_X + MAP_W / 2

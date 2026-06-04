@@ -4,6 +4,18 @@ import { E, N, S, W } from '../map/types'
 import { DIR_DELTA, OPP, updateCamera } from './dungeon-state'
 import type { DungeonState } from './dungeon-state'
 
+export function exitState(state: DungeonState, dir: ExitMask): 'none' | 'fog' | 'back' {
+  const cell = state.grid.cells[state.pip.row][state.pip.col]
+  if (!cell || !(cell.exits & dir)) return 'none'
+  const { dc, dr } = DIR_DELTA[dir]
+  const nc = state.pip.col + dc
+  const nr = state.pip.row + dr
+  if (nc < 0 || nc >= state.grid.width || nr < 0 || nr >= state.grid.height) return 'none'
+  const neighbour = state.grid.cells[nr][nc]
+  if (neighbour === null) return 'fog'
+  return isBacktrackable(state, dir) ? 'back' : 'none'
+}
+
 export const ALL_DIRS: ExitMask[] = [N, E, S, W]
 
 export function availableDirs(state: DungeonState): ExitMask[] {

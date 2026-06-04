@@ -2,6 +2,7 @@ import { colors } from '../colors'
 import type { Inventory, Item } from './types'
 import type { DungeonState } from '../navigation/dungeon-state'
 import { chebyshev } from '../navigation/dungeon-state'
+import { PANEL_TOP } from '../screens/game-layout'
 
 // Overlay occupies the map tile zone: MAP_X (10) to MAP_X + MAP_W (370), width 360 px.
 // Must match MAP_X and MAP_W in src/map/renderer.ts.
@@ -15,8 +16,8 @@ export const SATCHEL_BTN_SIZE = 44
 export const SATCHEL_BTN_X = MAP_X + MAP_W - 8 - SATCHEL_BTN_SIZE  // 318
 export const SATCHEL_BTN_Y = LOGICAL_H - 8 - SATCHEL_BTN_SIZE       // 792
 
-// Overlay covers the same zone as the combat panel (PANEL_TOP + ENCOUNTER_PANEL_GAP = 438)
-export const OVERLAY_TOP = 438
+// Overlay starts at the nav panel top so it covers it completely
+export const OVERLAY_TOP = PANEL_TOP
 
 const HEADER_H = 44
 const TAB_H = 40
