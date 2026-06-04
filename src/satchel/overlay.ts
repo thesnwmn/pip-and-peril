@@ -231,12 +231,16 @@ function drawItemCell(
   item: Item,
   x: number,
   y: number,
+  isHovered: boolean = false,
 ): void {
+  const isCombatOnly = item.usableInCombat && !item.usableInNav
+
   drawRR(ctx, x, y, ITEM_CELL, ITEM_CELL, 4)
-  ctx.fillStyle = '#b89060'
+  ctx.globalAlpha = isCombatOnly ? 0.4 : 1
+  ctx.fillStyle = isHovered && !isCombatOnly ? '#c9a070' : '#b89060'
   ctx.fill()
-  ctx.strokeStyle = colors.satchelBrass
-  ctx.lineWidth = 1.5
+  ctx.strokeStyle = isHovered && !isCombatOnly ? colors.gold : colors.satchelBrass
+  ctx.lineWidth = isHovered && !isCombatOnly ? 2 : 1.5
   ctx.stroke()
 
   // Draw a simple icon based on iconType
@@ -262,20 +266,38 @@ function drawItemCell(
     ctx.textBaseline = 'middle'
     ctx.fillText(String(item.quantity), bx + 7, by + 7)
   }
+
+  // Combat-only label
+  if (isCombatOnly) {
+    ctx.globalAlpha = 0.8
+    ctx.font = '9px monospace'
+    ctx.fillStyle = colors.textMuted
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'bottom'
+    ctx.fillText('combat only', cx, y + ITEM_CELL + 10)
+  }
+
+  ctx.globalAlpha = 1
 }
 
 function iconGlyph(iconType: string): string {
   switch (iconType) {
-    case 'cheese':  return '⬡'
-    case 'charm':   return '◈'
-    case 'potion':  return '⚗'
-    default:        return '?'
+    case 'cheese':    return '⬡'
+    case 'charm':     return '◈'
+    case 'potion':    return '⚗'
+    case 'gouda':     return '⬡'
+    case 'acorn':     return '◐'
+    case 'smoke':     return '✦'
+    case 'glowstone': return '★'
+    default:          return '?'
   }
 }
 
 function drawPouchTab(
   ctx: CanvasRenderingContext2D,
   inventory: Inventory,
+  itemHitRects: Array<{ x: number; y: number; w: number; h: number; item: Item }>,
+  hovered: string | null,
 ): void {
   let y = CONTENT_Y + PAD
 
@@ -332,7 +354,8 @@ function drawPouchTab(
     }
     if (line) ctx.fillText(line, MAP_X + PAD, lineY)
   } else {
-    // Item grid — 3 columns
+    // Item grid — 3 columns (also build hit rects)
+    itemHitRects = []
     const gridX = MAP_X + PAD
     for (let i = 0; i < inventory.items.length; i++) {
       const col = i % ITEM_COLS
@@ -340,7 +363,12 @@ function drawPouchTab(
       const cx = gridX + col * (ITEM_CELL + ITEM_GAP)
       const cy = y + row * (ITEM_CELL + ITEM_GAP)
       if (cy + ITEM_CELL > TAB_TOP - 4) break  // clip to content area
-      drawItemCell(ctx, inventory.items[i], cx, cy)
+      const item = inventory.items[i]
+      const isHovered = hovered === `item-${item.id}`
+      drawItemCell(ctx, item, cx, cy, isHovered)
+      if (item.usableInNav) {
+        itemHitRects.push({ x: cx, y: cy, w: ITEM_CELL, h: ITEM_CELL, item })
+      }
     }
   }
 }
@@ -496,18 +524,24 @@ export interface SatchelOverlay {
   _getTab(): SatchelTab
 }
 
-export function createSatchelOverlay(): SatchelOverlay {
+export interface SatchelOverlayCallbacks {
+  onItemUse?: (item: Item) => void
+}
+
+export function createSatchelOverlay(callbacks?: SatchelOverlayCallbacks): SatchelOverlay {
   let opened = false
   let animStartTime: number | null = null
   let lastTimestamp: DOMHighResTimeStamp = 0
   let activeTab: SatchelTab = 'pouch'
   let hovered: string | null = null
+  let itemHitRects: Array<{ x: number; y: number; w: number; h: number; item: Item }> = []
 
   function open(): void {
     opened = true
     animStartTime = null  // set on first draw
     activeTab = 'pouch'
     hovered = null
+    itemHitRects = []
   }
 
   function close(): void {
@@ -554,11 +588,16 @@ export function createSatchelOverlay(): SatchelOverlay {
 
     // Draw active tab content
     if (scale >= 1) {
-      switch (activeTab) {
-        case 'pouch':   drawPouchTab(ctx, inventory); break
-        case 'journal': drawJournalTab(ctx); break
-        case 'tally':   drawTallyTab(ctx, dungeonState); break
-        case 'map':     drawMapTab(ctx); break
+      if (activeTab === 'pouch') {
+        itemHitRects = []
+        drawPouchTab(ctx, inventory, itemHitRects, hovered)
+      } else {
+        itemHitRects = []
+        switch (activeTab) {
+          case 'journal': drawJournalTab(ctx); break
+          case 'tally':   drawTallyTab(ctx, dungeonState); break
+          case 'map':     drawMapTab(ctx); break
+        }
       }
     }
 
@@ -578,6 +617,18 @@ export function createSatchelOverlay(): SatchelOverlay {
     if (x >= MAP_X + MAP_W - CLOSE_HIT && y >= OVERLAY_TOP && y <= OVERLAY_TOP + CLOSE_HIT) {
       close()
       return true
+    }
+
+    // Item clicks (pouch tab)
+    if (activeTab === 'pouch') {
+      for (const rect of itemHitRects) {
+        if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) {
+          if (callbacks?.onItemUse) {
+            callbacks.onItemUse(rect.item)
+          }
+          return true
+        }
+      }
     }
 
     // Tab strip
@@ -601,7 +652,17 @@ export function createSatchelOverlay(): SatchelOverlay {
     if (!isAnimating()) {
       if (x >= MAP_X + MAP_W - CLOSE_HIT && y >= OVERLAY_TOP && y <= OVERLAY_TOP + CLOSE_HIT) {
         next = 'close'
-      } else if (y >= TAB_TOP) {
+      } else if (activeTab === 'pouch') {
+        // Check for item hover
+        for (const rect of itemHitRects) {
+          if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) {
+            next = `item-${rect.item.id}`
+            break
+          }
+        }
+      }
+
+      if (!next && y >= TAB_TOP) {
         const idx = Math.floor((x - MAP_X) / TAB_W)
         if (idx >= 0 && idx < TABS.length) next = `tab-${TABS[idx]}`
       }
