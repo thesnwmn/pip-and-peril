@@ -2,7 +2,7 @@ import { colors } from '../colors'
 import { DUNGEON } from '../map/biome'
 import type { ExitMask } from '../map/types'
 import { E, N, S, W } from '../map/types'
-import { drawMap, drawSingleTile, MAP_X, MAP_Y, TILE_SIZE } from '../map/renderer'
+import { drawMap, drawSingleTile, MAP_X, MAP_W, MAP_Y, TILE_SIZE } from '../map/renderer'
 import type { DungeonState, LogStyle, RoomOffering } from '../navigation/dungeon-state'
 import { chebyshev, DIR_DELTA, initDungeon, OPP } from '../navigation/dungeon-state'
 import { availableDirs, dirFromPipToNeighbour, isBacktrackable, movePip } from '../navigation/movement'
@@ -37,9 +37,9 @@ const MAP_BOTTOM = MAP_Y + 5 * TILE_SIZE  // 410
 const PANEL_TOP = MAP_BOTTOM + 20         // 430
 const PANEL_CORNER = 8
 const PANEL_HEADER_H = 28
-const PANEL_SIDE_MARGIN = 12
+const PANEL_SIDE_MARGIN = 4   // 4 px each side keeps 3×112 px cards within 360 px
 const PANEL_GAP = 8
-const CARD_W = 116
+const CARD_W = 112
 const CARD_H = 163
 const CARD_TILE_SIZE = 88
 const CARD_BORDER = 2.5
@@ -52,9 +52,10 @@ const VIEWPORT_ROWS = 5
 const ARROW_HALF = 13
 
 // Elastic canvas: encounter register constants
-const COMBAT_PANEL_TOP = PANEL_TOP  // combat tray aligns with nav panel top
+const ENCOUNTER_PANEL_GAP = 8  // bg strip between map tiles and combat panel top
+const COMBAT_PANEL_TOP = PANEL_TOP + ENCOUNTER_PANEL_GAP  // 438; panel sits 8px below nav panel boundary
 const TRANSITION_DURATION = 450  // ms
-const COMBAT_MAP_CENTER_Y = MAP_Y + (COMBAT_PANEL_TOP - MAP_Y) / 2  // ~248.5
+const COMBAT_MAP_CENTER_Y = MAP_Y + (COMBAT_PANEL_TOP - MAP_Y) / 2  // ~244
 
 interface HitRect {
   x: number; y: number; w: number; h: number; id: string
@@ -302,17 +303,17 @@ function drawRoomPanel(
     roundRect?: (x: number, y: number, w: number, h: number, radii: number[]) => void
   }
   if (ctxAny.roundRect) {
-    ctxAny.roundRect(0, PANEL_TOP, LOGICAL_W, panelH, [PANEL_CORNER, PANEL_CORNER, 0, 0])
+    ctxAny.roundRect(MAP_X, PANEL_TOP, MAP_W, panelH, [PANEL_CORNER, PANEL_CORNER, 0, 0])
   } else {
-    ctx.rect(0, PANEL_TOP, LOGICAL_W, panelH)
+    ctx.rect(MAP_X, PANEL_TOP, MAP_W, panelH)
   }
   ctx.fill()
 
   ctx.strokeStyle = colors.logNormal
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(0, PANEL_TOP)
-  ctx.lineTo(LOGICAL_W, PANEL_TOP)
+  ctx.moveTo(MAP_X, PANEL_TOP)
+  ctx.lineTo(MAP_X + MAP_W, PANEL_TOP)
   ctx.stroke()
 
   // Panel header
@@ -320,10 +321,10 @@ function drawRoomPanel(
   ctx.fillStyle = colors.textMuted
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('WHERE DOES THIS LEAD?', LOGICAL_W / 2, PANEL_TOP + PANEL_HEADER_H / 2)
+  ctx.fillText('WHERE DOES THIS LEAD?', MAP_X + MAP_W / 2, PANEL_TOP + PANEL_HEADER_H / 2)
 
-  // Cards — 12 px margins as specced, 8 px gaps
-  const cardsStartX = PANEL_SIDE_MARGIN
+  // Cards — 4 px margins each side; 3×112 px cards + 2×8 px gaps = 360 px total
+  const cardsStartX = MAP_X + PANEL_SIDE_MARGIN
   const cardsY = PANEL_TOP + PANEL_HEADER_H
 
   for (let i = 0; i < 3; i++) {
@@ -595,11 +596,9 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 
     // ── Map (with zoom transform during encounter register) ──────────────────
-    const mapAreaH = Math.max(0, currentPanelTop - MAP_Y)
-
     ctx.save()
     ctx.beginPath()
-    ctx.rect(0, MAP_Y, LOGICAL_W, mapAreaH)
+    ctx.rect(MAP_X, MAP_Y, MAP_W, VIEWPORT_ROWS * TILE_SIZE)
     ctx.clip()
 
     if (combat !== null || transition !== null) {
@@ -648,12 +647,17 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
           drawRoomPanel(ctx, state, cardTeases, hoveredElement, hitRects)
         }
       }
-      if (combat !== null && (combat.phase === 'victory' || combat.phase === 'defeat')) {
+      if (combat !== null) {
+        // Gap strip — bg colour between map and the combat panel surface
+        ctx.fillStyle = colors.bg
+        ctx.fillRect(0, currentPanelTop - ENCOUNTER_PANEL_GAP, LOGICAL_W, ENCOUNTER_PANEL_GAP)
         // Banner — shown during stable combat and during the falling transition
-        const bst = bannerStartTime ?? timestamp
-        drawCombatBanner(ctx, timestamp, combat, bst, currentPanelTop)
-      } else if (combat !== null) {
-        dicePanel.draw(ctx, timestamp)
+        if (combat.phase === 'victory' || combat.phase === 'defeat') {
+          const bst = bannerStartTime ?? timestamp
+          drawCombatBanner(ctx, timestamp, combat, bst, currentPanelTop)
+        } else {
+          dicePanel.draw(ctx, timestamp)
+        }
       }
     } else if (state.uiState === 'choosing') {
       drawRoomPanel(ctx, state, cardTeases, hoveredElement, hitRects)

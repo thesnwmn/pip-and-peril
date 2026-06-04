@@ -3,24 +3,26 @@ import type { Inventory, Item } from './types'
 import type { DungeonState } from '../navigation/dungeon-state'
 import { chebyshev } from '../navigation/dungeon-state'
 
-const LOGICAL_W = 390
+// Overlay occupies the map tile zone: MAP_X (10) to MAP_X + MAP_W (370), width 360 px.
+// Must match MAP_X and MAP_W in src/map/renderer.ts.
+const MAP_X = 10
+const MAP_W = 360
 const LOGICAL_H = 844
 const ANIM_DURATION = 300
 
-// Satchel button (bottom-right, 44 × 44 tap target, 8 px margin)
+// Satchel button (bottom-right of the panel zone, 44 × 44 tap target, 8 px margin)
 export const SATCHEL_BTN_SIZE = 44
-export const SATCHEL_BTN_X = LOGICAL_W - 8 - SATCHEL_BTN_SIZE  // 338
-export const SATCHEL_BTN_Y = LOGICAL_H - 8 - SATCHEL_BTN_SIZE  // 792
+export const SATCHEL_BTN_X = MAP_X + MAP_W - 8 - SATCHEL_BTN_SIZE  // 318
+export const SATCHEL_BTN_Y = LOGICAL_H - 8 - SATCHEL_BTN_SIZE       // 792
 
-// Overlay covers only the panel zone so the map remains visible above
-// Matches PANEL_TOP in game.ts (LOG_BOTTOM + 6 ≈ 472)
-export const OVERLAY_TOP = 472
+// Overlay covers the same zone as the combat panel (PANEL_TOP + ENCOUNTER_PANEL_GAP = 438)
+export const OVERLAY_TOP = 438
 
 const HEADER_H = 44
 const TAB_H = 40
 const TAB_TOP = LOGICAL_H - TAB_H                            // 804
-const CONTENT_Y = OVERLAY_TOP + HEADER_H                     // 516
-const CONTENT_H = LOGICAL_H - OVERLAY_TOP - HEADER_H - TAB_H // 288
+const CONTENT_Y = OVERLAY_TOP + HEADER_H                     // 482
+const CONTENT_H = LOGICAL_H - OVERLAY_TOP - HEADER_H - TAB_H // 322
 
 // Content inner padding
 const PAD = 16
@@ -29,7 +31,7 @@ const PAD = 16
 const CLOSE_HIT = 44
 
 // Tab geometry
-const TAB_W = LOGICAL_W / 4  // 97.5
+const TAB_W = MAP_W / 4  // 90
 
 // Item grid
 const ITEM_CELL = 64
@@ -130,20 +132,20 @@ function drawHeader(ctx: CanvasRenderingContext2D, hovered: string | null): void
   const midY = OVERLAY_TOP + HEADER_H / 2
 
   ctx.fillStyle = colors.satchelLeather
-  ctx.fillRect(0, OVERLAY_TOP, LOGICAL_W, HEADER_H)
+  ctx.fillRect(MAP_X, OVERLAY_TOP, MAP_W, HEADER_H)
 
   // Stitched borders — top seam and bottom separator
   ctx.strokeStyle = colors.satchelBrass
   ctx.lineWidth = 1.5
   ctx.beginPath()
-  ctx.moveTo(0, OVERLAY_TOP)
-  ctx.lineTo(LOGICAL_W, OVERLAY_TOP)
+  ctx.moveTo(MAP_X, OVERLAY_TOP)
+  ctx.lineTo(MAP_X + MAP_W, OVERLAY_TOP)
   ctx.stroke()
 
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(0, OVERLAY_TOP + HEADER_H)
-  ctx.lineTo(LOGICAL_W, OVERLAY_TOP + HEADER_H)
+  ctx.moveTo(MAP_X, OVERLAY_TOP + HEADER_H)
+  ctx.lineTo(MAP_X + MAP_W, OVERLAY_TOP + HEADER_H)
   ctx.stroke()
 
   // Title
@@ -151,10 +153,10 @@ function drawHeader(ctx: CanvasRenderingContext2D, hovered: string | null): void
   ctx.fillStyle = colors.textPrimary
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
-  ctx.fillText("Pip's Satchel", PAD, midY)
+  ctx.fillText("Pip's Satchel", MAP_X + PAD, midY)
 
   // Close button ×
-  const cx = LOGICAL_W - CLOSE_HIT / 2
+  const cx = MAP_X + MAP_W - CLOSE_HIT / 2
   ctx.font = 'bold 18px monospace'
   ctx.fillStyle = hovered === 'close' ? colors.textPrimary : colors.textMuted
   ctx.textAlign = 'center'
@@ -164,19 +166,19 @@ function drawHeader(ctx: CanvasRenderingContext2D, hovered: string | null): void
 
 function drawTabStrip(ctx: CanvasRenderingContext2D, active: SatchelTab): void {
   ctx.fillStyle = colors.satchelStitch
-  ctx.fillRect(0, TAB_TOP, LOGICAL_W, TAB_H)
+  ctx.fillRect(MAP_X, TAB_TOP, MAP_W, TAB_H)
 
   // Top border
   ctx.strokeStyle = colors.satchelBrass
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(0, TAB_TOP)
-  ctx.lineTo(LOGICAL_W, TAB_TOP)
+  ctx.moveTo(MAP_X, TAB_TOP)
+  ctx.lineTo(MAP_X + MAP_W, TAB_TOP)
   ctx.stroke()
 
   for (let i = 0; i < TABS.length; i++) {
     const tab = TABS[i]
-    const tx = i * TAB_W
+    const tx = MAP_X + i * TAB_W
     const isActive = tab === active
     const midX = tx + TAB_W / 2
     const midY = TAB_TOP + TAB_H / 2 - (isActive ? 1 : 0)
@@ -218,7 +220,7 @@ function drawTabStrip(ctx: CanvasRenderingContext2D, active: SatchelTab): void {
 
 function drawContentArea(ctx: CanvasRenderingContext2D): void {
   ctx.fillStyle = colors.satchelCanvas
-  ctx.fillRect(0, CONTENT_Y, LOGICAL_W, CONTENT_H)
+  ctx.fillRect(MAP_X, CONTENT_Y, MAP_W, CONTENT_H)
 }
 
 // ─── Pouch tab ───────────────────────────────────────────────────────────────
@@ -277,8 +279,8 @@ function drawPouchTab(
   let y = CONTENT_Y + PAD
 
   // Gold row
-  const goldLabelX = PAD
-  const goldValueX = PAD + 38
+  const goldLabelX = MAP_X + PAD
+  const goldValueX = MAP_X + PAD + 38
 
   ctx.font = '12px monospace'
   ctx.fillStyle = colors.textMuted
@@ -298,8 +300,8 @@ function drawPouchTab(
   ctx.globalAlpha = 0.6
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(PAD, y)
-  ctx.lineTo(LOGICAL_W - PAD, y)
+  ctx.moveTo(MAP_X + PAD, y)
+  ctx.lineTo(MAP_X + MAP_W - PAD, y)
   ctx.stroke()
   ctx.globalAlpha = 1
 
@@ -313,7 +315,7 @@ function drawPouchTab(
     ctx.textAlign = 'left'
     ctx.textBaseline = 'top'
     const emptyMsg = '"Nothing in here yet. Just crumbs and old string."'
-    const maxW = LOGICAL_W - PAD * 2
+    const maxW = MAP_W - PAD * 2
     const words = emptyMsg.split(' ')
     let line = ''
     let lineY = y
@@ -322,15 +324,15 @@ function drawPouchTab(
       if (ctx.measureText(test).width <= maxW) {
         line = test
       } else {
-        ctx.fillText(line, PAD, lineY)
+        ctx.fillText(line, MAP_X + PAD, lineY)
         lineY += 16
         line = word
       }
     }
-    if (line) ctx.fillText(line, PAD, lineY)
+    if (line) ctx.fillText(line, MAP_X + PAD, lineY)
   } else {
     // Item grid — 3 columns
-    const gridX = PAD
+    const gridX = MAP_X + PAD
     for (let i = 0; i < inventory.items.length; i++) {
       const col = i % ITEM_COLS
       const row = Math.floor(i / ITEM_COLS)
@@ -355,7 +357,7 @@ function drawJournalTab(ctx: CanvasRenderingContext2D): void {
   ]
   const y = CONTENT_Y + PAD
   for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], PAD, y + i * 18)
+    ctx.fillText(lines[i], MAP_X + PAD, y + i * 18)
   }
 }
 
@@ -445,9 +447,9 @@ function drawTallyTab(
   for (const row of rows) {
     ctx.textAlign = 'left'
     ctx.textBaseline = 'middle'
-    ctx.fillText(row.label, PAD, y + rowH / 2)
+    ctx.fillText(row.label, MAP_X + PAD, y + rowH / 2)
 
-    const valueX = PAD + LABEL_COL_W
+    const valueX = MAP_X + PAD + LABEL_COL_W
     drawTallyMark(ctx, row.value, valueX, y + rowH / 2)
 
     // Light row divider
@@ -455,8 +457,8 @@ function drawTallyTab(
     ctx.globalAlpha = 0.2
     ctx.lineWidth = 1
     ctx.beginPath()
-    ctx.moveTo(PAD, y + rowH)
-    ctx.lineTo(LOGICAL_W - PAD, y + rowH)
+    ctx.moveTo(MAP_X + PAD, y + rowH)
+    ctx.lineTo(MAP_X + MAP_W - PAD, y + rowH)
     ctx.stroke()
     ctx.globalAlpha = 1
 
@@ -477,7 +479,7 @@ function drawMapTab(ctx: CanvasRenderingContext2D): void {
   ]
   const y = CONTENT_Y + PAD
   for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], PAD, y + i * 18)
+    ctx.fillText(lines[i], MAP_X + PAD, y + i * 18)
   }
 }
 
@@ -539,7 +541,7 @@ export function createSatchelOverlay(): SatchelOverlay {
 
     ctx.save()
     ctx.beginPath()
-    ctx.rect(0, OVERLAY_TOP, LOGICAL_W, LOGICAL_H - OVERLAY_TOP)
+    ctx.rect(MAP_X, OVERLAY_TOP, MAP_W, LOGICAL_H - OVERLAY_TOP)
     ctx.clip()
     ctx.translate(originX, originY)
     ctx.scale(scale, scale)
@@ -572,14 +574,14 @@ export function createSatchelOverlay(): SatchelOverlay {
     }
 
     // Close button — top-right of the overlay header
-    if (x >= LOGICAL_W - CLOSE_HIT && y >= OVERLAY_TOP && y <= OVERLAY_TOP + CLOSE_HIT) {
+    if (x >= MAP_X + MAP_W - CLOSE_HIT && y >= OVERLAY_TOP && y <= OVERLAY_TOP + CLOSE_HIT) {
       close()
       return true
     }
 
     // Tab strip
     if (y >= TAB_TOP && y <= LOGICAL_H) {
-      const idx = Math.floor(x / TAB_W)
+      const idx = Math.floor((x - MAP_X) / TAB_W)
       if (idx >= 0 && idx < TABS.length) {
         activeTab = TABS[idx]
       }
@@ -596,10 +598,10 @@ export function createSatchelOverlay(): SatchelOverlay {
     let next: string | null = null
 
     if (!isAnimating()) {
-      if (x >= LOGICAL_W - CLOSE_HIT && y >= OVERLAY_TOP && y <= OVERLAY_TOP + CLOSE_HIT) {
+      if (x >= MAP_X + MAP_W - CLOSE_HIT && y >= OVERLAY_TOP && y <= OVERLAY_TOP + CLOSE_HIT) {
         next = 'close'
       } else if (y >= TAB_TOP) {
-        const idx = Math.floor(x / TAB_W)
+        const idx = Math.floor((x - MAP_X) / TAB_W)
         if (idx >= 0 && idx < TABS.length) next = `tab-${TABS[idx]}`
       }
     }

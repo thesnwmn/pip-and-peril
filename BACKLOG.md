@@ -20,18 +20,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-## READY
-
-### 032 · Map Zone Stability
-
-The map canvas clip region currently shrinks when an encounter panel rises — navigation uses the
-full screen height, combat squishes it to ~45%. This fix makes the map zone a constant: the clip
-is always `MAP_Y` to `LOGICAL_H`. Encounter panels overlay the lower portion of the map rather
-than compressing it, so the dungeon feels spatially stable across all states.
-See `docs/features/032-map-zone-stability.md` for the full spec.
-
----
-
 ## NEEDS SPEC
 
 > **Run-loop feature set.** Items 020–029 together complete the *full gameplay run loop* — every

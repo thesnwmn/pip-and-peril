@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 032 · Map Zone Stability
+
+**Shipped:** 2026-06-03 · **PR:** [#47](https://github.com/thesnwmn/pip-and-peril/pull/47) · **Spec:** [docs/features/history/032-map-zone-stability.md](docs/features/history/032-map-zone-stability.md)
+
+The map canvas clip region currently shrinks when an encounter panel rises — navigation uses the full screen height, combat squishes it to ~45%. This fix makes the map zone a constant: the clip is always `MAP_Y` to `LOGICAL_H`. Encounter panels overlay the lower portion of the map rather than compressing it, so the dungeon feels spatially stable across all states.
+
+---
+
 ### 031 · Log View Redesign
 
 **Shipped:** 2026-06-03 · **PR:** [#45](https://github.com/thesnwmn/pip-and-peril/pull/45) · **Spec:** [docs/features/history/031-log-view-redesign.md](docs/features/history/031-log-view-redesign.md)

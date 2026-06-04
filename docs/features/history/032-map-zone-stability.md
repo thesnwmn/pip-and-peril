@@ -238,10 +238,24 @@ None. This is **READY**.
 
 ## Shipped
 
-**Date:** · **PR:**
+**Date:** 2026-06-03 · **PR:** #47
 
 ### What was built
 
+Removed the dynamic `mapAreaH` calculation from `src/screens/game.ts`'s `draw` function and replaced the map clip rectangle with a fixed constant: `ctx.rect(MAP_X, MAP_Y, VIEWPORT_COLS * TILE_SIZE, LOGICAL_H - MAP_Y)` — always `(10, 50, 360, 794)`. The change is three lines total: one deleted (`mapAreaH` assignment) and one modified (`ctx.rect` call). No other logic was touched; panels already draw after the map and naturally overlay it.
+
 ### Evidence
 
+- `npm run typecheck` exits clean (0 errors).
+- `npm run test` — 201/201 tests pass, all pre-existing, none modified.
+- Inline Reviewer pass: all 11 acceptance criteria verified against the diff. Approved with no blocking issues.
+
 ### Play-test
+
+1. Open the game (dev server or preview URL).
+2. **Navigation idle** — observe the dungeon tile grid; note the narrow background strips left (~10 px) and right (~20 px) of the tile grid.
+3. Tap a direction arrow to enter **choosing state** — the room-selection panel should slide up from the bottom and overlay the map. Confirm the map did not visibly shrink; the tiles above the panel remain at the same position and scale as step 2.
+4. Select a room card to confirm the panel dismisses and Pip moves.
+5. Navigate to an **enemy room** to trigger combat. Watch the panel rise — confirm the dungeon map stays spatially stable (tiles do not shift or shrink as the panel ascends).
+6. In **stable combat state** — confirm the background strips left and right of the tile grid are visible at the same width as in navigation (step 2). In the previous behaviour, the zoomed tiles filled the full 390 px and the strips disappeared; they should now remain.
+7. Complete or lose the combat and watch the panel fall — again the map should remain stable throughout.

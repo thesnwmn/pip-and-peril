@@ -9,6 +9,7 @@ const VIEWPORT_COLS = 5
 const VIEWPORT_ROWS = 5
 export const MAP_X = 10
 export const MAP_Y = 50
+export const MAP_W = VIEWPORT_COLS * TILE_SIZE  // 360 — width of the 5-tile viewport
 
 const COURSE_HEIGHT = 6
 const BRICK_JOINT_WIDTH = 1
@@ -339,9 +340,6 @@ export function drawMap(
 
   // Dungeon boundary: dashed gold border around the full grid
   ctx.save()
-  ctx.beginPath()
-  ctx.rect(MAP_X, MAP_Y, VIEWPORT_COLS * TILE_SIZE, VIEWPORT_ROWS * TILE_SIZE)
-  ctx.clip()
   ctx.strokeStyle = 'rgba(200, 148, 30, 0.5)'
   ctx.lineWidth = 2
   ctx.setLineDash([5, 4])
