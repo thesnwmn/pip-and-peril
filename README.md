@@ -4,7 +4,7 @@
 
 A web-based, portrait-oriented roguelike dungeon crawler starring **Pip**, a mouse explorer.
 Dice-driven, turn-based, with procedural tile-based dungeon exploration resolved through a coloured
-dice-pool system. See the full design brief in [`docs/concept.md`](docs/concept.md).
+dice-pool system. See the full design brief in [`docs/concept/overview.md`](docs/concept/overview.md).
 
 ## Status
 

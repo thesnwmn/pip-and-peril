@@ -1,7 +1,7 @@
 # 026 · Chest Encounter
 
 **Status:** READY
-**Source idea:** Manager request; `docs/concept.md` (Room Types — Chest); `docs/concept/screen-layout-and-transitions.md` (Opening a Chest); Idea 001 (empty chest surprise, archived)
+**Source idea:** Manager request; `docs/concept/overview.md` (Room Types — Chest); `docs/concept/screen-layout-and-transitions.md` (Opening a Chest); Idea 001 (empty chest surprise, archived)
 **Depends on:** 019 (gold/pouch model), 020 (item system, `acquireItem`, item registry), 025 (trap mechanic — trapped variant only), 030 (encounter panel framework), 034 (encounter registry)
 
 ---

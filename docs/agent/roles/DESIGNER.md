@@ -24,8 +24,22 @@ friction is not optional; it is the core of the role.
 
 ## Process
 
-1. **Understand the request.** Read the source idea in `IDEAS.md` (or the manager's prompt), the
-   concept in `docs/concept.md`, and any related specs in `docs/features/`.
+1. **Understand the request and the game.** Before anything else, read the concept docs — they are
+   the reference that tells you what this game *is* and what it should *feel like*. Start with
+   `docs/concept.md` (the index), then read `docs/concept/overview.md` for the pillars and
+   aesthetic direction, and any expanded doc that covers the area you're working in:
+
+   | Feature area | Read also |
+   |---|---|
+   | Tile, room, or map features | `docs/concept/tiles-and-props.md` |
+   | Item or equipment features | `docs/concept/in-run-items.md` |
+   | UI, screen, or transition features | `docs/concept/screen-layout-and-transitions.md` |
+   | Enemy, combat, or boss features | `docs/concept/enemies-and-bosses.md` |
+
+   Then read the source idea in `IDEAS.md` (or the manager's prompt) and any related specs in
+   `docs/features/`. The concept docs are the authority on intent; the idea and spec history are
+   context. If the source idea conflicts with a concept doc, that tension needs resolving before
+   you spec anything.
 
 2. **Interrogate before you spec — this is the core of the role.** Do not jump straight to writing
    a spec. First, think hard about whether the idea is the right one:
@@ -64,14 +78,15 @@ friction is not optional; it is the core of the role.
    the ambiguity could derail the Engineer.
 
    For any feature that involves a visible screen or UI component, visual design is **part of the
-   spec** — not a follow-up. Read `docs/concept.md` (Aesthetic Direction) and any existing color
+   spec** — not a follow-up. Read `docs/concept/overview.md` (Aesthetic Direction) and any existing color
    decisions before writing, then include in the Design detail section:
    - A wireframe (ASCII diagram or inline SVG) showing the layout.
    - Any new named color tokens (e.g. `--room-enemy: #7a1a1a`), matched to the established palette.
    - Typography and sizing notes for new text elements.
 
-   The Thinker may supply aesthetic mood notes or palette sketches in `IDEAS.md` — treat these the
-   same as mechanical ideas: raw material to challenge and sharpen, not instructions to transcribe.
+   The Thinker may supply aesthetic mood notes or palette sketches in concept docs or `IDEAS.md` —
+   treat these the same as mechanical ideas: raw material to challenge and sharpen, not instructions
+   to transcribe.
 
 4. **Add or update the backlog entry** in `BACKLOG.md`. A fully-specced item is `READY`; a captured
    but unspecced one stays `NEEDS SPEC` with a note on what's blocking the spec.

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Pip & Peril** is a web-based, portrait-oriented roguelike dungeon crawler starring **Pip**, a
 mouse explorer. It is dice-driven and turn-based, with procedural tile-based dungeon exploration
-resolved through a coloured dice-pool system. Read `docs/concept.md` for the full design brief.
+resolved through a coloured dice-pool system. Read `docs/concept.md` for the concept doc index; start with `docs/concept/overview.md` for the full design brief.
 
 The game is built to run in the browser. It currently exists as a set of static HTML
 proof-of-concepts (`poc/`) and a landing page (`index.html`), deployed to GitHub Pages. There is
@@ -70,7 +70,7 @@ The harness keeps a clear paper trail from concept → decision → backlog → 
 
 | Concern | Lives in |
 |---|---|
-| **Concept & direction** | `docs/concept.md`, `docs/concept/` (art direction, pillars, tone) |
+| **Concept & direction** | `docs/concept.md` (index) · `docs/concept/overview.md` (design brief) · `docs/concept/` (expanded docs per area) |
 | **Raw ideas** | `IDEAS.md` (written by Thinker, consumed by Designer) |
 | **Feature backlog** | `BACKLOG.md` (active) · `BACKLOG_HISTORY.md` (completed, summary + link) |
 | **Feature details** | `docs/features/` (active specs) · `docs/features/history/` (archived specs with evidence) |
