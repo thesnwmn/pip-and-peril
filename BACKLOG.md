@@ -43,6 +43,16 @@ combat defeat paths to route to Home (not Main Menu).
 **Depends on:** 006 (combat loop), 019 (gold reward pattern), 022 (boss room placement), 034 (encounter registry).
 See `docs/features/023-boss-encounter.md` for the full spec.
 
+### 024 · Run Summary Screen
+
+A full-screen parchment retrospective at the end of every run — reached by boss victory (after
+the 023 banner) or Pip's death. Shows floor reached, enemies defeated, total gold found, and on
+defeat what felled Pip. Same screen serves both outcomes with different header tone. Introduces
+`RunState` counters (`enemiesDefeated`, `goldEarned`, `killedBy`). Step ① of two: the dungeon
+sketch centrepiece is deferred.
+**Depends on:** 023 (run-complete trigger and banner), 006 (defeat signal routing), 034 (encounter registry).
+See `docs/features/024-run-summary-screen.md` for the full spec.
+
 ---
 
 ## NEEDS SPEC
@@ -58,17 +68,6 @@ See `docs/features/023-boss-encounter.md` for the full spec.
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) shipping first — it is already shipped.
-
-### 024 · Run Summary Screen
-
-The payoff at the end of a run — reached by **boss victory (run complete)** or by **death**. A cool,
-parchment retrospective showing depth reached, enemies felled, gold found, and (on death) what
-felled Pip. Closes the emotional loop and replaces the current abrupt defeat→Main-Menu cut. The hero
-element is the run's record, not a stats grid.
-**Depends on:** 023 (run-complete trigger), 006 (defeat path to reroute here).
-**Suggested stepping (for the Designer):** ① a stats-based summary that both outcomes route into;
-② upgrade the centrepiece to the hand-drawn **dungeon sketch** of the explored run.
-**Related:** Idea 017 (Run Summary as Dungeon Sketch), Idea 014 (Dungeon Sketch).
 
 ### 025 · Trap Encounter
 
