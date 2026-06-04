@@ -16,12 +16,11 @@ routing for any panel registered with it. Combat is refactored as the first cons
 reference implementation. After this feature, adding a new encounter type means creating a panel
 module and registering it; nothing else changes.
 
-The RISING transition is redesigned as a layered animation: when an encounter triggers, the
-navigation panel dismisses any room selection cards and shows the situated whisper for the
-entered room — then stays visible in that state while the encounter panel slides up from
-off-screen below it. Once the encounter panel covers the navigation panel zone it is discarded.
-The FALLING transition on a victory outcome reverses this: the encounter panel slides back
-down off-screen, revealing a clean navigation panel underneath.
+The RISING transition is a layered animation: by the time an encounter triggers, the nav panel
+is already in WHISPER mode (the card-tap transition per feature 035). The encounter panel slides
+up from off-screen below the whisper-showing nav panel; once it covers the nav zone the nav panel
+is discarded. The FALLING transition on a victory outcome reverses this: the encounter panel
+slides back down, revealing a clean nav panel in IDLE mode underneath.
 
 ## Acceptance criteria
 
@@ -61,17 +60,17 @@ down off-screen, revealing a clean navigation panel underneath.
    transition animation: the layered rise/fall described in criterion 8 and the Design detail
    replaces the current single-surface animation.
 
-8. At encounter trigger the registry:
-   a. Instructs the navigation panel to dismiss any room selection cards and trigger the
-      situated whisper for the entered room.
-   b. Instantiates the encounter panel and begins the RISING animation with the encounter
-      panel starting at LOGICAL_H (fully off-screen below).
-   c. Renders both panels each frame during the rise — navigation panel at its normal position,
-      encounter panel as an overlay rising above it — until the encounter panel top reaches
-      PANEL_TOP, at which point the navigation panel is discarded.
+8. At encounter trigger the registry instantiates the encounter panel and begins the RISING
+   animation with the encounter panel starting at LOGICAL_H (fully off-screen below). By this
+   point the nav panel is already in WHISPER mode (the card-tap that moved Pip into the room
+   triggered the CHOOSING → WHISPER transition per feature 035). The registry renders both
+   panels each frame during the rise — nav panel at its normal position as the background
+   layer, encounter panel rising above it — until the encounter panel top reaches PANEL_TOP,
+   at which point the nav panel is discarded.
    On a **victory** outcome, the FALLING animation slides the encounter panel back to
-   LOGICAL_H, revealing a clean navigation panel underneath (no cards, no whisper). Once the
-   encounter panel exits the screen the encounter is cleared and navigation resumes.
+   LOGICAL_H; the nav panel is rendered from the start of the fall in IDLE mode (reset: no
+   cards, no whisper) so it is visible as soon as the encounter panel retreats below PANEL_TOP.
+   Once the encounter panel exits the screen the encounter is cleared and navigation resumes.
    On a **defeat** outcome, the existing behaviour is preserved: the fall exits to the main
    menu without a navigation reveal.
 
@@ -83,14 +82,16 @@ down off-screen, revealing a clean navigation panel underneath.
 - The encounter panel specification should cover only what combat demonstrably needs today,
   with extension points noted as comments. Do not over-specify for encounters that don't exist yet.
 - No changes to the satchel/menu modal.
-- The navigation panel (033's work) gains two narrow hooks to support the registry: dismiss
-  cards and trigger a whisper on command. No other changes to its behaviour.
+- The nav panel's content modes (IDLE/CHOOSING/WHISPER) are 035's concern. This feature
+  only needs the nav panel to expose one hook: reset to IDLE after a victory outcome.
 - The layered transition animation is an intentional visible change; all other player-facing
   behaviour is unchanged.
 
 ## Dependencies
 
 - 033 — navigation panel extract (cleaner `game.ts` before restructuring encounter wiring)
+- 035 — nav panel content modes (always-visible nav panel with IDLE/CHOOSING/WHISPER states
+  that this feature layers encounter panels on top of)
 
 ## Design detail
 
