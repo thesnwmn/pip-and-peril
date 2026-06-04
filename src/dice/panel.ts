@@ -48,15 +48,16 @@ const ROLL_BTN_H = 44
 const ROLL_BTN_X = MAP_X + SIDE_MARGIN      // = 26
 const ROLL_BTN_W = MAP_W - SIDE_MARGIN * 2  // = 328
 
-// Action buttons (2-column grid)
+// Action buttons (4-column grid, 1 row)
 const ACTION_Y = ROLL_BTN_Y + ROLL_BTN_H + 10  // = 648
 const ACTION_BTN_H = 46
-const ACTION_BTN_W = (MAP_W - SIDE_MARGIN * 2 - 10) / 2  // = 159
+const ACTION_GAP = 8
+const ACTION_BTN_W = (MAP_W - SIDE_MARGIN * 2 - ACTION_GAP * 3) / 4  // = 79
 const ACTION_BTN_RADIUS = 8
 
 // Encounter log zone — below action buttons
-const ACTION_ROWS = Math.ceil(3 / 2)  // 2 rows for 3 actions
-const ACTIONS_BOTTOM = ACTION_Y + ACTION_ROWS * ACTION_BTN_H + (ACTION_ROWS - 1) * 8
+const ACTION_ROWS = 1
+const ACTIONS_BOTTOM = ACTION_Y + ACTION_ROWS * ACTION_BTN_H
 const LOG_RULE_Y = ACTIONS_BOTTOM + 6
 const LOG_LINE_H = 14
 const LOG_LINE1_Y = LOG_RULE_Y + 5
@@ -129,6 +130,7 @@ const ACTIONS: ActionDef[] = [
   { id: 'strike', label: 'Strike', cost: { red: 2 } },
   { id: 'evade',  label: 'Evade',  cost: { green: 2 } },
   { id: 'focus',  label: 'Focus',  cost: { blue: 1 } },
+  { id: 'item',   label: 'ITEM',   cost: {} },
 ]
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -300,13 +302,15 @@ function drawActionButton(
   ctx.lineWidth = flashing ? 2 : 1
   ctx.stroke()
 
-  ctx.font = '14px system-ui, -apple-system, sans-serif'
+  ctx.font = '12px system-ui, -apple-system, sans-serif'
   ctx.fillStyle = colors.textPrimary
-  ctx.textAlign = 'left'
+  ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText(action.label, x + 10, y + 16)
+  ctx.fillText(action.label, x + ACTION_BTN_W / 2, y + ACTION_BTN_H / 2)
 
-  drawCostPill(ctx, action.cost, x + ACTION_BTN_W / 2, y + ACTION_BTN_H - 22)
+  if (action.id !== 'item') {
+    drawCostPill(ctx, action.cost, x + ACTION_BTN_W / 2, y + ACTION_BTN_H - 18)
+  }
   ctx.globalAlpha = 1
 }
 
@@ -381,6 +385,68 @@ function drawEncounterLogZone(
   ctx.globalAlpha = 1
 }
 
+// ── Item picker overlay ───────────────────────────────────────────────────────
+
+const PICKER_PADDING = 12
+const PICKER_HEADER_H = 32
+const PICKER_ITEM_H = 60
+const PICKER_MAX_ITEMS = 3
+
+function drawItemPickerOverlay(
+  ctx: CanvasRenderingContext2D,
+  inventory: any,
+  yOffset: number,
+  hoveredIndex: number | null,
+): void {
+  const combatItems = inventory.items.filter((i: any) => i.usableInCombat)
+  if (combatItems.length === 0) return
+
+  const pickerH = PICKER_HEADER_H + Math.min(combatItems.length, PICKER_MAX_ITEMS) * PICKER_ITEM_H
+  const pickerY = ACTION_Y + ACTION_BTN_H + 8 + yOffset
+
+  // Background
+  roundRect(ctx, MAP_X + 8, pickerY, MAP_W - 16, pickerH, 8)
+  ctx.fillStyle = colors.surface
+  ctx.fill()
+  ctx.strokeStyle = colors.logNormal
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+  // Header
+  ctx.font = 'bold 12px monospace'
+  ctx.fillStyle = colors.textPrimary
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('Use Item', MAP_X + 8 + PICKER_PADDING, pickerY + PICKER_HEADER_H / 2)
+
+  // Items
+  for (let i = 0; i < Math.min(combatItems.length, PICKER_MAX_ITEMS); i++) {
+    const item = combatItems[i]
+    const itemY = pickerY + PICKER_HEADER_H + i * PICKER_ITEM_H
+    const isHovered = i === hoveredIndex
+
+    if (isHovered) {
+      ctx.fillStyle = colors.surfaceRaised
+      ctx.fillRect(MAP_X + 8, itemY, MAP_W - 16, PICKER_ITEM_H)
+    }
+
+    ctx.font = 'bold 12px monospace'
+    ctx.fillStyle = colors.textPrimary
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    ctx.fillText(item.name, MAP_X + 8 + PICKER_PADDING, itemY + 4)
+
+    ctx.font = 'italic 11px monospace'
+    ctx.fillStyle = colors.textMuted
+    ctx.fillText(item.description, MAP_X + 8 + PICKER_PADDING, itemY + 22)
+
+    ctx.font = '10px monospace'
+    ctx.fillStyle = colors.gold
+    ctx.textAlign = 'right'
+    ctx.fillText(`×${item.quantity}`, MAP_X + MAP_W - 8 - PICKER_PADDING, itemY + 10)
+  }
+}
+
 // ── Hit rect type ─────────────────────────────────────────────────────────────
 
 interface HitRect {
@@ -413,9 +479,12 @@ export interface DicePanelCallbacks {
   onStateChange: (pool: DicePool) => void
   addLog: (message: string) => void
   onAction?: (actionId: string) => void
+  onItem?: (item: any) => void
   onBeforeRoll?: () => boolean
   getCombatLog?: () => CombatLogEntry[]
   getHpInfo?: () => HpInfo | null
+  getInventory?: () => any
+  getItemUsedThisTurn?: () => boolean
 }
 
 export function createDicePanel(
@@ -430,16 +499,17 @@ export function createDicePanel(
   let hoveredElement: string | null = null
   let flashingAction: string | null = null
   let flashEndTime: number | null = null
+  let showItemPicker = false
+  let itemPickerHovered: number | null = null
   const anim: AnimState = { startTime: null, lastTickTime: 0, scramble: [] }
 
   function yOffset(): number { return getPanelTop() - PANEL_TOP }
 
   function actionButtonPos(i: number): { x: number; y: number } {
-    const col = i % 2
-    const row = Math.floor(i / 2)
+    const col = i % 4
     return {
-      x: MAP_X + SIDE_MARGIN + col * (ACTION_BTN_W + 10),
-      y: ACTION_Y + row * (ACTION_BTN_H + 8),
+      x: MAP_X + SIDE_MARGIN + col * (ACTION_BTN_W + ACTION_GAP),
+      y: ACTION_Y,
     }
   }
 
@@ -550,13 +620,33 @@ export function createDicePanel(
 
     // Action buttons (only in rolled state)
     if (pool.state === 'rolled') {
+      const inventory = callbacks.getInventory ? callbacks.getInventory() : null
+      const itemUsedThisTurn = callbacks.getItemUsedThisTurn ? callbacks.getItemUsedThisTurn() : false
+      const hasCombatItems = inventory && inventory.items.some((i: any) => i.usableInCombat)
+
       for (let i = 0; i < ACTIONS.length; i++) {
         const action = ACTIONS[i]
         const { x, y } = actionButtonPos(i)
-        const affordable = canAfford(pool, action.cost)
+
+        let affordable: boolean
+        if (action.id === 'item') {
+          affordable = hasCombatItems && !itemUsedThisTurn
+        } else {
+          affordable = canAfford(pool, action.cost)
+        }
+
         const hovered = hoveredElement === `action-${action.id}`
         const flashing = flashingAction === action.id
+
+        // Don't show ITEM button if no combat items
+        if (action.id === 'item' && !hasCombatItems) continue
+
         drawActionButton(ctx, action, x, y, affordable, hovered, flashing)
+      }
+
+      // Draw item picker if open
+      if (showItemPicker && inventory) {
+        drawItemPickerOverlay(ctx, inventory, off, itemPickerHovered)
       }
     }
 
@@ -568,6 +658,35 @@ export function createDicePanel(
 
   function handleClick(x: number, y: number): void {
     const pool = getPool()
+    const inventory = callbacks.getInventory ? callbacks.getInventory() : null
+    const off = yOffset()
+
+    // Handle item picker clicks
+    if (showItemPicker && inventory) {
+      const combatItems = inventory.items.filter((i: any) => i.usableInCombat)
+      const pickerY = ACTION_Y + ACTION_BTN_H + 8 + off
+      const pickerH = PICKER_HEADER_H + Math.min(combatItems.length, PICKER_MAX_ITEMS) * PICKER_ITEM_H
+
+      if (y >= pickerY && y <= pickerY + pickerH && x >= MAP_X + 8 && x <= MAP_X + MAP_W - 8) {
+        // Click is within picker bounds
+        const itemIndex = Math.floor((y - pickerY - PICKER_HEADER_H) / PICKER_ITEM_H)
+        if (itemIndex >= 0 && itemIndex < combatItems.length) {
+          const item = combatItems[itemIndex]
+          if (callbacks.onItem) {
+            callbacks.onItem(item)
+          }
+          showItemPicker = false
+          itemPickerHovered = null
+        }
+        return
+      } else {
+        // Click outside picker, close it
+        showItemPicker = false
+        itemPickerHovered = null
+        return
+      }
+    }
+
     const hit = hitTest(x, y, pool)
     if (!hit) return
 
@@ -585,6 +704,11 @@ export function createDicePanel(
       const actionId = hit.slice(7)
       const action = ACTIONS.find(a => a.id === actionId)
       if (!action) return
+
+      if (action.id === 'item') {
+        showItemPicker = !showItemPicker
+        return
+      }
 
       if (!canAfford(pool, action.cost)) {
         flashingAction = actionId
@@ -608,7 +732,27 @@ export function createDicePanel(
 
   function handlePointerMove(x: number, y: number): void {
     const pool = getPool()
-    hoveredElement = hitTest(x, y, pool)
+    const inventory = callbacks.getInventory ? callbacks.getInventory() : null
+    const off = yOffset()
+
+    // Track item picker hovers
+    if (showItemPicker && inventory) {
+      const combatItems = inventory.items.filter((i: any) => i.usableInCombat)
+      const pickerY = ACTION_Y + ACTION_BTN_H + 8 + off
+
+      if (y >= pickerY + PICKER_HEADER_H && x >= MAP_X + 8 && x <= MAP_X + MAP_W - 8) {
+        const itemIndex = Math.floor((y - pickerY - PICKER_HEADER_H) / PICKER_ITEM_H)
+        if (itemIndex >= 0 && itemIndex < combatItems.length) {
+          itemPickerHovered = itemIndex
+        } else {
+          itemPickerHovered = null
+        }
+      } else {
+        itemPickerHovered = null
+      }
+    } else {
+      hoveredElement = hitTest(x, y, pool)
+    }
   }
 
   return { draw, handleClick, handlePointerMove }

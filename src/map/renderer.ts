@@ -164,6 +164,23 @@ function drawCell(
     ctx.fillStyle = biome.fogOverlay
     ctx.fillRect(px, py, s, s)
   }
+
+  // Step 8 — fled marker for enemy rooms
+  if (cell.roomType === 'enemy' && cell.fled) {
+    const markerSize = Math.round(s / 6)
+    const mx = px + s - markerSize - 2
+    const my = py + 2
+    ctx.fillStyle = '#c43030'  // --enemy-fled color
+    ctx.beginPath()
+    ctx.arc(mx + markerSize / 2, my + markerSize / 2, markerSize / 2, 0, Math.PI * 2)
+    ctx.fill()
+    // Draw exclamation mark or simple marker
+    ctx.font = `bold ${Math.round(markerSize * 0.7)}px monospace`
+    ctx.fillStyle = '#ffffff'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('!', mx + markerSize / 2, my + markerSize / 2)
+  }
 }
 
 export function drawPip(

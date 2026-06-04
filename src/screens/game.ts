@@ -13,6 +13,7 @@ import { resetPool, starterPool } from '../dice/pool'
 import { createMenuModal, drawMenuButton, isInMenuButton } from '../menu/modal'
 import { createSatchelOverlay, drawSatchelButton, isInSatchelButton } from '../satchel/overlay'
 import type { Inventory } from '../satchel/types'
+import { applyItemEffect } from '../satchel/items'
 import { createEncounterRegistry } from '../encounter/registry'
 import { createCombatEncounterPanel } from '../combat/combat-panel'
 import {
@@ -32,7 +33,51 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   const pipMaxHp = 10
   let pipHp = pipMaxHp
 
-  const satchelOverlay = createSatchelOverlay()
+  const satchelOverlay = createSatchelOverlay({
+    onItemUse: (item) => {
+      const prevHp = pipHp
+      const result = applyItemEffect({
+        pipHp,
+        pipMaxHp,
+        pool: dicePool,
+        dungeonState: state,
+        tileRow: state.pip.row,
+        tileCol: state.pip.col,
+      }, item.effect)
+
+      if (result.pipHpAfter !== undefined) {
+        pipHp = result.pipHpAfter
+        const hpChange = result.pipHpAfter - prevHp
+        const whisperText = item.id === 'cheese-crumb'
+          ? 'Pip nibbles the crumb. +2 HP.'
+          : item.id === 'gouda-wedge'
+          ? 'A real meal. +5 HP.'
+          : item.id === 'glowstone-dust'
+          ? 'The tunnel glows softly. Fog clears.'
+          : `${item.name} used. +${hpChange} HP.`
+        navPanel.triggerWhisper(whisperText)
+      }
+
+      if (result.poolAfter !== undefined) {
+        dicePool = result.poolAfter
+      }
+
+      if (result.dungeonStateAfter !== undefined) {
+        state = result.dungeonStateAfter
+      }
+
+      // Decrement item quantity
+      const itemIndex = inventory.items.findIndex(i => i.id === item.id)
+      if (itemIndex >= 0) {
+        const updated = [...inventory.items]
+        updated[itemIndex] = { ...updated[itemIndex], quantity: updated[itemIndex].quantity - 1 }
+        if (updated[itemIndex].quantity <= 0) {
+          updated.splice(itemIndex, 1)
+        }
+        inventory = { ...inventory, items: updated }
+      }
+    },
+  })
 
   function resetRunState(): void {
     state = initDungeon()
@@ -113,6 +158,11 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       defeat: () => {
         resetRunState()
         transitionTo('home')
+      },
+      fled: () => {
+        state = { ...state, uiState: 'idle' }
+        dicePool = resetPool(dicePool)
+        navPanel.clearWhisper()
       },
     },
   })
