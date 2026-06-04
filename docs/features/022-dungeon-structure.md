@@ -2,7 +2,7 @@
 
 **Status:** READY
 **Source idea:** Manager request; `docs/concept.md` (Dungeon Structure)
-**Depends on:** 004 (room offer logic), 025 (trap encounter — receives `trapDifficulty` from this spec), 038 (enemy roster — tier references in tuning become real enemy sets)
+**Depends on:** 004 (room offer logic). *(Note: 025 and 038 depend on this spec — 025 reads the `trapDifficulty` values set here; 038 fills the enemy tier slots defined in tuning. This item can ship with Goblin as the sole tier-1 entry and trap tiles placed but not yet triggering an encounter.)*
 
 ---
 
