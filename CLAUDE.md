@@ -18,6 +18,7 @@ implemented features require them.
 The project uses **Vite + TypeScript + Vitest** for development, testing, and building:
 
 ```bash
+bash init.sh       # Full env check — install deps, typecheck, test, build. Run at start/end of Engineer/Debugger sessions
 npm run dev        # Start Vite dev server at http://localhost:5173
 npm run build      # Build for production into dist/
 npm run test       # Run Vitest unit tests
