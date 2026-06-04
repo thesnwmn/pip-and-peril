@@ -57,7 +57,8 @@ inline before opening any PR**.
 11. **Run `init.sh` again.** `bash init.sh` must pass cleanly before you push. This confirms the
     finished state is sound, not just the feature in isolation.
 
-12. **Push and open the PR** against `main` on the session's feature branch. Then tell the manager
+12. **Push and open the PR** against `main` on the session's feature branch. Use the title format
+    `feat(NNN): <Feature Title>` matching the spec — e.g. `feat(003): Dungeon Tile Generation`. Then tell the manager
     it's ready for merge, including play-test steps. **Also include the PR preview URL** —
     `https://thesnwmn.github.io/pip-and-peril/preview/pr-<N>/` — so the manager can review it live
     *before* merging. The preview deploys automatically when the PR is opened; the workflow also

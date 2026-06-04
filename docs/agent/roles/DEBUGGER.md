@@ -43,7 +43,8 @@ and prove it's fixed** — without scope-creeping into new features. Like the En
 
 10. **Record evidence and push.** Capture the fix in `BACKLOG_HISTORY.md` (if tracked as an item):
     what was broken, the root cause, the fix, the regression test, and play-test/repro steps. Push
-    the `fix/...` branch and open a PR against `main`.
+    the `fix/...` branch and open a PR against `main`. Use the title format
+    `fix: <short description>` — e.g. `fix: dice pool not resetting between turns`.
 
 ## Non-negotiables
 
