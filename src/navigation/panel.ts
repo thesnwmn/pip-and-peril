@@ -57,10 +57,10 @@ const DIR_BTN = {
 // Direction button layout spec (static positions, computed once)
 type DirSpec = { dir: ExitMask; label: string; cx: number; cy: number }
 const DIR_SPECS: DirSpec[] = [
-  { dir: N, label: 'N', cx: PANEL_CENTER_X,             cy: PANEL_CENTER_Y - BTN_STEP },
-  { dir: S, label: 'S', cx: PANEL_CENTER_X,             cy: PANEL_CENTER_Y + BTN_STEP },
-  { dir: W, label: 'W', cx: PANEL_CENTER_X - BTN_STEP,  cy: PANEL_CENTER_Y },
-  { dir: E, label: 'E', cx: PANEL_CENTER_X + BTN_STEP,  cy: PANEL_CENTER_Y },
+  { dir: N, label: '↑', cx: PANEL_CENTER_X,             cy: PANEL_CENTER_Y - BTN_STEP },
+  { dir: S, label: '↓', cx: PANEL_CENTER_X,             cy: PANEL_CENTER_Y + BTN_STEP },
+  { dir: W, label: '←', cx: PANEL_CENTER_X - BTN_STEP,  cy: PANEL_CENTER_Y },
+  { dir: E, label: '→', cx: PANEL_CENTER_X + BTN_STEP,  cy: PANEL_CENTER_Y },
 ]
 
 
@@ -183,7 +183,7 @@ function drawDirButton(
   ctx.lineWidth = 1.5
   ctx.stroke()
 
-  ctx.font = 'bold 16px monospace'
+  ctx.font = 'bold 18px system-ui, -apple-system, sans-serif'
   ctx.fillStyle = col.label
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
@@ -316,6 +316,10 @@ function drawRoomPanel(
   hoveredElement: string | null,
   hitRects: HitRect[],
 ): void {
+  // Offerings may be cleared during a cross-fade out (placeRoom empties them);
+  // bail early so we don't crash trying to access undefined offering slots.
+  if (state.offerings.length < 3) return
+
   // Centre the cards block (header + cards) vertically within the panel zone
   const cardsY = Math.round(PANEL_CENTER_Y - CARD_H / 2)
   const headerCenterY = cardsY - PANEL_HEADER_H / 2 - 4
