@@ -81,4 +81,10 @@ export const colors = {
   satchelBrass: '#a07828',
   satchelStitch: '#6b4f2a',
   satchelInk: '#1a0f08',
+
+  // Nav panel direction buttons & map-zone fog marker
+  navDirNone: '#3a3a50',
+  navDirFog:  '#c8941e',
+  navDirBack: '#7a5010',
+  navFogMark: '#1e2b54',
 } as const

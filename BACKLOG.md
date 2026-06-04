@@ -20,7 +20,7 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-## READY
+## IN PROGRESS
 
 ### 035 · Navigation Panel Content Modes & Direction Buttons
 

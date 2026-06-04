@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { E, N, S, W } from '../map/types'
 import type { DungeonState } from './dungeon-state'
 import { initDungeon } from './dungeon-state'
-import { availableDirs, isBacktrackable, movePip } from './movement'
+import { availableDirs, exitState, isBacktrackable, movePip } from './movement'
 
 function stateWithCell(
   base: DungeonState,
@@ -92,6 +92,46 @@ describe('isBacktrackable', () => {
     newCells[6][6] = { roomType: 'start', exits: E | S | W } // no N
     state = { ...state, grid: { ...state.grid, cells: newCells } }
     expect(isBacktrackable(state, N)).toBe(false)
+  })
+})
+
+describe('exitState', () => {
+  it('returns fog when exit exists and neighbour cell is null', () => {
+    const state = initDungeon() // start at (6,6) with N|E|S|W exits, all neighbours null
+    expect(exitState(state, N)).toBe('fog')
+    expect(exitState(state, E)).toBe('fog')
+    expect(exitState(state, S)).toBe('fog')
+    expect(exitState(state, W)).toBe('fog')
+  })
+
+  it('returns none when pip tile has no exit in that direction', () => {
+    const base = initDungeon()
+    const state = stateWithCell(base, 6, 6, 'start', N | E)  // no S or W
+    expect(exitState(state, S)).toBe('none')
+    expect(exitState(state, W)).toBe('none')
+  })
+
+  it('returns back when neighbour is placed with reciprocal exit', () => {
+    const base = initDungeon()
+    // Place corridor north with S exit (backtrack reciprocal)
+    const state = stateWithCell(base, 6, 5, 'corridor', S)
+    expect(exitState(state, N)).toBe('back')
+  })
+
+  it('returns none when neighbour is placed but has no reciprocal exit', () => {
+    const base = initDungeon()
+    // Corridor north has only N exit — no S reciprocal
+    const state = stateWithCell(base, 6, 5, 'corridor', N)
+    expect(exitState(state, N)).toBe('none')
+  })
+
+  it('returns none for an out-of-bounds direction', () => {
+    const base = initDungeon()
+    const newCells = base.grid.cells.map(r => [...r])
+    newCells[0][0] = { roomType: 'corridor', exits: N | W }
+    const state = { ...base, grid: { ...base.grid, cells: newCells }, pip: { col: 0, row: 0 } }
+    expect(exitState(state, N)).toBe('none')
+    expect(exitState(state, W)).toBe('none')
   })
 })
 
