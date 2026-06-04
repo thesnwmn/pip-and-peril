@@ -166,12 +166,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         state = placeRoom(state, offering, targetPos)
         state = { ...state, roomsEntered: state.roomsEntered + 1 }
         navPanel.clearTeases()
-        const roomType = state.grid.cells[state.pip.row][state.pip.col]!.roomType
-        const hasWhisper = !!(LOG_MESSAGES[roomType]?.length)
-        if (hasWhisper) {
-          state = { ...state, uiState: 'whisper' }
-          triggerWhisper(roomType)
-        }
+        triggerWhisper(state.grid.cells[state.pip.row][state.pip.col]!.roomType)
         checkCombatTrigger()
       },
       onDirButton: (dir, dirState) => {
@@ -186,21 +181,14 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
           }))
           state = { ...state, uiState: 'choosing', pendingDir: dir, offerings }
         } else {
-          // Backtrack: room already placed, move pip directly to whisper
+          // Backtrack: room already placed, move pip directly
           state = movePip(state, dir)
           state = { ...state, roomsEntered: state.roomsEntered + 1 }
-          const roomType = state.grid.cells[state.pip.row][state.pip.col]!.roomType
-          const hasWhisper = !!(LOG_MESSAGES[roomType]?.length)
-          if (hasWhisper) {
-            state = { ...state, uiState: 'whisper' }
-            triggerWhisper(roomType)
-          }
+          triggerWhisper(state.grid.cells[state.pip.row][state.pip.col]!.roomType)
           checkCombatTrigger()
         }
       },
-      onWhisperEnd: () => {
-        state = { ...state, uiState: 'idle' }
-      },
+      onWhisperEnd: () => {},
     },
   )
 

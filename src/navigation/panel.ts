@@ -407,17 +407,6 @@ export function createNavigationPanel(
       drawFogMarkers(ctx, state)
     }
 
-    // Whisper expiry: fire callback when animation ends (not while encounter covers the panel).
-    // No early return — draw() continues so the mode-change detection below starts the cross-fade
-    // on this same frame rather than leaving a blank-panel frame.
-    if (panelMode === 'whisper' && whisper !== null && !inEncounterRegister) {
-      const elapsed = timestamp - whisper.startTime
-      if (elapsed >= WHISPER_TOTAL_MS) {
-        whisper = null
-        callbacks.onWhisperEnd()
-      }
-    }
-
     // Helper: render one mode's content at a given composite alpha
     const renderMode = (mode: DungeonState['uiState'], alpha: number, registerHits: boolean): void => {
       if (alpha <= 0) return
@@ -432,21 +421,29 @@ export function createNavigationPanel(
         ctx.globalAlpha = alpha
         drawRoomPanel(ctx, state, cardTeases, hoveredElement, registerHits ? hitRects : [])
         ctx.restore()
-      } else if (mode === 'whisper' && whisper !== null) {
-        const elapsed = timestamp - whisper.startTime
-        const wAlpha = whisperAlpha(elapsed)
-        if (wAlpha > 0) {
-          ctx.save()
-          ctx.globalAlpha = alpha * wAlpha
-          drawPanelWhisper(ctx, whisper.text)
-          ctx.restore()
-        }
       }
     }
 
     // Outgoing mode fades out; incoming mode fades in
     if (prevPanelMode !== null) renderMode(prevPanelMode, outAlpha, false)
     renderMode(panelMode, inAlpha, true)
+
+    // Whisper is an independent overlay — renders on top of whatever mode is active.
+    if (whisper !== null) {
+      const elapsed = timestamp - whisper.startTime
+      if (elapsed >= WHISPER_TOTAL_MS) {
+        whisper = null
+        callbacks.onWhisperEnd()
+      } else {
+        const wAlpha = whisperAlpha(elapsed)
+        if (wAlpha > 0) {
+          ctx.save()
+          ctx.globalAlpha = wAlpha
+          drawPanelWhisper(ctx, whisper.text)
+          ctx.restore()
+        }
+      }
+    }
   }
 
   function handleClick(x: number, y: number): boolean {

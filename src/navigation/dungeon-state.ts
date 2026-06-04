@@ -22,7 +22,7 @@ export interface DungeonState {
   pip: GridPos
   camera: GridPos
   startPos: GridPos
-  uiState: 'idle' | 'choosing' | 'whisper'
+  uiState: 'idle' | 'choosing'
   pendingDir: ExitMask | null
   offerings: RoomOffering[]
   stepCount: number
