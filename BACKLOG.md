@@ -34,6 +34,15 @@ Trap tiles carry a `trapDifficulty` value scaled to floor and depth. All constan
 **Depends on:** 004 (room offer logic), 025 (trap encounter), 038 (enemy roster for tier references).
 See `docs/features/022-dungeon-structure.md` for the full spec.
 
+### 023 · Boss Encounter & Run Completion
+
+A cinematic intro (camera pull-back, title card, camera tighten) leads into a fight against
+**The Rat King** — 20 HP, 3 attack, permanently enraging to 5 attack at half HP. Defeating him
+ends the run with a parchment-toned "Run Complete" banner and routes to Home. Also corrects all
+combat defeat paths to route to Home (not Main Menu).
+**Depends on:** 006 (combat loop), 019 (gold reward pattern), 022 (boss room placement), 034 (encounter registry).
+See `docs/features/023-boss-encounter.md` for the full spec.
+
 ---
 
 ## NEEDS SPEC
@@ -49,17 +58,6 @@ See `docs/features/022-dungeon-structure.md` for the full spec.
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) shipping first — it is already shipped.
-
-### 023 · Boss Encounter & Run Completion
-
-A single, named **boss** fight — a tougher enemy with one signature behaviour — using the combat
-loop (006) with the boss-camera drama from the screen-layout concept. Defeating it **completes the
-run** (a new "run complete" outcome distinct from the existing defeat→menu path). One boss and one
-end condition now; more boss types and end triggers are explicitly later work.
-**Depends on:** 006 (combat), 022 (a reachable boss room), 030 (encounter panel + camera infra for boss drama).
-**Suggested stepping (for the Designer):** ① boss combat (stats, name, one special move, boss HP
-display); ② the run-complete state + transition out of the run. Feeds directly into 024.
-**Related:** `docs/concept/screen-layout-and-transitions.md` (Combat — Boss).
 
 ### 024 · Run Summary Screen
 
