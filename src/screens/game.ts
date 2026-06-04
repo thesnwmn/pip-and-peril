@@ -1,7 +1,7 @@
 import { colors } from '../colors'
 import { DUNGEON } from '../map/biome'
 import { drawMap, MAP_X, MAP_W, MAP_Y, TILE_SIZE } from '../map/renderer'
-import type { DungeonState, LogStyle } from '../navigation/dungeon-state'
+import type { DungeonState } from '../navigation/dungeon-state'
 import { DIR_DELTA, initDungeon, OPP } from '../navigation/dungeon-state'
 import { movePip } from '../navigation/movement'
 import { generateOfferings, placeRoom, CARD_TEASES } from '../navigation/room-selection'
@@ -10,33 +10,17 @@ import { createNavigationPanel } from '../navigation/panel'
 import type { ScreenController } from './main-menu'
 import type { DicePool } from '../dice/pool'
 import { resetPool, starterPool } from '../dice/pool'
-import { createDicePanel } from '../dice/panel'
-import type { CombatLogEntry } from '../dice/panel'
-import type { CombatState } from '../combat/types'
-import { GOBLIN } from '../combat/types'
-import { applyEnemyAttack, applyEvade, applyFocus, applyStrike, rollGoldReward } from '../combat/encounter'
-import { drawCombatBanner } from '../combat/panel'
 import { createMenuModal, drawMenuButton, isInMenuButton } from '../menu/modal'
 import { createSatchelOverlay, drawSatchelButton, isInSatchelButton } from '../satchel/overlay'
 import type { Inventory } from '../satchel/types'
-import { COMBAT_CONFIG } from '../encounter/config'
-import { easeIn, easeOut, lerp } from '../animation/easing'
+import { createEncounterRegistry } from '../encounter/registry'
+import { createCombatEncounterPanel } from '../combat/combat-panel'
 import {
   LOGICAL_W,
   LOGICAL_H,
   VIEWPORT_COLS,
   VIEWPORT_ROWS,
-  PANEL_TOP,
-  ENCOUNTER_PANEL_GAP,
-  COMBAT_PANEL_TOP,
-  TRANSITION_DURATION,
-  COMBAT_MAP_CENTER_X,
-  COMBAT_MAP_CENTER_Y,
 } from './game-layout'
-
-type EncounterTransition =
-  | { phase: 'rising'; startTime: number; fromPanelTop: number }
-  | { phase: 'falling'; startTime: number; fallAction: 'victory' | 'defeat' }
 
 export function createGame(transitionTo: (screen: string) => void): ScreenController {
   let state: DungeonState = initDungeon()
@@ -44,16 +28,9 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   let isMouseDevice = false
   let dicePool: DicePool = starterPool()
   let inventory: Inventory = { gold: 0, items: [] }
-  let combatLog: CombatLogEntry[] = []
 
   const pipMaxHp = 10
   let pipHp = pipMaxHp
-  let combat: CombatState | null = null
-  let bannerStartTime: number | null = null
-  let transition: EncounterTransition | null = null
-
-  // Last-computed panel top, updated every frame — used by dice panel hit detection
-  let livePanelTop = PANEL_TOP
 
   const satchelOverlay = createSatchelOverlay()
 
@@ -61,12 +38,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     state = initDungeon()
     dicePool = starterPool()
     pipHp = pipMaxHp
-    combat = null
-    bannerStartTime = null
-    transition = null
-    livePanelTop = PANEL_TOP
     inventory = { gold: 0, items: [] }
-    combatLog = []
     navPanel.clearTeases()
     navPanel.clearWhisper()
     satchelOverlay.close()
@@ -77,87 +49,11 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     transitionTo(screen)
   })
 
-  const dicePanel = createDicePanel(
-    () => dicePool,
-    () => livePanelTop,
-    {
-      onStateChange: (pool) => { dicePool = pool },
-      addLog: (message) => { addLogEntry(message, 'normal') },
-      getCombatLog: () => combatLog,
-      getHpInfo: () => combat ? {
-        pipHp,
-        pipMaxHp,
-        enemyHp: combat.enemy.hp,
-        enemyMaxHp: combat.enemy.maxHp,
-        enemyName: combat.enemy.name,
-      } : null,
-      onBeforeRoll: (): boolean => {
-        if (combat === null) return true
-        if (combat.phase === 'awaiting-roll') {
-          combat = { ...combat, phase: 'player-turn' }
-          return true
-        }
-        if (combat.phase === 'player-turn') {
-          const prevHp = pipHp
-          const result = applyEnemyAttack(combat, pipHp)
-          pipHp = result.pipHp
-          combat = result.combat
-          addLogEntry(
-            `Goblin strikes — −${result.damage} HP! (Pip: ${prevHp}→${pipHp})`,
-            'enemy',
-          )
-          if (result.defeat) {
-            combatLog = []
-            bannerStartTime = performance.now()
-            return false
-          }
-          return true
-        }
-        return false
-      },
-      onAction: (actionId: string): void => {
-        if (combat === null) return
-        if (actionId === 'strike') {
-          const prevEnemyHp = combat.enemy.hp
-          const result = applyStrike(combat)
-          combat = result.combat
-          addLogEntry(
-            `Strike — 2 damage! (Goblin: ${prevEnemyHp}→${combat.enemy.hp})`,
-            'enemy',
-          )
-          if (result.victory) {
-            const goldEarned = rollGoldReward(combat.enemy)
-            inventory = { ...inventory, gold: inventory.gold + goldEarned }
-            combat = { ...result.combat, goldAwarded: goldEarned }
-            const newCells = state.grid.cells.map(row => [...row])
-            const cell = newCells[state.pip.row][state.pip.col]
-            if (cell) {
-              newCells[state.pip.row][state.pip.col] = { ...cell, cleared: true }
-            }
-            state = { ...state, grid: { ...state.grid, cells: newCells } }
-            combatLog = []
-            bannerStartTime = performance.now()
-          }
-        } else if (actionId === 'evade') {
-          combat = applyEvade(combat)
-          addLogEntry('Evade — incoming damage reduced.', 'normal')
-        } else if (actionId === 'focus') {
-          const prevPipHp = pipHp
-          const focusResult = applyFocus(pipHp, pipMaxHp)
-          pipHp = focusResult.pipHp
-          if (focusResult.heal === 0) {
-            addLogEntry(`Focus — +0 HP (Pip: ${prevPipHp}/${pipMaxHp} full)`, 'normal')
-          } else {
-            addLogEntry(`Focus — +${focusResult.heal} HP (Pip: ${prevPipHp}→${pipHp})`, 'normal')
-          }
-        }
-      },
-    },
-  )
+  const registry = createEncounterRegistry()
 
   const navPanel = createNavigationPanel(
     () => state,
-    () => combat !== null || transition !== null,
+    () => registry.isActive(),
     {
       onCardChosen: (idx) => {
         const offering = state.offerings[idx]
@@ -166,8 +62,9 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         state = placeRoom(state, offering, targetPos)
         state = { ...state, roomsEntered: state.roomsEntered + 1 }
         navPanel.clearTeases()
-        triggerWhisper(state.grid.cells[state.pip.row][state.pip.col]!.roomType)
-        checkCombatTrigger()
+        const cell = state.grid.cells[state.pip.row][state.pip.col]
+        if (cell) triggerWhisper(cell.roomType)
+        checkEncounterTrigger()
       },
       onDirButton: (dir, dirState) => {
         if (dirState === 'fog') {
@@ -181,35 +78,48 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
           }))
           state = { ...state, uiState: 'choosing', pendingDir: dir, offerings }
         } else {
-          // Backtrack: room already placed, move pip directly
           state = movePip(state, dir)
           state = { ...state, roomsEntered: state.roomsEntered + 1 }
-          triggerWhisper(state.grid.cells[state.pip.row][state.pip.col]!.roomType)
-          checkCombatTrigger()
+          const cell = state.grid.cells[state.pip.row][state.pip.col]
+          if (cell) triggerWhisper(cell.roomType)
+          checkEncounterTrigger()
         }
       },
       onWhisperEnd: () => {},
     },
   )
 
-  function addLogEntry(message: string, _style: LogStyle): void {
-    combatLog = [{ message }, ...combatLog.slice(0, 4)]
-  }
+  // Register combat as the reference encounter type.
+  // Adding a new encounter type requires only registering here — no other changes to this file.
+  registry.register({
+    trigger: (cell) => cell.roomType === 'enemy' && cell.cleared !== true,
+    factory: (onComplete) => createCombatEncounterPanel(onComplete, {
+      getPool: () => dicePool,
+      setPool: (p) => { dicePool = p },
+      getPipHp: () => pipHp,
+      setPipHp: (hp) => { pipHp = hp },
+      getPipMaxHp: () => pipMaxHp,
+      getInventory: () => inventory,
+      setInventory: (inv) => { inventory = inv },
+      getDungeonState: () => state,
+      setDungeonState: (s) => { state = s },
+    }),
+    handlers: {
+      victory: () => {
+        state = { ...state, enemiesDefeated: state.enemiesDefeated + 1, uiState: 'idle' }
+        dicePool = resetPool(dicePool)
+        navPanel.clearWhisper()
+      },
+      defeat: () => {
+        resetRunState()
+        transitionTo('home')
+      },
+    },
+  })
 
-  function checkCombatTrigger(): void {
+  function checkEncounterTrigger(): void {
     const cell = state.grid.cells[state.pip.row][state.pip.col]
-    if (cell && cell.roomType === 'enemy' && cell.cleared !== true) {
-      combat = { enemy: { ...GOBLIN }, phase: 'awaiting-roll', evadeBuffer: 0, goldAwarded: 0 }
-      combatLog = []
-      dicePool = resetPool(dicePool)
-      bannerStartTime = null
-      transition = { phase: 'rising', startTime: performance.now(), fromPanelTop: livePanelTop }
-    }
-  }
-
-  function startFallingTransition(fallAction: 'victory' | 'defeat'): void {
-    transition = { phase: 'falling', startTime: performance.now(), fallAction }
-    bannerStartTime = null
+    if (cell) registry.checkTrigger(cell)
   }
 
   function triggerWhisper(roomType: import('../map/types').RoomType): void {
@@ -219,143 +129,48 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     if (text) navPanel.triggerWhisper(text)
   }
 
-  function computeCanvasState(timestamp: DOMHighResTimeStamp): {
-    currentPanelTop: number
-    currentZoom: number
-    pipNatX: number
-    pipNatY: number
-    pipTargetX: number
-    pipTargetY: number
-  } {
+  function draw(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
+    // Pip's natural (un-zoomed) screen position — needed for map-view interpolation
     const vpCol = state.pip.col - (state.camera.col - Math.floor(VIEWPORT_COLS / 2))
     const vpRow = state.pip.row - (state.camera.row - Math.floor(VIEWPORT_ROWS / 2))
     const pipNatX = MAP_X + vpCol * TILE_SIZE + TILE_SIZE / 2
     const pipNatY = MAP_Y + vpRow * TILE_SIZE + TILE_SIZE / 2
 
-    if (combat === null && transition === null) {
-      return { currentPanelTop: LOGICAL_H, currentZoom: 1.0, pipNatX, pipNatY, pipTargetX: pipNatX, pipTargetY: pipNatY }
-    }
-
-    if (transition === null) {
-      // Stable combat — panel fully risen
-      return { currentPanelTop: COMBAT_PANEL_TOP, currentZoom: COMBAT_CONFIG.cameraZoom, pipNatX, pipNatY, pipTargetX: COMBAT_MAP_CENTER_X, pipTargetY: COMBAT_MAP_CENTER_Y }
-    }
-
-    const elapsed = timestamp - transition.startTime
-    const t = Math.min(1, Math.max(0, elapsed / TRANSITION_DURATION))
-
-    if (transition.phase === 'rising') {
-      const easedT = easeOut(t)
-      return {
-        currentPanelTop: Math.round(lerp(transition.fromPanelTop, COMBAT_PANEL_TOP, easedT)),
-        currentZoom: lerp(1.0, COMBAT_CONFIG.cameraZoom, easedT),
-        pipNatX,
-        pipNatY,
-        pipTargetX: lerp(pipNatX, COMBAT_MAP_CENTER_X, easedT),
-        pipTargetY: lerp(pipNatY, COMBAT_MAP_CENTER_Y, easedT),
-      }
-    } else {
-      const easedT = easeIn(t)
-      return {
-        currentPanelTop: Math.round(lerp(COMBAT_PANEL_TOP, LOGICAL_H, easedT)),
-        currentZoom: lerp(COMBAT_CONFIG.cameraZoom, 1.0, easedT),
-        pipNatX,
-        pipNatY,
-        pipTargetX: lerp(COMBAT_MAP_CENTER_X, pipNatX, easedT),
-        pipTargetY: lerp(COMBAT_MAP_CENTER_Y, pipNatY, easedT),
-      }
-    }
-  }
-
-  function draw(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
-    // ── Transition completion ────────────────────────────────────────────────
-    if (transition !== null) {
-      const elapsed = timestamp - transition.startTime
-      if (elapsed >= TRANSITION_DURATION) {
-        if (transition.phase === 'rising') {
-          transition = null  // combat stable
-        } else {
-          const { fallAction } = transition
-          transition = null
-          livePanelTop = COMBAT_PANEL_TOP
-          if (fallAction === 'victory') {
-            state = { ...state, enemiesDefeated: state.enemiesDefeated + 1, uiState: 'idle' }
-            combat = null
-            dicePool = resetPool(dicePool)
-            bannerStartTime = null
-            navPanel.clearWhisper()
-          } else {
-            resetRunState()
-            transitionTo('home')
-            return
-          }
-        }
-      }
-    }
-
-    // ── Banner auto-advance → start falling transition ──────────────────────
-    if (combat !== null && bannerStartTime !== null && transition === null &&
-        (combat.phase === 'victory' || combat.phase === 'defeat')) {
-      const timeout = combat.phase === 'victory' ? 1500 : 2000
-      if (timestamp - bannerStartTime >= timeout) {
-        startFallingTransition(combat.phase)
-      }
-    }
-
-    // ── Compute animated canvas state ────────────────────────────────────────
-    const { currentPanelTop, currentZoom, pipNatX, pipNatY, pipTargetX, pipTargetY } = computeCanvasState(timestamp)
-    livePanelTop = currentPanelTop
+    // Advance transition state machine and get animated map render params
+    const { zoom, pipTargetX, pipTargetY } = registry.computeMapState(timestamp, pipNatX, pipNatY)
 
     ctx.fillStyle = colors.bg
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 
-    // ── Map (with zoom transform during encounter register) ──────────────────
+    // ── Map (with zoom transform during encounters) ──────────────────────────
     ctx.save()
     ctx.beginPath()
     ctx.rect(MAP_X, MAP_Y, MAP_W, VIEWPORT_ROWS * TILE_SIZE)
     ctx.clip()
 
-    if (combat !== null || transition !== null) {
-      // Fill so areas outside the dungeon boundary match the void tile colour.
+    if (registry.isActive()) {
       ctx.fillStyle = DUNGEON.voidFill
       ctx.fillRect(MAP_X, MAP_Y, MAP_W, VIEWPORT_ROWS * TILE_SIZE)
-      // Zoom around pip's natural position, centering it toward the map area centre.
       ctx.translate(pipTargetX, pipTargetY)
-      ctx.scale(currentZoom, currentZoom)
+      ctx.scale(zoom, zoom)
       ctx.translate(-pipNatX, -pipNatY)
     }
 
     drawMap(ctx, state.grid, state.fog, state.camera, state.pip, DUNGEON)
     ctx.restore()
 
-    // ── Navigation panel (status bar, nav arrows, whisper, room selection) ───
-    navPanel.draw(ctx, timestamp)
+    // ── Navigation panel (background layer; hidden once encounter panel covers it) ──
+    if (registry.shouldDrawNavPanel()) {
+      navPanel.draw(ctx, timestamp)
+    }
 
-    // MENU button always visible
+    // MENU button always visible (except during transitions — blocked in handleClick)
     drawMenuButton(ctx, !menuModal.isOpen() && isMouseDevice && hoveredElement === 'menu-btn')
 
-    // ── Encounter register: draw satchel BEFORE panel so panel covers it ─────
-    const inEncounterRegister = combat !== null || transition !== null
-    if (inEncounterRegister) {
+    // Satchel button — disabled (encounter active) or enabled (navigation)
+    if (registry.isActive()) {
       drawSatchelButton(ctx, true, false)
-    }
-
-    // ── Panel zone (encounter register) ─────────────────────────────────────
-    if (inEncounterRegister && combat !== null) {
-      // Gap strip — bg colour between map and the combat panel surface
-      ctx.fillStyle = colors.bg
-      ctx.fillRect(0, currentPanelTop - ENCOUNTER_PANEL_GAP, LOGICAL_W, ENCOUNTER_PANEL_GAP)
-      // Banner — shown during stable combat and during the falling transition
-      if (combat.phase === 'victory' || combat.phase === 'defeat') {
-        const bst = bannerStartTime ?? timestamp
-        drawCombatBanner(ctx, timestamp, combat, bst, currentPanelTop)
-      } else {
-        dicePanel.draw(ctx, timestamp)
-      }
-    }
-
-    // ── Satchel button (nav register — floats on top of nav panels) ──────────
-    if (!inEncounterRegister) {
+    } else {
       drawSatchelButton(
         ctx,
         false,
@@ -363,62 +178,45 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       )
     }
 
+    // ── Encounter panel drawn on top of everything above ────────────────────
+    registry.draw(ctx, timestamp)
+
     // Satchel overlay and menu modal always on top
     satchelOverlay.draw(ctx, timestamp, inventory, state)
     menuModal.draw(ctx)
   }
 
   function handleClick(x: number, y: number): void {
-    // Modal consumes all input when open
     if (menuModal.handleClick(x, y)) return
-
-    // Satchel overlay consumes all input when open
     if (satchelOverlay.handleClick(x, y)) return
 
-    // Block all game input during transitions
-    if (transition !== null) return
+    // Transitions block all non-modal/overlay input (same as before refactor)
+    if (registry.isTransitioning()) return
 
-    // MENU button
     if (isInMenuButton(x, y)) {
-      dicePanel.handlePointerMove(-1, -1)
       menuModal.open()
       return
     }
 
-    // Satchel button — navigation only, not during combat or transition
-    if (isInSatchelButton(x, y) && combat === null) {
+    // Encounter ACTIVE — registry handles input (returns true)
+    if (registry.handleClick(x, y)) return
+
+    if (isInSatchelButton(x, y)) {
       satchelOverlay.open()
       return
     }
 
-    // Combat active
-    if (combat !== null) {
-      if (y >= livePanelTop) {
-        if (combat.phase === 'victory') {
-          startFallingTransition('victory')
-        } else if (combat.phase === 'defeat') {
-          startFallingTransition('defeat')
-        } else {
-          dicePanel.handleClick(x, y)
-        }
-      }
-      return
-    }
-
-    // Direction buttons (IDLE) and room selection cards (CHOOSING) — handled by nav panel
     navPanel.handleClick(x, y)
   }
 
   function handlePointerMove(x: number, y: number): void {
     isMouseDevice = true
 
-    // Modal blocks hover when open
     if (menuModal.handlePointerMove(x, y)) {
       hoveredElement = null
       return
     }
 
-    // Satchel overlay consumes pointer when open
     if (satchelOverlay.handlePointerMove(x, y)) {
       hoveredElement = null
       return
@@ -434,18 +232,12 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       return
     }
 
-    // Combat active (or transitioning)
-    if (combat !== null || transition !== null) {
-      if (y >= livePanelTop && combat !== null &&
-          combat.phase !== 'victory' && combat.phase !== 'defeat' &&
-          transition === null) {
-        dicePanel.handlePointerMove(x, y)
-      }
+    if (registry.isActive()) {
+      registry.handlePointerMove(x, y)
       hoveredElement = null
       return
     }
 
-    // Delegate card hover to navigation panel
     navPanel.handlePointerMove(x, y)
     hoveredElement = null
   }

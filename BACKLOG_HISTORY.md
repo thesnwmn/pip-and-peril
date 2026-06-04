@@ -16,6 +16,18 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 034 · Encounter Registry
+
+**Shipped:** 2026-06-04 · **PR:** [#56](https://github.com/thesnwmn/pip-and-peril/pull/56) · **Spec:** [docs/features/history/034-encounter-registry.md](docs/features/history/034-encounter-registry.md)
+
+Defines what an encounter panel *is* — a full-canvas module that can draw anywhere (including
+over the map zone), declare a map-view configuration (zoom, pip centering), and signal outcomes
+— and builds the encounter registry that manages trigger detection, rise/fall transitions, and
+outcome routing. Combat is refactored as the reference implementation. After this, new encounter
+types (021, 023, 025–028) plug in as panel modules without touching `game.ts`.
+
+---
+
 ### 035 · Navigation Panel Content Modes & Direction Buttons
 
 **Shipped:** 2026-06-04 · **PR:** (link added after merge) · **Spec:** [docs/features/history/035-nav-panel-content-modes.md](docs/features/history/035-nav-panel-content-modes.md)
