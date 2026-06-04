@@ -10,9 +10,10 @@ export interface Enemy {
 
 export interface CombatState {
   enemy: Enemy
-  phase: 'awaiting-roll' | 'player-turn' | 'victory' | 'defeat'
+  phase: 'awaiting-roll' | 'player-turn' | 'victory' | 'defeat' | 'fled'
   evadeBuffer: number
   goldAwarded: number
+  itemUsedThisTurn: boolean
 }
 
 export const GOBLIN: Enemy = {

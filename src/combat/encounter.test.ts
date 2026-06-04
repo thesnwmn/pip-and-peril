@@ -9,6 +9,7 @@ function makeCombat(overrides: Partial<CombatState> = {}): CombatState {
     phase: 'player-turn',
     evadeBuffer: 0,
     goldAwarded: 0,
+    itemUsedThisTurn: false,
     ...overrides,
   }
 }

@@ -17,6 +17,7 @@ export interface TileCell {
   roomType: RoomType
   exits: ExitMask
   cleared?: boolean
+  fled?: boolean
 }
 
 export interface GameMap {

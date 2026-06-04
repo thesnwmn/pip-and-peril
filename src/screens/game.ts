@@ -114,6 +114,11 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         resetRunState()
         transitionTo('home')
       },
+      fled: () => {
+        state = { ...state, uiState: 'idle' }
+        dicePool = resetPool(dicePool)
+        navPanel.clearWhisper()
+      },
     },
   })
 
