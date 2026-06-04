@@ -20,6 +20,22 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
+## READY
+
+### 022 · Dungeon Structure: Multi-Floor, Pacing & Boss Gate
+
+Three floors replace the endless map. Room offers are **depth-and-floor weighted** from a tuning
+config (corridors and shops shallow, enemies and traps deep). A **Stairwell** room type unlocks at
+a per-floor tile threshold and descends one-way. On Floor 3 the **Boss room** is the only exit —
+its offer weight is a product of a tiles-explored factor and a Manhattan-distance tier factor, so it
+lurks far from where Pip arrived. Exactly one Shop is guaranteed per floor via a debt mechanism.
+Trap tiles carry a `trapDifficulty` value scaled to floor and depth. All constants live in
+`src/dungeon/tuning.ts`.
+**Depends on:** 004 (room offer logic), 025 (trap encounter), 038 (enemy roster for tier references).
+See `docs/features/022-dungeon-structure.md` for the full spec.
+
+---
+
 ## NEEDS SPEC
 
 > **Run-loop feature set.** Items 020–029 together complete the *full gameplay run loop* — every
@@ -33,20 +49,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) shipping first — it is already shipped.
-
-### 022 · Dungeon Structure: Depth Pacing & Boss Gate
-
-Gives the dungeon a sense of *descent and an end*. Today navigation is effectively endless; this
-makes room-type offers **depth-weighted** (shallow skews corridor/shop/NPC; deep skews
-enemy/chest/boss, per the concept) and introduces the **boss gate** — past a threshold depth the
-Boss room becomes the reachable **end trigger** for the run. This is the structural prerequisite for
-"defeat a boss to complete the run": without it there is no boss to reach. Built to be extensible —
-"more end triggers later" slot in here.
-**Depends on:** 004 (room offer logic), `docs/concept.md` (Dungeon Structure).
-**Suggested stepping (for the Designer):** ① depth-weighted room offers (encounter types that don't
-yet exist simply stay inert on entry, exactly as the boss is silent today); ② the boss gate /
-guaranteed-reachable boss room at threshold depth.
-**Note:** weighting gets richer automatically as later encounter types (025–028) are built.
 
 ### 023 · Boss Encounter & Run Completion
 
@@ -138,6 +140,16 @@ The combat encounter panel is cramped — actions and item slots are squeezed in
 and will only get tighter as more actions (e.g. Flee from 036) and item slots are added. Redesign
 the panel layout to give both areas room to breathe and scale. Exact approach TBD by the Designer.
 **Depends on:** 006 (combat panel), 020 (item action button).
+
+### 038 · Enemy Roster Expansion
+
+Feature 022 (dungeon structure) weights rooms toward "tier-1", "tier-2", and "tier-3" enemies
+across floors and depth phases, but today only one enemy type exists (the Goblin). This feature
+fills the roster: new named creatures at each tier, with stats (HP, attack, gold reward range) and
+at least one distinguishing behaviour per tier. Weaker enemies (tier-1) can appear at any depth but
+dominate shallowly; tier-2 and tier-3 creatures gate to deeper floors and phases, so progression
+feels earned. Enemy room placement in 022 will pull from this roster once it ships.
+**Depends on:** 022 (tier references and weighting system), 006 (combat loop).
 
 ---
 
