@@ -215,7 +215,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     const pipNatY = MAP_Y + vpRow * TILE_SIZE + TILE_SIZE / 2
 
     if (combat === null && transition === null) {
-      const panelTop = state.uiState === 'choosing' ? PANEL_TOP : LOGICAL_H
+      const panelTop = state.uiState === 'choosing' ? COMBAT_PANEL_TOP : LOGICAL_H
       return { currentPanelTop: panelTop, currentZoom: 1.0, pipNatX, pipNatY, pipTargetX: pipNatX, pipTargetY: pipNatY }
     }
 
@@ -260,7 +260,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         } else {
           const { fallAction } = transition
           transition = null
-          livePanelTop = PANEL_TOP
+          livePanelTop = COMBAT_PANEL_TOP
           if (fallAction === 'victory') {
             state = { ...state, enemiesDefeated: state.enemiesDefeated + 1 }
             combat = null

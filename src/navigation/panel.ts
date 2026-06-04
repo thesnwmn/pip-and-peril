@@ -12,6 +12,7 @@ import {
   LOGICAL_H,
   STATUS_BAR_H,
   PANEL_TOP,
+  COMBAT_PANEL_TOP,
   PANEL_CORNER,
   PANEL_HEADER_H,
   PANEL_SIDE_MARGIN,
@@ -35,7 +36,7 @@ interface WhisperState {
 }
 
 const WHISPER_SCRIM_H = 60
-const WHISPER_ANCHOR = PANEL_TOP + 36
+const WHISPER_ANCHOR = COMBAT_PANEL_TOP + 36
 
 function cardColors(roomType: RoomType): { border: string; bg: string; text: string } {
   switch (roomType) {
@@ -244,7 +245,7 @@ function drawRoomPanel(
   hoveredElement: string | null,
   hitRects: HitRect[],
 ): void {
-  const panelH = LOGICAL_H - PANEL_TOP
+  const panelH = LOGICAL_H - COMBAT_PANEL_TOP
 
   ctx.fillStyle = colors.surface
   ctx.beginPath()
@@ -252,27 +253,27 @@ function drawRoomPanel(
     roundRect?: (x: number, y: number, w: number, h: number, radii: number[]) => void
   }
   if (ctxAny.roundRect) {
-    ctxAny.roundRect(MAP_X, PANEL_TOP, MAP_W, panelH, [PANEL_CORNER, PANEL_CORNER, 0, 0])
+    ctxAny.roundRect(MAP_X, COMBAT_PANEL_TOP, MAP_W, panelH, [PANEL_CORNER, PANEL_CORNER, 0, 0])
   } else {
-    ctx.rect(MAP_X, PANEL_TOP, MAP_W, panelH)
+    ctx.rect(MAP_X, COMBAT_PANEL_TOP, MAP_W, panelH)
   }
   ctx.fill()
 
   ctx.strokeStyle = colors.logNormal
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(MAP_X, PANEL_TOP)
-  ctx.lineTo(MAP_X + MAP_W, PANEL_TOP)
+  ctx.moveTo(MAP_X, COMBAT_PANEL_TOP)
+  ctx.lineTo(MAP_X + MAP_W, COMBAT_PANEL_TOP)
   ctx.stroke()
 
   ctx.font = '12px monospace'
   ctx.fillStyle = colors.textMuted
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('WHERE DOES THIS LEAD?', MAP_X + MAP_W / 2, PANEL_TOP + PANEL_HEADER_H / 2)
+  ctx.fillText('WHERE DOES THIS LEAD?', MAP_X + MAP_W / 2, COMBAT_PANEL_TOP + PANEL_HEADER_H / 2)
 
   const cardsStartX = MAP_X + PANEL_SIDE_MARGIN
-  const cardsY = PANEL_TOP + PANEL_HEADER_H
+  const cardsY = COMBAT_PANEL_TOP + PANEL_HEADER_H
 
   for (let i = 0; i < 3; i++) {
     const cx = cardsStartX + i * (CARD_W + PANEL_GAP)
