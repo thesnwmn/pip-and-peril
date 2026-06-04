@@ -2,13 +2,7 @@
 
 **Status:** READY
 **Source idea:** Manager request; backlog item; `docs/concept.md` (Non-combat encounters); `docs/concept/screen-layout-and-transitions.md` (Trap)
-**Depends on:** 004 (room entry trigger), 005 (dice pool), 022 (sets `trapDifficulty` on tile at placement), 030 (encounter panel + snap camera mode)
-
-> **Note on 030:** Feature 030 (encounter panel + snap camera infrastructure) has not been specced yet.
-> This spec describes the trap-specific camera and panel behaviour directly, drawing from the
-> screen-layout concept doc. The Engineer may implement the trap panel as a specialisation of
-> the existing combat panel pattern (006) without waiting for a generalised 030 refactor, treating
-> this feature as the first concrete instance of the snap-camera encounter type.
+**Depends on:** 004 (room entry trigger), 005 (dice pool), 022 (sets `trapDifficulty` on tile at placement), 030 (encounter panel + snap camera mode — shipped)
 
 ---
 
@@ -130,6 +124,10 @@ The flavour variant is stored on the tile once assigned, so re-entry (post-`trap
 - **Zoom level:** Close — the trap tile fills roughly half the map zone above the panel. Enough room context is visible at the edges that the player knows where they are.
 - **Sequencing:** Snap fires first. Panel begins to rise ~100 ms after the snap completes. Per `screen-layout-and-transitions.md`: *"the snap comes first (instant), the panel follows immediately after (~100ms later). This tiny sequencing makes the snap feel intentional rather than glitchy."*
 - **Return:** Standard smooth easing (~300 ms) after panel descends. No snap on the exit.
+
+### Panel architecture
+
+The trap panel is a **new panel type** implementing the encounter panel interface from feature 030. It does not extend or inherit from the combat panel. The snap-camera behaviour is supplied by 030's snap-camera mode; the trap panel declares it at construction.
 
 ### Panel contents (roll phase)
 
