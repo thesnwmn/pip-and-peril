@@ -155,6 +155,7 @@ export function createCombatEncounterPanel(
 
         if (result.poolAfter !== undefined) {
           ctx.setPool(result.poolAfter)
+          dicePanel.startRollAnimation()
           addLogEntry(`${item.name} — Rerolled all dice!`)
         }
 

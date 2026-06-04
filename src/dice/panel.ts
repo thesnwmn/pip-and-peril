@@ -1,6 +1,7 @@
 import { colors } from '../colors'
 import type { DicePool, DieColor, PipCost } from './pool'
 import { canAfford, rollPool, spendPips } from './pool'
+import { iconGlyph } from '../satchel/icon'
 
 // ── Layout constants ─────────────────────────────────────────────────────────
 
@@ -61,6 +62,10 @@ const ACTIONS_BOTTOM = ACTION_Y + ACTION_ROWS * ACTION_BTN_H
 const LOG_RULE_Y = ACTIONS_BOTTOM + 6
 const LOG_LINE_H = 14
 const LOG_LINE1_Y = LOG_RULE_Y + 5
+
+// Item row — inline item selector that appears below action buttons
+const ITEM_ROW_Y = ACTION_Y + ACTION_BTN_H + 8  // = 702
+const ITEM_ROW_H = ACTION_BTN_H                   // = 46, same grid height
 
 // ── Pip dot patterns for d6 ───────────────────────────────────────────────────
 
@@ -306,10 +311,15 @@ function drawActionButton(
   ctx.fillStyle = colors.textPrimary
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText(action.label, x + ACTION_BTN_W / 2, y + ACTION_BTN_H / 2)
 
   if (action.id !== 'item') {
-    drawCostPill(ctx, action.cost, x + ACTION_BTN_W / 2, y + ACTION_BTN_H - 18)
+    const LABEL_H = 14, PILL_GAP = 3, PILL_H = 18
+    const totalH = LABEL_H + PILL_GAP + PILL_H
+    const top = y + (ACTION_BTN_H - totalH) / 2
+    ctx.fillText(action.label, x + ACTION_BTN_W / 2, top + LABEL_H / 2)
+    drawCostPill(ctx, action.cost, x + ACTION_BTN_W / 2, top + LABEL_H + PILL_GAP)
+  } else {
+    ctx.fillText(action.label, x + ACTION_BTN_W / 2, y + ACTION_BTN_H / 2)
   }
   ctx.globalAlpha = 1
 }
@@ -385,65 +395,65 @@ function drawEncounterLogZone(
   ctx.globalAlpha = 1
 }
 
-// ── Item picker overlay ───────────────────────────────────────────────────────
+// ── Item row ─────────────────────────────────────────────────────────────────
 
-const PICKER_PADDING = 12
-const PICKER_HEADER_H = 32
-const PICKER_ITEM_H = 60
-const PICKER_MAX_ITEMS = 3
+function truncateText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string {
+  if (ctx.measureText(text).width <= maxW) return text
+  let t = text
+  while (t.length > 1 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1)
+  return t + '…'
+}
 
-function drawItemPickerOverlay(
+function drawItemRow(
   ctx: CanvasRenderingContext2D,
   inventory: any,
-  yOffset: number,
+  rowY: number,
   hoveredIndex: number | null,
 ): void {
   const combatItems = inventory.items.filter((i: any) => i.usableInCombat)
   if (combatItems.length === 0) return
 
-  const pickerH = PICKER_HEADER_H + Math.min(combatItems.length, PICKER_MAX_ITEMS) * PICKER_ITEM_H
-  const pickerY = ACTION_Y + ACTION_BTN_H + 8 + yOffset
+  const ITEMS_PER_ROW = 4
+  const rows = Math.ceil(combatItems.length / ITEMS_PER_ROW)
 
-  // Background
-  roundRect(ctx, MAP_X + 8, pickerY, MAP_W - 16, pickerH, 8)
-  ctx.fillStyle = colors.surface
-  ctx.fill()
-  ctx.strokeStyle = colors.logNormal
-  ctx.lineWidth = 1
-  ctx.stroke()
+  for (let row = 0; row < rows; row++) {
+    const y = rowY + row * (ITEM_ROW_H + ACTION_GAP)
+    for (let col = 0; col < ITEMS_PER_ROW; col++) {
+      const idx = row * ITEMS_PER_ROW + col
+      if (idx >= combatItems.length) break
+      const item = combatItems[idx]
+      const x = MAP_X + SIDE_MARGIN + col * (ACTION_BTN_W + ACTION_GAP)
+      const hovered = idx === hoveredIndex
 
-  // Header
-  ctx.font = 'bold 12px monospace'
-  ctx.fillStyle = colors.textPrimary
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'middle'
-  ctx.fillText('Use Item', MAP_X + 8 + PICKER_PADDING, pickerY + PICKER_HEADER_H / 2)
+      roundRect(ctx, x, y, ACTION_BTN_W, ITEM_ROW_H, ACTION_BTN_RADIUS)
+      ctx.fillStyle = hovered ? colors.surfaceRaised : colors.surface
+      ctx.fill()
+      ctx.strokeStyle = colors.gold
+      ctx.lineWidth = 1
+      ctx.stroke()
 
-  // Items
-  for (let i = 0; i < Math.min(combatItems.length, PICKER_MAX_ITEMS); i++) {
-    const item = combatItems[i]
-    const itemY = pickerY + PICKER_HEADER_H + i * PICKER_ITEM_H
-    const isHovered = i === hoveredIndex
+      // Icon glyph
+      ctx.font = '14px monospace'
+      ctx.fillStyle = colors.textPrimary
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(iconGlyph(item.iconType), x + ACTION_BTN_W / 2, y + ITEM_ROW_H / 2 - 7)
 
-    if (isHovered) {
-      ctx.fillStyle = colors.surfaceRaised
-      ctx.fillRect(MAP_X + 8, itemY, MAP_W - 16, PICKER_ITEM_H)
+      // Item name (truncated to fit button width)
+      ctx.font = '8px system-ui, -apple-system, sans-serif'
+      const name = truncateText(ctx, item.name, ACTION_BTN_W - 6)
+      ctx.fillStyle = colors.textMuted
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(name, x + ACTION_BTN_W / 2, y + ITEM_ROW_H - 9)
+
+      // Quantity badge (top-right corner)
+      ctx.font = 'bold 8px monospace'
+      ctx.fillStyle = colors.gold
+      ctx.textAlign = 'right'
+      ctx.textBaseline = 'top'
+      ctx.fillText(`×${item.quantity}`, x + ACTION_BTN_W - 3, y + 2)
     }
-
-    ctx.font = 'bold 12px monospace'
-    ctx.fillStyle = colors.textPrimary
-    ctx.textAlign = 'left'
-    ctx.textBaseline = 'top'
-    ctx.fillText(item.name, MAP_X + 8 + PICKER_PADDING, itemY + 4)
-
-    ctx.font = 'italic 11px monospace'
-    ctx.fillStyle = colors.textMuted
-    ctx.fillText(item.description, MAP_X + 8 + PICKER_PADDING, itemY + 22)
-
-    ctx.font = '10px monospace'
-    ctx.fillStyle = colors.gold
-    ctx.textAlign = 'right'
-    ctx.fillText(`×${item.quantity}`, MAP_X + MAP_W - 8 - PICKER_PADDING, itemY + 10)
   }
 }
 
@@ -495,6 +505,7 @@ export function createDicePanel(
   draw: (ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp) => void
   handleClick: (x: number, y: number) => void
   handlePointerMove: (x: number, y: number) => void
+  startRollAnimation: () => void
 } {
   let hoveredElement: string | null = null
   let flashingAction: string | null = null
@@ -643,15 +654,16 @@ export function createDicePanel(
 
         drawActionButton(ctx, action, x, y, affordable, hovered, flashing)
       }
-
-      // Draw item picker if open
-      if (showItemPicker && inventory) {
-        drawItemPickerOverlay(ctx, inventory, off, itemPickerHovered)
-      }
     }
 
     // Encounter log zone (below action buttons)
     drawEncounterLogZone(ctx, callbacks.getCombatLog ? callbacks.getCombatLog() : [])
+
+    // Item row drawn on top of log zone so it remains fully visible when open
+    if (pool.state === 'rolled' && showItemPicker) {
+      const itemInv = callbacks.getInventory ? callbacks.getInventory() : null
+      if (itemInv) drawItemRow(ctx, itemInv, ITEM_ROW_Y, itemPickerHovered)
+    }
 
     ctx.restore()
   }
@@ -661,30 +673,30 @@ export function createDicePanel(
     const inventory = callbacks.getInventory ? callbacks.getInventory() : null
     const off = yOffset()
 
-    // Handle item picker clicks
+    // Handle item row clicks
     if (showItemPicker && inventory) {
       const combatItems = inventory.items.filter((i: any) => i.usableInCombat)
-      const pickerY = ACTION_Y + ACTION_BTN_H + 8 + off
-      const pickerH = PICKER_HEADER_H + Math.min(combatItems.length, PICKER_MAX_ITEMS) * PICKER_ITEM_H
+      const ITEMS_PER_ROW = 4
+      const rows = Math.ceil(combatItems.length / ITEMS_PER_ROW)
 
-      if (y >= pickerY && y <= pickerY + pickerH && x >= MAP_X + 8 && x <= MAP_X + MAP_W - 8) {
-        // Click is within picker bounds
-        const itemIndex = Math.floor((y - pickerY - PICKER_HEADER_H) / PICKER_ITEM_H)
-        if (itemIndex >= 0 && itemIndex < combatItems.length) {
-          const item = combatItems[itemIndex]
-          if (callbacks.onItem) {
-            callbacks.onItem(item)
+      let hitItem: any = null
+      for (let row = 0; row < rows && hitItem === null; row++) {
+        const rowY = ITEM_ROW_Y + off + row * (ITEM_ROW_H + ACTION_GAP)
+        for (let col = 0; col < ITEMS_PER_ROW; col++) {
+          const idx = row * ITEMS_PER_ROW + col
+          if (idx >= combatItems.length) break
+          const btnX = MAP_X + SIDE_MARGIN + col * (ACTION_BTN_W + ACTION_GAP)
+          if (x >= btnX && x <= btnX + ACTION_BTN_W && y >= rowY && y <= rowY + ITEM_ROW_H) {
+            hitItem = combatItems[idx]
+            break
           }
-          showItemPicker = false
-          itemPickerHovered = null
         }
-        return
-      } else {
-        // Click outside picker, close it
-        showItemPicker = false
-        itemPickerHovered = null
-        return
       }
+
+      if (hitItem && callbacks.onItem) callbacks.onItem(hitItem)
+      showItemPicker = false
+      itemPickerHovered = null
+      return
     }
 
     const hit = hitTest(x, y, pool)
@@ -696,6 +708,7 @@ export function createDicePanel(
       anim.startTime = performance.now()
       anim.lastTickTime = 0
       anim.scramble = []
+      showItemPicker = false
       callbacks.onStateChange(rolled)
       return
     }
@@ -735,25 +748,35 @@ export function createDicePanel(
     const inventory = callbacks.getInventory ? callbacks.getInventory() : null
     const off = yOffset()
 
-    // Track item picker hovers
+    // Track item row hovers
     if (showItemPicker && inventory) {
       const combatItems = inventory.items.filter((i: any) => i.usableInCombat)
-      const pickerY = ACTION_Y + ACTION_BTN_H + 8 + off
+      const ITEMS_PER_ROW = 4
+      const rows = Math.ceil(combatItems.length / ITEMS_PER_ROW)
 
-      if (y >= pickerY + PICKER_HEADER_H && x >= MAP_X + 8 && x <= MAP_X + MAP_W - 8) {
-        const itemIndex = Math.floor((y - pickerY - PICKER_HEADER_H) / PICKER_ITEM_H)
-        if (itemIndex >= 0 && itemIndex < combatItems.length) {
-          itemPickerHovered = itemIndex
-        } else {
-          itemPickerHovered = null
+      itemPickerHovered = null
+      for (let row = 0; row < rows && itemPickerHovered === null; row++) {
+        const rowY = ITEM_ROW_Y + off + row * (ITEM_ROW_H + ACTION_GAP)
+        for (let col = 0; col < ITEMS_PER_ROW; col++) {
+          const idx = row * ITEMS_PER_ROW + col
+          if (idx >= combatItems.length) break
+          const btnX = MAP_X + SIDE_MARGIN + col * (ACTION_BTN_W + ACTION_GAP)
+          if (x >= btnX && x <= btnX + ACTION_BTN_W && y >= rowY && y <= rowY + ITEM_ROW_H) {
+            itemPickerHovered = idx
+            break
+          }
         }
-      } else {
-        itemPickerHovered = null
       }
     } else {
       hoveredElement = hitTest(x, y, pool)
     }
   }
 
-  return { draw, handleClick, handlePointerMove }
+  function startRollAnimation(): void {
+    anim.startTime = performance.now()
+    anim.lastTickTime = 0
+    anim.scramble = []
+  }
+
+  return { draw, handleClick, handlePointerMove, startRollAnimation }
 }

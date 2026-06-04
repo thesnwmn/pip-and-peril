@@ -61,6 +61,9 @@ export function createItemEncounterPanel(
   }
 
   function draw(ctx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
+    ctx.save()
+    ctx.globalAlpha = 1
+
     // Background
     ctx.fillStyle = colors.surface
     ctx.fillRect(0, PANEL_TOP, PANEL_W, LOGICAL_H - PANEL_TOP)
@@ -123,6 +126,8 @@ export function createItemEncounterPanel(
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText('Leave', ICON_CX, LEAVE_CY)
+
+    ctx.restore()
   }
 
   function handleClick(x: number, y: number): void {
