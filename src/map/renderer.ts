@@ -315,7 +315,7 @@ export function drawMap(
   const startRow = viewCenter.row - Math.floor(VIEWPORT_ROWS / 2)
 
   for (let vr = 0; vr < VIEWPORT_ROWS; vr++) {
-    for (let vc = 0; vc < VIEWPORT_COLS; vc++) {
+    for (let vc = -1; vc <= VIEWPORT_COLS; vc++) {
       const mapCol = startCol + vc
       const mapRow = startRow + vr
 
@@ -339,9 +339,6 @@ export function drawMap(
 
   // Dungeon boundary: dashed gold border around the full grid
   ctx.save()
-  ctx.beginPath()
-  ctx.rect(MAP_X, MAP_Y, VIEWPORT_COLS * TILE_SIZE, VIEWPORT_ROWS * TILE_SIZE)
-  ctx.clip()
   ctx.strokeStyle = 'rgba(200, 148, 30, 0.5)'
   ctx.lineWidth = 2
   ctx.setLineDash([5, 4])
