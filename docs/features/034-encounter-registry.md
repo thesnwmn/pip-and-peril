@@ -16,6 +16,13 @@ routing for any panel registered with it. Combat is refactored as the first cons
 reference implementation. After this feature, adding a new encounter type means creating a panel
 module and registering it; nothing else changes.
 
+The RISING transition is redesigned as a layered animation: when an encounter triggers, the
+navigation panel dismisses any room selection cards and shows the situated whisper for the
+entered room — then stays visible in that state while the encounter panel slides up from
+off-screen below it. Once the encounter panel covers the navigation panel zone it is discarded.
+The FALLING transition on a victory outcome reverses this: the encounter panel slides back
+down off-screen, revealing a clean navigation panel underneath.
+
 ## Acceptance criteria
 
 1. An encounter registry module exists that owns the encounter lifecycle: trigger detection,
@@ -49,18 +56,37 @@ module and registering it; nothing else changes.
    the map zone — by calling the panel's `draw()` after the map has been rendered, with no
    clipping restriction applied to the panel's draw call.
 
-7. All existing behaviour is unchanged: combat, encounter transitions, navigation, overlays,
-   menus, and satchel work identically to before this refactor.
+7. Core gameplay behaviour is preserved — combat mechanics, navigation, overlays, menus, and
+   satchel work identically to before this refactor. The one intentional visible change is the
+   transition animation: the layered rise/fall described in criterion 8 and the Design detail
+   replaces the current single-surface animation.
 
-8. `npm run test`, `npm run typecheck`, and `npm run build` all pass with no new errors.
+8. At encounter trigger the registry:
+   a. Instructs the navigation panel to dismiss any room selection cards and trigger the
+      situated whisper for the entered room.
+   b. Instantiates the encounter panel and begins the RISING animation with the encounter
+      panel starting at LOGICAL_H (fully off-screen below).
+   c. Renders both panels each frame during the rise — navigation panel at its normal position,
+      encounter panel as an overlay rising above it — until the encounter panel top reaches
+      PANEL_TOP, at which point the navigation panel is discarded.
+   On a **victory** outcome, the FALLING animation slides the encounter panel back to
+   LOGICAL_H, revealing a clean navigation panel underneath (no cards, no whisper). Once the
+   encounter panel exits the screen the encounter is cleared and navigation resumes.
+   On a **defeat** outcome, the existing behaviour is preserved: the fall exits to the main
+   menu without a navigation reveal.
+
+9. `npm run test`, `npm run typecheck`, and `npm run build` all pass with no new errors.
 
 ## Scope / non-goals
 
 - No new encounter types are built here (those are 021, 023, 025–028).
 - The encounter panel specification should cover only what combat demonstrably needs today,
   with extension points noted as comments. Do not over-specify for encounters that don't exist yet.
-- No changes to navigation panel (033's work) or to the satchel/menu modal.
-- No changes to player-visible behaviour or UI.
+- No changes to the satchel/menu modal.
+- The navigation panel (033's work) gains two narrow hooks to support the registry: dismiss
+  cards and trigger a whisper on command. No other changes to its behaviour.
+- The layered transition animation is an intentional visible change; all other player-facing
+  behaviour is unchanged.
 
 ## Dependencies
 
@@ -77,14 +103,16 @@ Pip enters a room
 Registry checks trigger conditions
         │ match found
         ▼
-Panel module instantiated
+Nav panel: cards dismissed, whisper triggered
+Encounter panel instantiated
         │
         ▼
-  ┌─── RISING ───────────────────────────┐
-  │ Transition animation                  │
-  │ Registry interpolates panel-top       │
-  │ Panel's map-view config applied       │
-  └──────────────────────────────────────┘
+  ┌─── RISING ───────────────────────────────────────────────┐
+  │ Nav panel visible at normal position (background layer)   │
+  │ Encounter panel rises from LOGICAL_H (foreground layer)   │
+  │ Encounter panel's map-view config applied                 │
+  │ Nav panel discarded once encounter panel top ≤ PANEL_TOP  │
+  └──────────────────────────────────────────────────────────┘
         │ animation complete
         ▼
   ┌─── ACTIVE ───────────────────────────┐
@@ -95,10 +123,12 @@ Panel module instantiated
   └──────────────────────────────────────┘
         │ outcome signalled
         ▼
-  ┌─── FALLING ──────────────────────────┐
-  │ Transition animation (reverse)        │
-  │ Map-view returns to default           │
-  └──────────────────────────────────────┘
+  ┌─── FALLING ──────────────────────────────────────────────┐
+  │ Encounter panel slides back to LOGICAL_H                  │
+  │ Clean nav panel revealed underneath (victory only)        │
+  │ Map-view returns to default                               │
+  │ Defeat: exits to main menu — no nav reveal                │
+  └──────────────────────────────────────────────────────────┘
         │ animation complete
         ▼
 Registry applies outcome to game state
@@ -131,6 +161,43 @@ Registry applies outcome to game state
 │                                         │
 └─────────────────────────────────────────┘
 ```
+
+### Layered transition
+
+During the RISING and FALLING animations the canvas has two panel layers in play simultaneously.
+Draw order each frame:
+
+```
+┌─────────────────────────────────────────┐
+│  Map zone (rendered first)              │
+│  Nav panel map-zone content (whisper)   │  ← background layer, discarded once covered
+├─────────────────────────────────────────┤  ← PANEL_TOP
+│  Nav panel zone content                 │  ← background layer
+├─────────────────────────────────────────┤  ← encounter panel top (animating upward)
+│  Encounter panel content                │  ← foreground layer
+└─────────────────────────────────────────┘  ← LOGICAL_H
+```
+
+**RISING** — encounter panel climbs from LOGICAL_H toward COMBAT_PANEL_TOP:
+- The nav panel stays pinned at its normal position and renders as usual, except room
+  selection cards have been dismissed and the situated whisper is active.
+- The encounter panel is drawn on top at its current animated position.
+- The moment the encounter panel top reaches PANEL_TOP the nav panel is discarded; only the
+  encounter panel renders from that point forward.
+- Map-view (zoom, camera centering) transitions from navigation defaults toward the encounter
+  panel's declared configuration over the course of the animation.
+
+**FALLING on victory** — encounter panel drops from COMBAT_PANEL_TOP to LOGICAL_H:
+- A clean nav panel (idle state: no cards, no whisper) is rendered as the background layer
+  from the start of the fall, so it is visible as soon as the encounter panel retreats below
+  PANEL_TOP.
+- Map-view returns to navigation defaults over the course of the fall.
+- Once the encounter panel exits the bottom of the screen, it is discarded and navigation
+  resumes normally.
+
+**FALLING on defeat** — unchanged from current behaviour:
+- Encounter panel slides to LOGICAL_H, then the run is reset and the game transitions to the
+  main menu. No nav panel is rendered during or after the fall.
 
 ### Map-view configuration
 
