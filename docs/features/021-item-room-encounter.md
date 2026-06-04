@@ -36,9 +36,9 @@ normal run.
 
 ### Panel
 
-5. The panel rises to approximately 35% of available canvas height. The camera gently centres on
-   the active room tile at ~1.2× base tile zoom; both transitions use the standard normal-speed
-   ease.
+5. The panel rises to `PANEL_TOP` — the same height as the navigation panel, fully covering it.
+   The camera gently centres on the active room tile at ~1.2× base tile zoom; both transitions
+   use the standard normal-speed ease.
 
 6. The panel displays:
    - A small header label: `"Found!"` (`--text-muted`, small)
@@ -101,7 +101,7 @@ Registry triggers item room encounter
   ┌── RISING (200–350 ms) ──────────────────────────────────────┐
   │  Nav panel: WHISPER mode                                     │
   │  "Something glints on a stone pedestal."                     │
-  │  Item room panel rises to ~35% height                        │
+  │  Item room panel rises to PANEL_TOP (same height as nav panel)                        │
   │  Camera centres gently on active room tile, ~1.2× zoom       │
   └─────────────────────────────────────────────────────────────┘
         │
@@ -155,7 +155,8 @@ No dice, no multi-beat flow, no HP. The simplest possible encounter panel.
 | Item room (falling) | 1× base tile size | Pip → soft-follow resumes | ease-in |
 
 The zoom is deliberately light — less than half of combat's 2.3×. The room should feel
-welcoming and readable, not dramatic.
+welcoming and readable, not dramatic. Panel height matches the navigation panel (top at
+`PANEL_TOP`), consistent with how all encounter panels are sized.
 
 ### Edge cases
 
@@ -171,7 +172,7 @@ welcoming and readable, not dramatic.
 ### Panel layout wireframe
 
 ```
-┌─────────────────────────────────────────┐  ← panel top (~35% of canvas height)
+┌─────────────────────────────────────────┐  ← PANEL_TOP (same as navigation panel)
 │  Found!                                 │  ← small header, --text-muted
 │                                         │
 │             ┌──────────┐               │
