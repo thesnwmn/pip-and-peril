@@ -132,6 +132,13 @@ makes the Smoke Pellet meaningfully better: no free attack, stay in the room. Fl
 any turn, requires no pips, and cannot be used against a boss.
 **Depends on:** 020 (fled tile state), 006 (combat phase), 034 (encounter panel — Flee button placement).
 
+### 037 · Combat Panel Redesign
+
+The combat encounter panel is cramped — actions and item slots are squeezed into too little space
+and will only get tighter as more actions (e.g. Flee from 036) and item slots are added. Redesign
+the panel layout to give both areas room to breathe and scale. Exact approach TBD by the Designer.
+**Depends on:** 006 (combat panel), 020 (item action button).
+
 ---
 
 ## DONE
