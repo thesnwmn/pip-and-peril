@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 035 · Navigation Panel Content Modes & Direction Buttons
+
+**Shipped:** 2026-06-04 · **PR:** (link added after merge) · **Spec:** [docs/features/history/035-nav-panel-content-modes.md](docs/features/history/035-nav-panel-content-modes.md)
+
+The nav panel becomes a permanent, always-visible layer with three content modes — IDLE (a cross of four directional buttons), CHOOSING (room selection cards), and WHISPER (room text) — that cross-fade as play progresses. Direction input moves from map-zone arrows into touch-friendly panel buttons, improving one-handed thumb reach. Fog exits are marked with a low-contrast "?" glyph on the map; backtrack exits have no map marker. The situated whisper moves from the map zone into the top of the panel zone so it is covered last when an encounter panel rises over it.
+
+---
+
 ### 033 · Navigation Panel Extract
 
 **Shipped:** 2026-06-04 · **PR:** [#51](https://github.com/thesnwmn/pip-and-peril/pull/51) · **Spec:** [docs/features/history/033-navigation-panel-extract.md](docs/features/history/033-navigation-panel-extract.md)

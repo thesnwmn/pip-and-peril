@@ -1,6 +1,6 @@
 # 035 · Navigation Panel Content Modes & Direction Buttons
 
-**Status:** READY
+**Status:** SHIPPED
 **Source idea:** Manager request
 **Depends on:** 033 (navigation panel module)
 
@@ -236,3 +236,51 @@ how the existing whisper reads in the map zone.
 ## Open questions
 
 None that block this item.
+
+## Shipped
+
+**Date:** 2026-06-04
+**PR:** (link added after merge)
+**Branch:** `claude/nav-panel-content-modes-Vk2NM`
+
+### What was built
+
+All 13 acceptance criteria met:
+
+- **`src/navigation/dungeon-state.ts`** — `uiState` union extended with `'whisper'`.
+- **`src/colors.ts`** — 4 new colour tokens: `navDirNone`, `navDirFog`, `navDirBack`, `navFogMark`.
+- **`src/navigation/movement.ts`** — new exported `exitState(state, dir)` utility; classifies a direction as `'none' | 'fog' | 'back'`. Extracted to make it testable and eliminate duplication between panel and game logic.
+- **`src/navigation/movement.test.ts`** — 5 new tests for `exitState` covering all branches (fog, no exit, backtrack, no reciprocal, OOB).
+- **`src/navigation/panel.ts`** — complete rewrite:
+  - `drawFogMarkers` replaces `drawNavArrows`; renders low-contrast "?" glyph for fog exits only.
+  - `drawPanelBackground` always draws surface + separator so panel is always visible.
+  - `drawDirectionCross` renders 4×64 px rounded-rect buttons (IDLE mode).
+  - `drawPanelWhisper` renders italic centred text near top of panel zone (WHISPER mode).
+  - `drawRoomPanel` cards vertically centred at `PANEL_CENTER_Y` (CHOOSING mode).
+  - Cross-fade: 150 ms `inAlpha`/`outAlpha` between all three modes via `globalAlpha`.
+  - `onDirButton(dir, dirState)` and `onWhisperEnd()` callbacks added.
+  - **Bug fixed (Reviewer):** stale card hit-rects guarded by `uiState !== 'choosing'` check to prevent double-tap crash with null `pendingDir`.
+  - **Bug fixed (Reviewer):** removed early `return` after `onWhisperEnd()` so cross-fade starts the same frame the whisper expires.
+- **`src/screens/game.ts`** — `handleClick` idle map-zone navigation block removed; `onDirButton` handler drives fog/backtrack movement; `onWhisperEnd` resets to idle.
+
+### Test evidence
+
+```
+Test Files  14 passed (14)
+     Tests  206 passed (206)
+```
+
+`npm run typecheck` — clean.  
+`npm run build` — clean (45.96 kB bundle).
+
+### Play-test steps
+
+1. Start a new run (`npm run dev` → tap **New Run**).
+2. **IDLE mode** — confirm a cross of four directional buttons appears in the nav panel. All four should be gold (fog), as the start tile has all four exits leading into unexplored dungeon.
+3. **Fog marker** — confirm faint "?" glyphs appear at the edge of the map zone for each available fog exit.
+4. **Tap a direction button** — panel cross-fades to CHOOSING mode; three room-selection cards appear vertically centred. Buttons disappear.
+5. **Tap a card** — panel cross-fades to WHISPER mode; room text appears near the top of the panel.
+6. Wait ~2.5 s — panel cross-fades back to IDLE, showing the new room's exits.
+7. **Backtrack** — move into an unexplored room, then tap the direction back to the start tile. The button should be amber (`navDirBack`). Tapping it should skip CHOOSING and go directly to WHISPER.
+8. **No-exit buttons** — directions with no exit should render in muted grey and be non-interactive.
+9. **Encounter** — enter an enemy room. The encounter panel should rise over the nav panel; the whisper text should remain visible until the encounter panel covers it.
