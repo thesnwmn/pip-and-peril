@@ -20,6 +20,27 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
+## READY
+
+### 033 · Navigation Panel Extract
+
+Pure file-organisation refactor — no behaviour change. Extracts canvas layout constants into a
+dedicated module and pulls all navigation-mode UI (status bar, nav arrows, whisper overlay, room
+selection cards) out of `screens/game.ts` into `navigation/panel.ts`, following the established
+panel factory pattern. `game.ts` drops from 822 lines to under 500.
+See `docs/features/033-navigation-panel-extract.md` for the full spec.
+
+### 034 · Encounter Registry
+
+Defines what an encounter panel *is* — a full-canvas module that can draw anywhere (including
+over the map zone), declare a map-view configuration (zoom, pip centering), and signal outcomes
+— and builds the encounter registry that manages trigger detection, rise/fall transitions, and
+outcome routing. Combat is refactored as the reference implementation. After this, new encounter
+types (021, 023, 025–028) plug in as panel modules without touching `game.ts`.
+See `docs/features/034-encounter-registry.md` for the full spec.
+
+---
+
 ## NEEDS SPEC
 
 > **Run-loop feature set.** Items 020–029 together complete the *full gameplay run loop* — every
