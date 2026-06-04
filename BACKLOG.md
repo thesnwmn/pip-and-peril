@@ -22,6 +22,14 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
+### 025 · Trap Encounter
+
+A **forced** encounter: stepping onto a trapped tile fires a single agility check (snap-camera,
+no-Leave panel). Enough Green pips — Pip slips clear; too few — HP loss scaled to the tile's
+`trapDifficulty`. Tile is spent after one trigger; never fires again on re-entry.
+**Depends on:** 004 (room entry trigger), 005 (dice pool), 022 (sets `trapDifficulty`), 030 (encounter panel + snap camera mode).
+See `docs/features/025-trap-encounter.md` for the full spec.
+
 ### 022 · Dungeon Structure: Multi-Floor, Pacing & Boss Gate
 
 Three floors replace the endless map. Room offers are **depth-and-floor weighted** from a tuning
@@ -68,16 +76,6 @@ See `docs/features/024-run-summary-screen.md` for the full spec.
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) shipping first — it is already shipped.
-
-### 025 · Trap Encounter
-
-A **forced** encounter: stepping onto a trapped tile fires a single agility check (the snap-camera,
-no-Leave trap panel from the screen-layout concept). Fail → HP loss; pass → Pip slips clear. Cheap
-to build (reuses dice + encounter register), adds real peril variety, and is the prerequisite for
-the *trapped* chest variant in 026.
-**Depends on:** 005 (dice), 004 (entry trigger), 030 (encounter panel + snap camera mode).
-**Related:** Idea 011 (Feature Tiles as Interactions — chasm/bridge agility checks share this
-mechanic and could be flavoured re-skins of it).
 
 ### 026 · Chest Encounter
 
