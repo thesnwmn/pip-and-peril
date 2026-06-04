@@ -93,8 +93,12 @@ into the upper portion. Camera adjusts.
 ```
 
 The **panel** has a consistent structure (a surface that rises from the bottom) but a
-**distinct personality per encounter type** — its height, visual texture, and contents vary.
+**distinct personality per encounter type** — its visual texture and contents vary.
 The panel is not a generic HUD; it is a piece of in-world furniture that matches the encounter.
+
+All encounter panels share the same top edge (`PANEL_TOP`), fully covering the navigation panel
+beneath them. The map zone above is always the same height regardless of encounter type; what
+changes between encounters is the camera zoom and framing, not how much map is visible.
 
 The **map above the panel is still dungeon** — not a screenshot, not a blur, but the live
 renderer showing the active room at the camera's current position and zoom. The player always
@@ -142,17 +146,17 @@ Camera smoothly zooms to **medium-close**: Pip is visible on one side, the enemy
 inside the room's rendered art (torches, archetype, props). Neither is cropped; the room
 context is preserved.
 
-The **combat panel** rises to ~50% of screen height:
+The **combat panel** rises:
 
 ```
 ┌─────────────────────────┐
 │ [status strip]          │
 ├─────────────────────────┤
 │                         │
-│  Pip ←→ Enemy in room   │  ← medium-close combat camera (~50% height)
+│  Pip ←→ Enemy in room   │  ← medium-close combat camera
 │  (room art visible)     │
 │                         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤  ← PANEL_TOP
 │ ♥♥♥ Pip    Enemy ♥♥♥   │  ← HP bars
 │  [d6🔴] [d4🟢] [d8🟡]  │  ← dice pool display
 │  [Attack 2🔴] [Dodge 1🟢]│  ← action buttons; insufficient pip state shown here
@@ -186,14 +190,14 @@ The point: the camera tells you "this is different and larger" before the mechan
 Camera centres on the room and adjusts gently — perhaps a slight pull-in to 1.2× so the
 room feels present without drama. The merchant (or their stall) is visible in the zoomed view.
 
-The **merchant panel** rises to ~65–70% of screen height — shops need room to breathe:
+The **merchant panel** rises:
 
 ```
 ┌─────────────────────────┐
 │ [status strip]          │
 ├─────────────────────────┤
-│   Shop room w/ merchant │  ← ~30% of screen; merchant visible in room
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│   Shop room w/ merchant │  ← map zone above PANEL_TOP; merchant visible in room
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤  ← PANEL_TOP
 │  [Merchant name/line]   │  ← parchment or warm-toned panel surface vs dungeon-dark
 │  ┌──────────────────┐   │
 │  │ Item A  ·  3🪙   │   │
@@ -216,15 +220,14 @@ the merchant spatial grounding.
 Camera zooms to a moderate frame — the NPC is prominent, Pip is beside them. The room
 context remains visible; this is a conversation *in a place*, not a menu.
 
-The **dialogue panel** rises to ~60% of screen height. Unlike the combat panel, it is
-primarily text and choices:
+The **dialogue panel** rises. Unlike the combat panel, it is primarily text and choices:
 
 ```
 ┌─────────────────────────┐
 │ [status strip]          │
 ├─────────────────────────┤
-│  NPC and Pip in room    │  ← ~40%; NPC visible, body-language readable
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│  NPC and Pip in room    │  ← map zone above PANEL_TOP; NPC visible, body-language readable
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤  ← PANEL_TOP
 │ [NPC portrait — small]  │  ← sits at the panel edge, straddling map and panel
 │ "Dialogue text here,    │
 │  a line or two at most. │  ← scrolling single-line at a time, not walls of text
@@ -250,11 +253,11 @@ moment of anticipation; the zoom earns it.
 
 The chest encounter is two beats:
 
-**Beat 1 — The approach.** A small panel rises (~35% height):
+**Beat 1 — The approach.** The panel rises:
 
 ```
 │  [Chest close-up in room] │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤  ← PANEL_TOP
 │  "An old chest. [Type]."   │  ← brief description
 │  [Open]  or  [Lock: 🔵3]  │  ← if locked: a dice check before opening
 │  [Leave]                   │
@@ -264,7 +267,7 @@ If locked, a dice check sits in this panel (brief, then resolved). If trapped, t
 fires *before* opening (see Trap, below); the chest panel then reappears for the reveal.
 
 **Beat 2 — The reveal.** A loot card animates in — the item or gold count — with a brief
-flourish. The panel expands slightly to accommodate the reveal, then settles.
+flourish within the panel.
 
 The two-beat structure — uncertainty, then resolution — is the chest encounter's whole
 emotional arc. The camera never moves between the beats.
@@ -278,12 +281,11 @@ Traps are involuntary. The player did not choose this. The camera knows.
 Camera **snaps** — a near-instant zoom with no easing — to a close view of the triggered
 trap. No smooth pull; the jolt is the signal.
 
-The **trap panel** rises fast (~25–30% height) — the smallest panel in the game, because
-traps are brief and punishing:
+The **trap panel** rises fast — the encounter is brief and punishing:
 
 ```
 │   Trap triggered — close view  │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤  ← PANEL_TOP
 │  "Pressure plate!"             │  ← 1 line; terse, sudden
 │  [d6🟢][d4🟢]  [Roll]         │  ← agility check (or whatever fits the trap)
 │  ← no Leave button →           │  ← forced; can't walk away
