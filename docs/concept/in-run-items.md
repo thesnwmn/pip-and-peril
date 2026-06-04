@@ -2,7 +2,7 @@
 
 *Things Pip finds in the dungeon. Things he carries in his satchel. Lost when the run ends.*
 
-This document sets the direction for in-run items as a system: the philosophy, structure, how they interact with different encounter types, and where they come from. Individual specable ideas are seeded in `IDEAS.md` (Ideas 019–022). This document shapes how all of them should feel and behave.
+This document sets the direction for in-run items as a system: the philosophy, structure, how they interact with different encounter types, and where they come from. Individual specable ideas are seeded in `IDEAS.md` (Ideas 019–022, 024–028). This document shapes how all of them should feel and behave.
 
 ---
 
@@ -128,6 +128,87 @@ Coatings are combat-only by nature. The ongoing poison mechanic (damage per enem
 
 ---
 
+### Knowledge / Information
+
+Items that reveal the dungeon's secrets rather than strengthening Pip directly. A different axis of value: knowing what's coming can matter more than being able to fight it.
+
+- **Room preview** — before committing to a room type during navigation, an item reveals what is actually in one of the offered tiles (enemy HP, whether the chest is trapped, whether the shop is stocked)
+- **Trap detection** — marks nearby trap tiles on the map before Pip steps on them; the difference between a warned agility check and a sudden snap zoom
+- **Enemy scouting** — shows the enemy's HP and attack value at the start of a combat encounter, before the first roll
+- **Floor map** — reveals the full current floor layout for a few seconds
+
+This category feels distinctly *mouse*. Pip's survival instinct is cunning more than brute force; he should be able to play information items as a genuine alternative to power items. A player who scouts effectively takes less damage than one who simply heals more.
+
+Knowledge items are primarily navigation-register, though enemy scouting naturally sits at combat entry. They don't interact with the dice system at all — which makes them a useful counterweight to the rest of the catalog.
+
+---
+
+### Charged / Multi-Use
+
+Items with a fixed number of uses before they deplete — filling the gap between single-use consumables and run-long equipment on the persistence spectrum.
+
+A **Healing Bandage Roll** with 3 charges. A **Whetstone** that sharpens the weapon for 2 combats. A **Smoke Canister** (larger pellet, 2 uses). The decision is different from single-use: it's not "do I spend my last one?" but "is this the right moment for one of my remaining charges?" A two-charge item is worth more than a one-charge item of the same type — but they occupy the same inventory slot.
+
+Charged items are represented naturally as a `charges: number` field on the item, counting down with each use and removing the item at zero. The Satchel should show the remaining charges visibly. This is a small mechanical addition to the data model but opens a meaningfully different design space.
+
+---
+
+### Death Prevention
+
+When Pip would die, this item triggers once instead. Pip survives at 1 HP.
+
+This is the most emotionally impactful item category in the genre. When it fires, the response is visceral — the player was *dead*. It recontextualises every combat in which it's carried: Pip is playing with a safety net he can feel. The item is worth treasuring, worth buying at high shop cost, worth holding through a whole run for a moment that may never come.
+
+Should be very rare — arriving from chests or as an occasional high-cost shop item, never from an ordinary item room. Only one at a time. In Pip's world the thematic frame is clear: a mouse's charmed life, borrowed time, something found that shouldn't exist down here.
+
+Candidates: **Saint's Acorn** (*One last chance. Use it well.*), **Nine Lives Token** (*Pip found this near a cat. Somehow that feels right.*). The name should feel like a found object, not a game mechanic. Death prevention items must never feel like a reward for poor play — they should be rare enough that carrying one feels like extraordinary luck, and using one feels like a near-miss story worth remembering.
+
+---
+
+### Cursed / Burden Items
+
+Items with a meaningful downside alongside their benefit. The rest of the catalog is purely beneficial — everything in the satchel is strictly good, just a question of when to use it. Cursed items introduce a risk/reward layer that doesn't currently exist.
+
+The downside should always be *thematically legible* from the item's identity:
+
+- **Tainted Mushroom** — grants +3 to all pip pools this combat, but deals 2 damage to Pip on use (the mushroom is slightly wrong)
+- **Stolen Idol** — passive for the rest of the run: +2 gold per room entered, but all enemies deal +1 damage (the dungeon's inhabitants want it back)
+- **Berserker Draught** — Pip's next three attacks deal double damage, but he cannot dodge for those same three turns (tunnel vision)
+- **Frantic Scrawl** — reveals the entire floor map, but Pip's next roll uses only half his dice pool rounded down (the effort of reading it leaves him shaken)
+
+Cursed items create memorable run stories. "I took the Stolen Idol on floor 2 and barely survived floor 3" is a narrative the game currently cannot produce. The risk must be real — a downside too small to matter is just flavour text and produces no decision.
+
+A visual signal — a faint red tint on the item border, or a small skull marker — should make cursed status visible before the player commits to taking it. The decision is *knowing the cost and choosing anyway*, not being caught off guard.
+
+---
+
+### Dice-Face Manipulation
+
+Items that interact with the *outcomes* showing on individual dice, rather than the pool composition or pip totals. Distinct from stat boosts (which add pips) and die upgrades (which change die types) — these interact with what specific dice are *currently showing*.
+
+This is the category most unique to a dice-driven game. Dicey Dungeons built an entire game around it.
+
+- **Lock Pin** — lock one die to its current face; it won't change on the next roll. Powerful when you rolled a 6 and need that colour again next turn.
+- **Pip Splitter** — split one die's face value into two smaller ones: a 6 becomes two 3s; a 4 becomes two 2s. Useful when you need two cheap actions rather than one expensive one.
+- **Colour Shift Vial** — treat one die as a different colour for this turn: your red die counts as green. Bridges a colour gap in a single roll.
+- **Mirror Shard** — duplicate one die's current face value, adding a matching virtual pip count. Doubles down on a high roll.
+
+These are all combat-only and all interact directly with the dice state mid-turn. The Lock Pin in particular changes how players think about rolls: suddenly a good die result is worth protecting across turns, not just spending immediately. This is a high-skill-expression category — the player who understands the dice pool well gets disproportionate value.
+
+Implementation note: these items act on the current roll state, not the pool configuration; they need access to the per-die face values, which may require a small extension to the combat state model.
+
+---
+
+### Deferred: Passive Trinkets / Charms
+
+*We will return to this category.*
+
+Small stackable passive bonuses — a *Bent Coin* that gives +1 gold from every enemy, a *River Stone* that guarantees at least 1 green pip per roll, a *Frayed Ribbon* that makes healing items restore 1 extra HP. Many of these at once rather than a few large ones; they accumulate over a run to define its character.
+
+This category is recognised and wanted but deferred until the catalog is large enough to feel it properly. With ~5 items, there's no passive trinket design space to explore. Revisit when the total catalog reaches ~20 distinct items, or when meta-progression (029) is in place — there's a natural question about whether some trinkets are in-run finds or meta-layer unlocks, and that distinction becomes important.
+
+---
+
 ## The Encounter Interaction Model
 
 Items that interact with dice don't all behave the same way across encounter types. The key concept is the **resolve window**.
@@ -227,6 +308,6 @@ The coating slot rule above is a natural early pressure point even before any fo
 
 *Related:*
 - `docs/concept.md` — core pillars, dice pool, meta-progression overview
-- `IDEAS.md` — specific item ideas seeded from this document (Ideas 019–023)
+- `IDEAS.md` — specific item ideas seeded from this document (Ideas 019–022, 024–028)
 - `docs/features/history/020-item-system-consumables.md` — current item catalog and data model
 - `docs/features/026-chest-encounter.md` — chest as item source (Iron Thimble already specced)

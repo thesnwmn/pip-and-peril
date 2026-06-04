@@ -156,4 +156,90 @@ decline timeout avoids breaking trap tension for players who have no intention o
 
 ---
 
+## Idea 024 — Knowledge / Information Items
+
+**Area:** System / Flow
+**Inspiration:** Genre survey — NetHack scrolls of mapping, Slay the Spire enemy intent preview; `docs/concept/in-run-items.md`.
+
+Items that reveal dungeon secrets rather than strengthening Pip directly — a different axis of
+value where cunning substitutes for power. Four sub-types: **room preview** (reveal actual
+contents of one offered tile before committing during navigation), **trap detection** (mark nearby
+trap tiles on the map before Pip steps on them), **enemy scouting** (show enemy HP and attack
+value at combat entry before the first roll), **floor map** (reveal the full current floor layout
+briefly). Navigation-register primarily; enemy scouting sits at the combat-entry beat. These items
+do not interact with the dice system at all, making them a useful counterweight to power-focused
+categories. Risk: room preview may reduce tension in room selection — the Designer should consider
+whether full reveal or a partial hint (e.g. "enemy" vs. exact HP) is the right granularity.
+
+---
+
+## Idea 025 — Charged / Multi-Use Items
+
+**Area:** System
+**Inspiration:** Genre survey — multi-charge items in NetHack, FTL augments; gap in persistence spectrum; `docs/concept/in-run-items.md`.
+
+A `charges: number` field on the item type, counting down with each use and removing the item at
+zero. Fills the gap between single-use consumables and run-long equipment: a **Healing Bandage
+Roll** with 3 charges, a **Whetstone** that sharpens the weapon for 2 combats, a **Smoke Canister**
+with 2 uses. The decision is different from single-use — not "is this the right moment to spend my
+last one?" but "is this worth one of my remaining charges?" A two-charge item is visibly more
+valuable than a one-charge item of the same type. Small data-model change (charges field on Item);
+Satchel should display remaining charges clearly. Risk: the Engineer should confirm the item
+catalog and `acquireItem` stacking logic handles charges vs. quantity correctly — these are
+different things.
+
+---
+
+## Idea 026 — Death Prevention Item
+
+**Area:** System / Flow
+**Inspiration:** Genre survey — Hades Death Defiance, NetHack amulet of life saving, Isaac Dead Cat; `docs/concept/in-run-items.md`.
+
+When Pip would die, this item triggers once instead — Pip survives at 1 HP. The most emotionally
+impactful item category in the genre: when it fires, the player was *dead*. Should be very rare
+(chests or high-cost shop item; never an ordinary item room), one at a time, and the thematic
+frame should feel like a found object rather than a game mechanic. Candidates: **Saint's Acorn**
+(*One last chance. Use it well.*), **Nine Lives Token** (*Found near a cat. Somehow that feels
+right.*). The item fires automatically — no player action required — which means the data model
+needs a hook in the death resolution path to check for it before writing `pipHp = 0`. Risk: if
+too common it trivialises permadeath; rarity is the entire balance lever.
+
+---
+
+## Idea 027 — Cursed / Burden Items
+
+**Area:** System / Flow
+**Inspiration:** Genre survey — Risk of Rain 2 Lunar items, NetHack cursed items, Hades Pact of Punishment; `docs/concept/in-run-items.md`.
+
+Items with a meaningful downside alongside their benefit, adding a risk/reward layer absent from
+the current all-positive catalog. Examples: **Tainted Mushroom** (+3 all pip pools this combat,
+deals 2 damage to Pip on use), **Stolen Idol** (+2 gold per room for the rest of the run, all
+enemies deal +1 damage — the dungeon wants it back), **Berserker Draught** (next three attacks
+deal double damage, but no dodging for three turns). A visual signal — faint red tint on the item
+border — should make cursed status visible before the player takes it; the decision is *knowing
+the cost and choosing anyway*. Risk: downsides must be real or the category collapses to flavour
+text; the Designer should playtest each example item to confirm the cost genuinely deters use in
+some situations.
+
+---
+
+## Idea 028 — Dice-Face Manipulation
+
+**Area:** Dice / System
+**Inspiration:** Dicey Dungeons (entire game); gap in the dice-interaction design space; `docs/concept/in-run-items.md`.
+
+Items that act on the *current face values showing on individual dice* mid-turn, distinct from
+stat boosts (add pips) and die upgrades (change die types). Four sub-types: **Lock Pin** (lock one
+die to its current face — it won't change on next roll, protects a high result), **Pip Splitter**
+(split one die's face value into two smaller ones — a 6 becomes two 3s, useful for two cheap
+actions over one expensive one), **Colour Shift Vial** (treat one die as a different colour this
+turn, bridges a colour gap), **Mirror Shard** (duplicate one die's current face value as a virtual
+bonus pip count). All combat-only; all require access to per-die face values in combat state rather
+than only pip totals — may need a small combat state extension. This is the highest skill-expression
+category in the catalog: a player who understands their pool well gets disproportionate value.
+Risk: the Lock Pin in particular changes the game's feel significantly — locking a 6 across turns
+creates a very different rhythm; worth prototyping early.
+
+---
+
 
