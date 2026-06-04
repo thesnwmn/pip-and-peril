@@ -1,6 +1,6 @@
 import { colors } from '../colors'
 import type { CombatState } from './types'
-import { PANEL_TOP } from '../dice/panel'
+import { PANEL_TOP } from '../screens/game-layout'
 
 // Panel occupies the map tile zone: MAP_X (10) to MAP_X + MAP_W (370), width 360 px.
 // Must match MAP_X and MAP_W in src/map/renderer.ts.
@@ -74,23 +74,20 @@ export function drawCombatStatusBar(
   ctx.fillText(`${combat.enemy.hp}/${combat.enemy.maxHp}`, enemyBarX + enemyBarW + 4, midY)
 }
 
+// The registry applies a vertical translate for the animation; this function draws
+// at the natural PANEL_TOP position. No override needed.
 export function drawCombatBanner(
   ctx: CanvasRenderingContext2D,
   timestamp: DOMHighResTimeStamp,
   combat: CombatState,
   bannerStartTime: number,
-  panelTopOverride: number,
 ): void {
-  const off = panelTopOverride - PANEL_TOP
   ctx.save()
-  ctx.translate(0, off)
 
-  const extraH = Math.max(0, -off)
-  const panelH = LOGICAL_H - PANEL_TOP + extraH
+  const panelH = LOGICAL_H - PANEL_TOP
   const isVictory = combat.phase === 'victory'
 
   const bgColor = isVictory ? colors.surface : colors.bg
-  const borderColor = isVictory ? colors.gold : ENEMY_RED
   const titleColor = isVictory ? colors.gold : ENEMY_RED
   const titleText = isVictory ? '── VICTORY ──' : '── DEFEATED ──'
   const subtitleText = isVictory ? `${combat.enemy.name} defeated!` : 'Pip has fallen…'

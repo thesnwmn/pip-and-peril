@@ -20,20 +20,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-## IN PROGRESS
-
-### 034 · Encounter Registry
-
-Defines what an encounter panel *is* — a full-canvas module that can draw anywhere (including
-over the map zone), declare a map-view configuration (zoom, pip centering), and signal outcomes
-— and builds the encounter registry that manages trigger detection, rise/fall transitions, and
-outcome routing. Combat is refactored as the reference implementation. After this, new encounter
-types (021, 023, 025–028) plug in as panel modules without touching `game.ts`.
-**Depends on 035** (the always-visible nav panel this feature layers encounter panels over).
-See `docs/features/034-encounter-registry.md` for the full spec.
-
----
-
 ## NEEDS SPEC
 
 > **Run-loop feature set.** Items 020–029 together complete the *full gameplay run loop* — every

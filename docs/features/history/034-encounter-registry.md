@@ -255,3 +255,40 @@ The panel's post-map `draw()` access covers all known use cases in the current b
 
 None that block this item. The combat panel's existing behaviour is the reference; the
 Engineer picks the specific interface shapes.
+
+## Shipped
+
+**Date:** 2026-06-04
+**PR:** (link pending push)
+
+### What was built
+
+- `src/encounter/panel.ts` — `EncounterPanel` interface with `draw`, `handleClick`, `handlePointerMove`, and optional `mapView: MapViewConfig`. The `onComplete` callback is passed to the factory at creation time.
+- `src/encounter/registry.ts` — `createEncounterRegistry()` factory. Owns trigger detection (`checkTrigger`), RISING/FALLING state machine (`computeMapState`), layered nav-panel rendering (`shouldDrawNavPanel`), animated panel draw (`draw`), and outcome routing. Injectable `getNow` for deterministic testing.
+- `src/combat/combat-panel.ts` — `createCombatEncounterPanel()` implementing `EncounterPanel`. Owns `CombatState`, `DicePanel` wiring, combat log, HP tracking via `CombatContext` getters/setters. Signals `onComplete('victory')` or `onComplete('defeat')` after banner timeout or tap.
+- `src/combat/panel.ts` — Removed `panelTopOverride` parameter from `drawCombatBanner`; registry translate handles animation positioning.
+- `src/screens/game.ts` — Removed all combat-specific state and logic (±300 lines). Wires up the registry with a single `registry.register({...})` call. Future encounter types add another `registry.register()` call; no other changes needed.
+- `src/encounter/registry.test.ts` — 35 new tests covering idle, RISING, ACTIVE, FALLING, outcome routing, input gating, and multi-registration dispatch.
+
+### Test evidence
+
+```
+Test Files  15 passed (15)
+     Tests  237 passed (237)   (35 new, 202 pre-existing)
+```
+
+TypeScript: clean. Build: clean (47 kB bundle).
+
+### Play-test instructions
+
+1. `npm run dev` → open http://localhost:5173
+2. Navigate: tap a direction arrow (↑/↓/←/→), then pick an **ENEMY** room card.
+3. The nav panel should slide away and the combat panel should rise smoothly from the bottom.
+4. Roll dice, spend red pips on **Strike** until the goblin's HP reaches 0.
+5. Verify the VICTORY banner appears (goblin name + gold reward).
+6. Tap to continue — the combat panel should slide back down revealing the nav panel (direction cross).
+7. Verify the goblin's room is now marked cleared (re-entering it does NOT restart combat).
+8. Continue navigating — confirm whisper text, satchel, and menu still work normally.
+9. Let the goblin defeat Pip (don't evade; roll and take hits until Pip HP reaches 0).
+10. Verify the DEFEATED banner appears, then the game returns to the home screen.
+11. Open the **MENU** button — confirm it opens during stable combat and is blocked during the rise/fall animation.
