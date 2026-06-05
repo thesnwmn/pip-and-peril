@@ -131,7 +131,7 @@ export function createCombatEncounterPanel(
 
     if (combat.phase === 'awaiting-roll') {
       // First roll: start player turn.
-      combat = { ...combat, phase: 'player-turn', itemUsedThisTurn: false }
+      combat = { ...combat, phase: 'player-turn', itemUsedThisTurn: false, analysedThisTurn: false }
       startRoll()
       return
     }
@@ -143,7 +143,7 @@ export function createCombatEncounterPanel(
       const result = applyEnemyTurn(combat, prevHp)
       ctx.setPipHp(result.pipHp)
       // Return to awaiting-roll so the player sees the new intent before rolling again.
-      combat = { ...result.combat, phase: result.defeat ? 'defeat' : 'awaiting-roll', itemUsedThisTurn: false }
+      combat = { ...result.combat, phase: result.defeat ? 'defeat' : 'awaiting-roll', itemUsedThisTurn: false, analysedThisTurn: false }
       openCategory = null
       fleePending = false
 
