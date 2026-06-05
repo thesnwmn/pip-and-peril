@@ -47,11 +47,15 @@ export function createCombatEncounterPanel(
     entryFrom,
     goldAwarded: 0,
     itemUsedThisTurn: false,
+    analysedThisCombat: false,
+    analysedThisTurn: false,
+    identified: false,
+    pipPoison: null,
   }
 
   let lastEnemyHeadline = ''
   let lastEnemyDetail = ''
-  let lastEnemyKind: 'attack' | 'guard' | null = null
+  let lastEnemyKind: CombatState['intent']['kind'] | null = null
   let bannerStartTime: number | null = null
   let completed = false
 
@@ -143,15 +147,23 @@ export function createCombatEncounterPanel(
       }
 
       // Record what the enemy just did for the awaiting-roll display.
-      lastEnemyKind = firedIntent.kind
+      lastEnemyKind = firedIntent.kind as any
       if (firedIntent.kind === 'guard') {
         lastEnemyHeadline = `${combat.enemy.name} guards`
         lastEnemyDetail = `+${firedIntent.value} block`
+      } else if (firedIntent.kind === 'empower') {
+        lastEnemyHeadline = `${combat.enemy.name} empowers`
+        lastEnemyDetail = 'Next attack ×2!'
+      } else if (firedIntent.kind === 'recover') {
+        lastEnemyHeadline = `${combat.enemy.name} recovers`
+        lastEnemyDetail = `+${firedIntent.value} HP`
       } else if (result.damage === 0) {
-        lastEnemyHeadline = `${combat.enemy.name} attacks`
+        const intentName = firedIntent.kind === 'lunge' ? 'lunges' : 'attacks'
+        lastEnemyHeadline = `${combat.enemy.name} ${intentName}`
         lastEnemyDetail = 'Dodged!'
       } else {
-        lastEnemyHeadline = `${combat.enemy.name} attacks`
+        const intentName = firedIntent.kind === 'lunge' ? 'lunges' : 'attacks'
+        lastEnemyHeadline = `${combat.enemy.name} ${intentName}`
         lastEnemyDetail = `−${result.damage} HP  (${prevHp} → ${ctx.getPipHp()})`
       }
 

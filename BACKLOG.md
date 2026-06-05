@@ -20,7 +20,7 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-### 046 · Combat Depth: Blue & Yellow, Full Intents & Advanced Actions
+### 046 · Combat Depth: Blue & Yellow, Full Intents & Advanced Actions (IN PROGRESS)
 
 The second combat layer, built directly on top of 037. Adds the four remaining **enemy intents**
 (💢 Empower, 😴 Recover, 🕸️ Status/Poison, ☠️ Lunge) and the **two-turn telegraph** revealed via
