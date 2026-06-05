@@ -223,6 +223,51 @@ some situations.
 
 ---
 
+## Idea 039 — Enemy Intent System
+
+**Area:** System / Dice
+**Inspiration:** Slay the Spire (enemy intent preview); combat system concept; the need to make the attack/defence binary meaningful.
+
+Before Pip rolls each turn, the enemy reveals a single intent icon and value showing what they will do this turn (Attack N, Guard, Empower, Recover, Status, Lunge). Pip rolls and allocates pips with this information in hand — creating a genuine decision each turn: "Do I spend Green to dodge this hit, or race to kill them first?" The intent system is the lever that makes Active Defence (Idea 040) a real decision rather than an always-correct choice. For bosses, intents form a fixed learnable cycle rather than procedural generation — rewarding pattern recognition. Risk: requires a new data field on enemy definitions (intent sequence or intent set); the Designer should decide whether floor-1 enemies use full intents or simplified ones while the system teaches itself.
+
+---
+
+## Idea 040 — Active Defence (Offence/Defence Binary)
+
+**Area:** Dice / System
+**Inspiration:** Combat system concept; the core problem with the current "spend everything" model.
+
+Defence is not passive. Pip takes full damage unless he deliberately holds Green pips back during his turn to act as a damage shield: 2G reserved fully dodges one hit; 1G reserved reduces one hit's damage by 1. Spending those Green pips on offence instead means taking the enemy's full hit. This single structural change creates the turn's dominant decision — hit harder now, or survive what's coming — without adding any new UI elements. The interjection model this creates: offence pips are spent actively; defence pips are *not spent* on offence (an absence, not a button). Risk: requires a mechanical separation between "pips spent on actions" and "pips reserved for defence" in the combat state model; the Engineer needs to handle the reserved pile as a distinct state.
+
+---
+
+## Idea 041 — Rattled / Emboldened Combat States
+
+**Area:** System / Character
+**Inspiration:** Entirely the Thinker's own — not a direct development of the manager's direction.
+
+Transient per-fight modifiers that track how the fight is going, without permanent complexity. **Rattled** triggers when Pip takes damage on two consecutive turns without landing a hit — one die locks to its minimum face until Pip lands an attack (representing flinching fear). **Emboldened** triggers when Pip lands a killing blow — the *next* combat starts with one free virtual Yellow pip on the first roll (confidence following a win). Both states clear naturally; neither compounds. They make fights feel like they have texture and momentum beyond HP tracking, and they create natural hooks for items (*Steadying Brew* clears Rattled) and meta-skills (*Counter-Strike* triggers on a full dodge; *Battle Cry* extends Emboldened). Risk: Rattled's visual representation — a "shaky" die — must read clearly on a small phone screen without being distracting mid-allocation.
+
+---
+
+## Idea 042 — Die Type Risk Profiles
+
+**Area:** Dice / Meta
+**Inspiration:** Combat system concept; board game dice theory; creating meaningful meta-progression choices beyond "bigger number."
+
+Different die sizes carry distinct strategic identities: d4s are consistent (narrow range, high floor relative to max); d8s are volatile (good ceiling, frequent low rolls, feast-or-famine); d10s and d12s are spikey (thrilling highs, crushing lows). Upgrading in meta-progression is therefore a choice of *risk tolerance*, not just raw power: a d6→d8 upgrade raises the ceiling but increases variance; adding a second d6 instead raises the floor. Engrave mechanics (locking one face) are most powerful on spikey large dice — a d10 with its "1" face engraved to "5" becomes much calmer. This creates build archetypes: Reliable (many small dice), Spike (fewer large dice), and tuned Hybrids. Risk: these profiles are only meaningful if combat scaling keeps them all relevant at late floors — a flat +N modifier per floor that outpaces the d4's ceiling would make d4s obsolete.
+
+---
+
+## Idea 043 — Boss Fixed Intent Cycles
+
+**Area:** System / Flow
+**Inspiration:** Hades (boss patterns); combat system concept; the desire for bosses to feel like learnable puzzles rather than RNG.
+
+Bosses use a fixed, looping intent sequence (3–4 intents) rather than procedurally generated ones. The player can decode the pattern over the course of the fight and plan multiple turns ahead. At the Enrage threshold (50% HP), the cycle accelerates or a new intent is injected — the pattern breaks and must be re-established. Some bosses (the Pale Adder, Scratch) have a third phase near death with a signature move. This makes boss fights feel like rhythm games at their peaks: learning the pattern, then executing under pressure. It also makes each boss feel hand-crafted even within a randomised run. Risk: fixed cycles can feel mechanical to veterans after multiple runs — the boss pool's variety (five or six bosses) is the mitigation; no single cycle should be met too often.
+
+---
+
 ## Idea 028 — Dice-Face Manipulation
 
 **Area:** Dice / System

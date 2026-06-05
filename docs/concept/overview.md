@@ -50,15 +50,18 @@ The encounter resolves and the player returns to navigation.
 
 ## The Dice Pool System
 
-Each stat is represented by a **coloured die type**. At the start of each encounter turn, the player rolls their entire pool. The resulting pips are spent on actions.
+Each stat is represented by a **coloured die type**. At the start of each encounter turn, the player rolls their entire pool. The resulting pips are spent on actions — but the core decision is not just *which* actions to take; it is **offence versus defence**. Pips spent attacking are pips not reserved to dodge incoming hits.
 
-| Colour | Stat | Example Uses |
-|--------|------|--------------|
-| 🔴 Red | Strength | Smash, shove, break |
-| 🔵 Blue | Intellect | Solve puzzles, read runes, trick enemies |
-| 🟢 Green | Agility | Dodge, sneak, dash |
-| 🟡 Yellow | Luck | Wild card, bonus pips, rerolls |
-| 🟣 Purple | Magic | Arcane abilities (later expansion) |
+| Colour | Role | Combat identity |
+|--------|------|-----------------|
+| 🔴 Red | Force | The primary offence colour. Strike, Heavy Strike, Shove. |
+| 🟢 Green | Speed | The primary defence colour — *reserved* pips dodge incoming hits — plus active tools: Feint (reduce Guard), Disengage. |
+| 🔵 Blue | Mind | The meta-action colour. Analyse (reveal future intents), Exploit (bypass Guard), Resist (cancel status). |
+| 🟡 Yellow | Fortune | Universal converter (2Y = 1 of any colour) and fortune amplifier. Lucky Shot bypasses Guard. |
+| 🟣 Purple | Magic | Future expansion. Held for a future archetype. |
+
+The detailed combat mechanics — turn structure, enemy intents, die-type risk profiles, item
+interjection points, and how combat scales — are in [`combat-system.md`](combat-system.md).
 
 ---
 
@@ -130,15 +133,18 @@ The depth of the dungeon affects what room types appear — shallower floors ske
 
 ## Meta Progression (Between Runs)
 
-Players spend a currency (e.g. "shiny scraps") earned during runs to upgrade their dice pool:
+Players spend a currency ("shiny scraps") earned during runs to upgrade their dice pool. Upgrading
+is a choice of **risk tolerance as much as raw power** — a d8 raises the ceiling but adds variance;
+a second d6 raises the floor. Die size risk profiles are detailed in `combat-system.md`.
 
-- **Swap dice** — e.g. upgrade a d6 Red to a d8 Red (higher pip ceiling)
-- **Add dice** — grow the pool size (more actions per turn)
-- **Engrave dice** — permanently fix one face (e.g. always shows 2 🟡)
-- **Unlock skills** — passive modifiers, e.g.:
-  - *"Spend 3🔴 to hit twice"*
-  - *"Whenever you roll a 1, gain a free reroll"*
-  - *"Sneaking costs 1 less 🟢"*
+- **Swap dice** — e.g. upgrade a d6 Red to a d8 Red (higher ceiling, more variance)
+- **Add dice** — grow the pool size (more pips available per turn)
+- **Engrave dice** — permanently fix one face (tames variance on spikey larger dice)
+- **Unlock Blue** — add the first Blue die (opens the Mind colour and its actions)
+- **Unlock skills** — passive modifiers that change what decisions are interesting, not just
+  numbers. Examples from `combat-system.md`: *Counter-Strike* (a full dodge deals 1 damage
+  automatically); *Careful Eye* (see first two intents at combat start); *Desperate Swing*
+  (while Rattled, Strike costs 1R less).
 
 ---
 
