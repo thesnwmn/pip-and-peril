@@ -99,6 +99,7 @@ export function createBossEncounterPanel(
   const phase2Cycle = bossSpec.phases[1]!.cycle
 
   let introStartTime: number | null = null
+  let introComplete = false
   let bannerStartTime: number | null = null
   let completed = false
 
@@ -201,7 +202,7 @@ export function createBossEncounterPanel(
     const tightZoom = COMBAT_CONFIG.cameraZoom
     const wideZoom = 0.75
 
-    if (introStartTime !== null) {
+    if (!introComplete && introStartTime !== null) {
       const elapsed = performance.now() - introStartTime
       const TRANSITION_START = 1500
       const TRANSITION_DURATION = 400
@@ -239,7 +240,7 @@ export function createBossEncounterPanel(
   // ── Draw functions ────────────────────────────────────────────────────────
 
   function drawIntroSequence(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
-    if (introStartTime === null) return
+    if (introStartTime === null || introComplete) return
 
     const elapsed = timestamp - introStartTime
     const INTRO_DURATION = 2500
@@ -256,7 +257,7 @@ export function createBossEncounterPanel(
       }
 
       const centerX = 192
-      const centerY = 200
+      const centerY = 550 // Bottom half of screen
       const cardW = 360
       const cardH = 120
 
@@ -282,15 +283,15 @@ export function createBossEncounterPanel(
     }
 
     if (elapsed >= INTRO_DURATION) {
-      introStartTime = null
+      introComplete = true
     }
   }
 
   // ── draw ──────────────────────────────────────────────────────────────────
 
   function draw(renderCtx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
-    // Initialize intro timing
-    if (introStartTime === null && bannerStartTime === null) {
+    // Initialize intro timing (only once)
+    if (introStartTime === null && !introComplete && bannerStartTime === null) {
       introStartTime = timestamp
     }
 
@@ -318,7 +319,7 @@ export function createBossEncounterPanel(
     }
 
     // Draw intro sequence
-    if (introStartTime !== null) {
+    if (!introComplete && introStartTime !== null) {
       drawIntroSequence(renderCtx, timestamp)
       return
     }
@@ -382,7 +383,7 @@ export function createBossEncounterPanel(
   // ── drawMapOverlay ────────────────────────────────────────────────────────
 
   function drawMapOverlay(renderCtx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
-    if (introStartTime !== null || bannerStartTime !== null) return
+    if (!introComplete || bannerStartTime !== null) return
     drawCombatOverlay(renderCtx, {
       enemy: {
         id: bossSpec.id,
