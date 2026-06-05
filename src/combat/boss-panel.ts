@@ -257,7 +257,7 @@ export function createBossEncounterPanel(
       }
 
       const centerX = 192
-      const centerY = 550 // Bottom half of screen
+      const centerY = 200 // Top of screen
       const cardW = 360
       const cardH = 120
 
