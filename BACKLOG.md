@@ -27,10 +27,11 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 The combat keystone, and the prerequisite for everything that touches a fight. Replaces the
 "spend everything every turn" loop with a real decision: the enemy **telegraphs an intent** before
 Pip rolls, and **defence is active** — Pip *reserves* Green pips (2G fully dodges the coming hit,
-1G shaves 1) instead of spending them. The combat **panel is redesigned** in the same feature to
-render it (intent banner, dice pool with live faces, costed action buttons with a greyed
-unaffordable state, defence-reserve indicator) — giving the cramped panel room for new actions and
-item slots. Folds in **Raw Flee** (escape a non-boss fight for one free enemy hit; Pip retreats to
+1G shaves 1) instead of spending them. The combat **panel is redesigned** in the same feature:
+**HP bars and the intent telegraph move onto the map** (Pip and the enemy facing off, bars beneath
+each, intent icon above the enemy), freeing the panel to be the **dice pool plus category buttons**
+(Red / Green / Item / Flee) that open submenus — clean room for the actions and item slots still to
+come. Folds in **Raw Flee** (escape a non-boss fight for one free enemy hit; Pip retreats to
 the entry tile and the room is left in the fled state — the seed for future roaming enemies).
 Ships in two phases (Phase 1 = Attack/Guard intents + reserve defence + Strike/Heavy/Reserve/Flee
 + the new panel; Phase 2 = Blue/Yellow, the full intent set, Tenacity hook).
