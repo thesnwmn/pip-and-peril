@@ -20,25 +20,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-## READY
-
-### 037 · Combat Overhaul: Intents, Active Defence & Panel Redesign
-
-The combat keystone, and the prerequisite for everything that touches a fight. Replaces the
-"spend everything every turn" loop with a real decision: the enemy **telegraphs an intent** before
-Pip rolls, and **defence is active** — Pip *reserves* Green pips (2G fully dodges the coming hit,
-1G shaves 1) instead of spending them. The combat **panel is redesigned** in the same feature:
-**HP bars and the intent telegraph move onto the map** (Pip and the enemy facing off, bars beneath
-each, intent icon above the enemy), freeing the panel to be the **dice pool plus category buttons**
-(Red / Green / Item / Flee) that open submenus — clean room for the actions and item slots still to
-come. Folds in **Raw Flee** (escape a non-boss fight for one free enemy hit; Pip retreats to
-the entry tile and the room is left in the fled state — the seed for future roaming enemies).
-Scoped as a self-contained unblocker: Attack/Guard intents, reserve defence, Strike/Heavy/Reserve/
-Flee, and the new panel. The richer combat layer (Blue/Yellow, the full intent set, advanced
-actions, Tenacity) is **046**, built on top.
-**Depends on:** 006 (combat loop), 030 (elastic canvas panel), 005 (dice), 020 (fled state).
-See `docs/features/037-combat-overhaul.md` for the full spec.
-
 ### 046 · Combat Depth: Blue & Yellow, Full Intents & Advanced Actions
 
 The second combat layer, built directly on top of 037. Adds the four remaining **enemy intents**

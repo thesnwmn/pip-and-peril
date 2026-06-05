@@ -13,10 +13,12 @@ export interface MapViewConfig {
 // Coordinates passed to handleClick/handlePointerMove are in the panel's natural
 // space: origin at (0,0) of the un-animated canvas (i.e. as if panelTop = PANEL_TOP).
 //
-// Extension point: future panels may add an `update(timestamp)` lifecycle hook
-// for heavy per-frame logic that needs to run independently of rendering.
+// drawMapOverlay (optional): called at screen coordinates without the panel
+// translation, so content always lands in the map zone regardless of animation.
+// Only called when the encounter is fully active (no rising/falling transition).
 export interface EncounterPanel {
   draw(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void
+  drawMapOverlay?(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void
   handleClick(x: number, y: number): void
   handlePointerMove(x: number, y: number): void
   // Optional map-view override. Absent = default navigation view.

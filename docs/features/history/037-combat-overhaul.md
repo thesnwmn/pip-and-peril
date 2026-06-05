@@ -373,10 +373,40 @@ src/
 
 ## Shipped
 
-**Date:** YYYY-MM-DD · **PR:** #NN
+**Date:** 2026-06-05 · **PR:** #77
 
 ### What was built
 
+- **`src/combat/types.ts`** — Rewrote types: added `Intent`, `IntentSet`, `WeightedIntent`; `Enemy` gains `block`, `isBoss`, `intents`; `CombatState` gains `intent`, `reservedGreen`, `entryFrom`; removed `evadeBuffer`.
+- **`src/combat/intents.ts`** (new) — `selectIntent()` pure weighted draw; `GOBLIN_INTENTS` (3× Attack 2, 1× Guard 2); `GOBLIN` constant (moved from types.ts).
+- **`src/combat/encounter.ts`** — Rewrote: `damageToPip()` (2G dodge / 1G −1 / 0G full), `applyStrike()` + `applyHeavyStrike()` with block depletion, `applyEnemyTurn()` (fires Attack or Guard intent, selects next intent), `applyFlee()` (free hit ignoring reserve), `canFlee()`. Removed `applyEvade`, `applyFocus`.
+- **`src/combat/encounter.test.ts`** — Full test suite for new functions; 274 tests pass (12 new).
+- **`src/combat/overlay.ts`** (new) — `drawCombatOverlay()`: HP bars (Pip left, enemy right) with gradient scrim, intent icon pill (⚔️/🛡) above enemy, guard block indicator.
+- **`src/combat/panel.ts`** — Complete rewrite: dice faces + pip badges (hero element), ROLL DICE / END TURN button, four category buttons (Red/Green/Item/Flee) with submenus (Red → Strike/Heavy; Green → Reserve live note + Clear; Item placeholder; Flee → confirm pending), one-line battle log. `drawCombatBanner` preserved.
+- **`src/combat/combat-panel.ts`** — Complete rewrite: initialises combat with first intent selected, handles awaiting-roll → player-turn → enemy-turn → awaiting-roll cycle, wires all action handlers, exposes `drawMapOverlay`.
+- **`src/encounter/panel.ts`** — Added optional `drawMapOverlay?` to `EncounterPanel` interface (backward-compatible).
+- **`src/encounter/registry.ts`** — Calls `drawMapOverlay` at screen coordinates (no panel translation) when encounter is active.
+- **`src/screens/game.ts`** — Tracks `combatEntryFrom` before every pip movement; passes it to `createCombatEncounterPanel`; `fled` outcome handler repositions Pip (and camera) to the entry tile.
+
 ### Evidence
 
+- `npm run typecheck` — zero errors.
+- `npm run test` — 274 / 274 passing (12 new tests: `damageToPip`, `applyStrike`/`applyHeavyStrike` with block, `applyEnemyTurn` Attack + Guard + next-intent, `applyFlee` free-hit + defeat, `canFlee` boss gate, `selectIntent` weighting).
+- `npm run build` — clean, 59.28 kB bundle.
+
 ### Play-test
+
+1. Start a new run from the home screen. Navigate until you reveal and enter an **enemy room** (red marker). The panel slides up.
+2. **Map overlay:** Pip HP bar appears lower-left of the map zone; Goblin HP bar lower-right; intent icon (⚔️2 or 🛡2) floats upper-right. No HP readout in the panel itself.
+3. **Awaiting-roll:** Dice show blank faces. Only ROLL DICE button visible. No category buttons.
+4. **Roll:** Tap ROLL DICE. Dice animate, show values. Button becomes END TURN. Category buttons (Red / Green / Item / Flee) appear.
+5. **Strike:** Open Red → Strike (2🔴). Goblin HP bar decreases. Log reads "Strike — 2 dmg!"
+6. **Heavy Strike:** Open Red → Heavy Strike (4🔴). Deals 4 damage; if Goblin Guarded last turn, damage depletes block before HP.
+7. **Reserve:** Open Green → "+Reserve 🟢" (costs 1🟢). Note shows "1 held — −1 damage". Tap again: "Dodge ready". On END TURN with 2🟢 reserved, an Attack 2 intent deals 0 damage to Pip.
+8. **Clear:** While reserve > 0, open Green → Clear. Green pips return to pool totals.
+9. **Guard intent:** After a 🛡2 intent fires, block indicator appears on Goblin's map bar. Your next Strike/Heavy is absorbed by block before HP.
+10. **Flee:** Tap Flee → confirm message. Tap Flee again. Goblin deals 2 free hit. Pip retreats to the corridor tile entered from. Room shows fled marker. Re-entering restarts combat.
+11. **Victory:** Reduce Goblin to 0 HP → victory banner + gold. Tap to continue.
+12. **Defeat:** Let Pip reach 0 HP → defeated banner. Tap → home screen.
+13. **Items in combat:** If holding a combat item, open Item and use it. Button greys for rest of that turn.
+14. **Boss-flee gate:** Set `isBoss: true` on GOBLIN in a dev build; Flee button should render greyed "Flee" with no confirm. *(Boss rooms not yet spawnable in this build.)*

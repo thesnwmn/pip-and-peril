@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 037 · Combat Overhaul: Intents, Active Defence & Panel Redesign
+
+**Shipped:** 2026-06-05 · **PR:** [#77](https://github.com/thesnwmn/pip-and-peril/pull/77) · **Spec:** [docs/features/history/037-combat-overhaul.md](docs/features/history/037-combat-overhaul.md)
+
+The combat keystone. Replaces "spend everything every turn" with a real decision: the enemy **telegraphs an intent** (⚔️ Attack N or 🛡 Guard N) before Pip rolls, and **defence is active** — Pip *reserves* Green pips (2G fully dodges, 1G shaves 1). HP bars and the intent telegraph move onto the **map as overlays**, freeing the panel to be pure controls: the **dice pool** plus **category buttons** (Red/Green/Item/Flee) with submenus. Folds in **Raw Flee** (one free enemy hit, Pip retreats to entry tile, room left fled).
+
+---
+
 ### 021 · Item Room Encounter
 
 **Shipped:** 2026-06-04 · **PR:** [#61](https://github.com/thesnwmn/pip-and-peril/pull/61) · **Spec:** [docs/features/history/021-item-room-encounter.md](docs/features/history/021-item-room-encounter.md)
