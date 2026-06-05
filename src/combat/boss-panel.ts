@@ -4,7 +4,6 @@ import { canAfford, resetPool, rollPool, spendPips } from '../dice/pool'
 import type { CombatState } from './types'
 import type { Enemy, Intent } from './types'
 import { damageToPip } from './encounter'
-import { drawCombatBanner, drawCombatPanel, hitTest, type CatId } from './panel'
 import { drawCombatOverlay } from './overlay'
 import type { Inventory, Item } from '../satchel/types'
 import type { DungeonState } from '../navigation/dungeon-state'
@@ -130,7 +129,7 @@ export function createBossEncounterPanel(
 
   // ── Panel UI state ────────────────────────────────────────────────────────
 
-  let openCategory: CatId | null = null
+  let openCategory: 'red' | 'green' | 'blue' | 'yellow' | 'item' | null = null
   let hoveredElement: string | null = null
   let flashingElement: string | null = null
   let flashEndTime: number | null = null
@@ -651,52 +650,169 @@ export function createBossEncounterPanel(
       return
     }
 
-    // Combat phase — reuse combat panel
+    // Combat phase — draw custom boss UI
     if (bossState.phase === 'combat') {
-      // Create a pseudo-CombatState for the combat panel
-      const pseudoCombat: CombatState = {
-        enemy: {
-          id: bossSpec.id,
-          name: bossSpec.name,
-          hp: bossHp,
-          maxHp: bossSpec.maxHp,
-          attack: 0,
-          block: bossBlock,
-          empowered,
-          disengaged: false,
-          isBoss: true,
-          goldMin: bossSpec.goldMin,
-          goldMax: bossSpec.goldMax,
-          intents: [], // Boss uses fixed cycles, not random intents
-        },
-        phase: 'player-turn',
-        intent: getCurrentIntent() as any,
-        nextIntent: undefined,
-        reservedGreen: bossState.reservedGreen,
-        entryFrom,
-        goldAwarded,
-        itemUsedThisTurn: false,
-        analysedThisCombat: false,
-        analysedThisTurn: false,
-        identified: false,
-        pipPoison: null,
+      drawBossCombatUI(renderCtx, pool, timestamp)
+    }
+  }
+
+  function drawBossCombatUI(renderCtx: CanvasRenderingContext2D, pool: DicePool, timestamp: DOMHighResTimeStamp): void {
+    const ctx = renderCtx
+    const MAP_X = 10
+    const MAP_W = 360
+    const PANEL_TOP = 430
+    const SIDE_MARGIN = 16
+
+    // Panel background
+    ctx.fillStyle = colors.surface
+    ctx.fillRect(MAP_X, PANEL_TOP, MAP_W, 414)
+
+    // Boss name and HP bar
+    const bossNameX = MAP_X + 16
+    const bossNameY = PANEL_TOP + 14
+    ctx.font = 'bold 12px monospace'
+    ctx.fillStyle = colors.textPrimary
+    ctx.fillText(bossSpec.name, bossNameX, bossNameY)
+
+    // HP bar (full width)
+    const hpBarX = MAP_X + 16
+    const hpBarY = PANEL_TOP + 32
+    const hpBarW = MAP_W - 32
+    const hpBarH = 16
+    const hpPercent = Math.max(0, bossHp / bossSpec.maxHp)
+    const barColor = bossState.enraged ? '#c0200a' : colors.roomBoss
+
+    ctx.fillStyle = '#1a1a1a'
+    ctx.fillRect(hpBarX, hpBarY, hpBarW, hpBarH)
+    ctx.fillStyle = barColor
+    ctx.fillRect(hpBarX, hpBarY, hpBarW * hpPercent, hpBarH)
+    ctx.strokeStyle = '#4a4a4a'
+    ctx.lineWidth = 1
+    ctx.strokeRect(hpBarX, hpBarY, hpBarW, hpBarH)
+
+    // HP text
+    ctx.font = '11px monospace'
+    ctx.fillStyle = colors.textPrimary
+    ctx.textAlign = 'right'
+    ctx.fillText(`${Math.max(0, bossHp)}/${bossSpec.maxHp}`, hpBarX + hpBarW - 6, hpBarY + 12)
+    ctx.textAlign = 'left'
+
+    // Current intent display
+    const intent = getCurrentIntent()
+    const intentX = hpBarX
+    const intentY = hpBarY + hpBarH + 20
+    ctx.font = '12px monospace'
+    ctx.fillStyle = colors.gold
+    const intentStr = `Intent: ${intent.kind.toUpperCase()}${intent.value ? ` (${intent.value})` : ''}`
+    ctx.fillText(intentStr, intentX, intentY)
+
+    // Reserved green display
+    if (bossState.reservedGreen > 0) {
+      ctx.font = '11px monospace'
+      ctx.fillStyle = '#7cb342'
+      ctx.fillText(`Reserved: ${bossState.reservedGreen}G`, intentX, intentY + 20)
+    }
+
+    // Dice pool display
+    const diceY = intentY + 50
+    ctx.font = '11px monospace'
+    ctx.fillStyle = colors.textPrimary
+    let diceX = intentX
+    for (let i = 0; i < pool.dice.length; i++) {
+      const die = pool.dice[i]!
+      const value = anim.scramble[i] ?? Math.ceil(Math.random() * die.sides)
+      const dieColors: Record<string, string> = {
+        red: colors.dieFaceRed,
+        blue: colors.dieFaceBlue,
+        green: colors.dieFaceGreen,
+        yellow: colors.dieFaceYellow,
+      }
+      ctx.fillStyle = dieColors[die.color] || colors.dieFaceRed
+      ctx.fillRect(diceX, diceY, 24, 24)
+      ctx.fillStyle = colors.textPrimary
+      ctx.font = 'bold 12px monospace'
+      ctx.textAlign = 'center'
+      ctx.fillText(value.toString(), diceX + 12, diceY + 16)
+      ctx.textAlign = 'left'
+      diceX += 30
+    }
+
+    // Category buttons - simplified version
+    const btnY = diceY + 40
+    const btnW = 70
+    const btnH = 30
+    const btnX1 = intentX
+    const btnX2 = btnX1 + btnW + 8
+    const btnX3 = btnX2 + btnW + 8
+
+    const drawBtn = (x: number, y: number, label: string, id: string, disabled = false) => {
+      const hovered = hoveredElement === id && !disabled
+      ctx.fillStyle = hovered ? '#4a4a4a' : '#2a2a2a'
+      ctx.fillRect(x, y, btnW, btnH)
+      ctx.strokeStyle = disabled ? '#444' : '#666'
+      ctx.lineWidth = 1
+      ctx.strokeRect(x, y, btnW, btnH)
+      ctx.fillStyle = disabled ? '#666' : colors.textPrimary
+      ctx.font = '11px monospace'
+      ctx.textAlign = 'center'
+      ctx.fillText(label, x + btnW / 2, y + 19)
+      ctx.textAlign = 'left'
+    }
+
+    drawBtn(btnX1, btnY, 'Red', 'cat-red')
+    drawBtn(btnX2, btnY, 'Green', 'cat-green')
+    drawBtn(btnX3, btnY, 'Blue', 'cat-blue')
+
+    // Action buttons in submenu
+    if (openCategory) {
+      const subX = intentX
+      const subY = btnY + btnH + 12
+      const subBtnW = 60
+      const subBtnH = 24
+
+      ctx.fillStyle = '#1a1a1a'
+      ctx.fillRect(subX, subY, MAP_W - 32, 100)
+      ctx.strokeStyle = '#4a4a4a'
+      ctx.lineWidth = 1
+      ctx.strokeRect(subX, subY, MAP_W - 32, 100)
+
+      let subBtnX = subX + 8
+      let subBtnY = subY + 8
+
+      const drawSubBtn = (x: number, y: number, label: string, id: string) => {
+        const hovered = hoveredElement === id
+        ctx.fillStyle = hovered ? '#4a4a4a' : '#2a2a2a'
+        ctx.fillRect(x, y, subBtnW, subBtnH)
+        ctx.strokeStyle = '#666'
+        ctx.lineWidth = 1
+        ctx.strokeRect(x, y, subBtnW, subBtnH)
+        ctx.fillStyle = colors.textPrimary
+        ctx.font = '10px monospace'
+        ctx.textAlign = 'center'
+        ctx.fillText(label, x + subBtnW / 2, y + 16)
+        ctx.textAlign = 'left'
       }
 
-      drawCombatPanel(renderCtx, {
-        pool,
-        combat: pseudoCombat,
-        openCategory,
-        fleePending: false,
-        lastEnemyHeadline: '',
-        lastEnemyDetail: '',
-        lastEnemyKind: null,
-        hoveredElement,
-        flashingElement,
-        flashEndTime,
-        animScramble: anim.scramble,
-        inventory: ctx.getInventory(),
-        timestamp,
-      })
+      if (openCategory === 'red') {
+        drawSubBtn(subBtnX, subBtnY, 'Strike', 'sub-strike')
+        subBtnX += subBtnW + 6
+        drawSubBtn(subBtnX, subBtnY, 'Heavy', 'sub-heavy')
+      } else if (openCategory === 'green') {
+        drawSubBtn(subBtnX, subBtnY, 'Reserve', 'sub-reserve')
+        if (bossState.reservedGreen > 0) {
+          subBtnX += subBtnW + 6
+          drawSubBtn(subBtnX, subBtnY, 'Clear', 'sub-clear-reserve')
+        }
+        subBtnX = subX + 8
+        subBtnY += subBtnH + 6
+        drawSubBtn(subBtnX, subBtnY, 'Feint', 'sub-feint')
+      } else if (openCategory === 'blue') {
+        drawSubBtn(subBtnX, subBtnY, 'Analyse', 'sub-analyse')
+        subBtnX += subBtnW + 6
+        drawSubBtn(subBtnX, subBtnY, 'Exploit', 'sub-exploit')
+        subBtnX += subBtnW + 6
+        drawSubBtn(subBtnX, subBtnY, 'Identify', 'sub-identify')
+      }
     }
   }
 
@@ -750,98 +866,94 @@ export function createBossEncounterPanel(
     if (y < PANEL_TOP) return
     if (bossState.phase !== 'combat') return
 
-    const pool = ctx.getPool()
-    const id = hitTest(x, y, pool, {
-      enemy: {
-        id: bossSpec.id,
-        name: bossSpec.name,
-        hp: bossHp,
-        maxHp: bossSpec.maxHp,
-        attack: 0,
-        block: bossBlock,
-        empowered,
-        disengaged: false,
-        isBoss: true,
-        goldMin: bossSpec.goldMin,
-        goldMax: bossSpec.goldMax,
-        intents: [],
-      },
-      phase: 'player-turn',
-      intent: getCurrentIntent() as any,
-      nextIntent: undefined,
-      reservedGreen: bossState.reservedGreen,
-      entryFrom,
-      goldAwarded,
-      itemUsedThisTurn: false,
-      analysedThisCombat: false,
-      analysedThisTurn: false,
-      identified: false,
-      pipPoison: null,
-    } as CombatState, openCategory, false, ctx.getInventory())
+    const MAP_X = 10
+    const MAP_W = 360
+    const PANEL_TOP_CONST = PANEL_TOP
 
-    if (!id) {
-      openCategory = null
-      return
-    }
+    // Calculate button positions (same as in drawBossCombatUI)
+    const intentX = MAP_X + 16
+    const diceY = PANEL_TOP_CONST + 32 + 16 + 50 // approx, matches draw function
+    const btnY = diceY + 40
+    const btnW = 70
+    const btnH = 30
+    const btnX1 = intentX
+    const btnX2 = btnX1 + btnW + 8
+    const btnX3 = btnX2 + btnW + 8
 
-    if (id === 'roll') { handleRoll(); return }
-
-    // Category toggles
-    if (id === 'cat-red') {
-      if (!canAfford(pool, { red: 2 })) { flash('cat-red'); return }
-      openCategory = openCategory === 'red' ? null : 'red'
-      return
-    }
-    if (id === 'cat-green') {
-      if (!canAfford(pool, { green: 1 })) { flash('cat-green'); return }
-      openCategory = openCategory === 'green' ? null : 'green'
-      return
-    }
-    if (id === 'cat-blue') {
-      if (!canAfford(pool, { blue: 1 })) { flash('cat-blue'); return }
-      openCategory = openCategory === 'blue' ? null : 'blue'
-      return
-    }
-    if (id === 'cat-yellow') {
-      if (!canAfford(pool, { yellow: 1 })) { flash('cat-yellow'); return }
-      openCategory = openCategory === 'yellow' ? null : 'yellow'
-      return
-    }
-    if (id === 'cat-item') {
-      if (!ctx.getInventory().items.some(i => i.usableInCombat)) {
-        flash('cat-item'); return
+    // Category button hit test
+    if (y >= btnY && y < btnY + btnH && x >= btnX1 && x < btnX3 + btnW) {
+      if (x < btnX1 + btnW) {
+        openCategory = openCategory === 'red' ? null : 'red'
+        return
+      } else if (x < btnX2 + btnW) {
+        openCategory = openCategory === 'green' ? null : 'green'
+        return
+      } else if (x < btnX3 + btnW) {
+        openCategory = openCategory === 'blue' ? null : 'blue'
+        return
       }
-      openCategory = openCategory === 'item' ? null : 'item'
-      return
-    }
-    if (id === 'cat-flee') {
-      // Boss doesn't allow flee (AC 13)
-      return
     }
 
-    // Submenu actions
-    if (id === 'sub-strike') { handleStrike(false); return }
-    if (id === 'sub-heavy') { handleStrike(true); return }
-    if (id === 'sub-reserve') { handleReserve(); return }
-    if (id === 'sub-clear-reserve') { handleClearReserve(); return }
-    if (id === 'sub-feint') { handleFeint(); return }
-    if (id === 'sub-shove') { handleShove(); return }
-    if (id === 'sub-disengage') { handleDisengage(); return }
-    if (id === 'sub-analyse') { handleAnalyse(); return }
-    if (id === 'sub-exploit') { handleExploit(); return }
-    if (id === 'sub-resist') { handleResist(); return }
-    if (id === 'sub-identify') { handleIdentify(); return }
-    if (id === 'sub-convert') { handleConvert(); return }
-    if (id === 'sub-lucky-shot') { handleLuckyShot(); return }
+    // Submenu action hit test
+    if (openCategory) {
+      const subX = intentX
+      const subY = btnY + btnH + 12
+      const subBtnW = 60
+      const subBtnH = 24
 
-    // Item actions
-    if (id?.startsWith('item-')) {
-      const itemId = id.substring(5)
-      const inv = ctx.getInventory()
-      const item = inv.items.find(i => i.id === itemId)
-      if (item) handleItem(item)
-      return
+      if (y >= subY && y < subY + 100 && x >= subX && x < MAP_X + MAP_W - 16) {
+        let subBtnX = subX + 8
+        let subBtnY = subY + 8
+
+        if (openCategory === 'red') {
+          if (y >= subBtnY && y < subBtnY + subBtnH && x >= subBtnX && x < subBtnX + subBtnW) {
+            handleStrike(false)
+            return
+          }
+          subBtnX += subBtnW + 6
+          if (y >= subBtnY && y < subBtnY + subBtnH && x >= subBtnX && x < subBtnX + subBtnW) {
+            handleStrike(true)
+            return
+          }
+        } else if (openCategory === 'green') {
+          if (y >= subBtnY && y < subBtnY + subBtnH && x >= subBtnX && x < subBtnX + subBtnW) {
+            handleReserve()
+            return
+          }
+          if (bossState.reservedGreen > 0) {
+            subBtnX += subBtnW + 6
+            if (y >= subBtnY && y < subBtnY + subBtnH && x >= subBtnX && x < subBtnX + subBtnW) {
+              handleClearReserve()
+              return
+            }
+          }
+          subBtnX = subX + 8
+          subBtnY += subBtnH + 6
+          if (y >= subBtnY && y < subBtnY + subBtnH && x >= subBtnX && x < subBtnX + subBtnW) {
+            handleFeint()
+            return
+          }
+        } else if (openCategory === 'blue') {
+          if (y >= subBtnY && y < subBtnY + subBtnH && x >= subBtnX && x < subBtnX + subBtnW) {
+            handleAnalyse()
+            return
+          }
+          subBtnX += subBtnW + 6
+          if (y >= subBtnY && y < subBtnY + subBtnH && x >= subBtnX && x < subBtnX + subBtnW) {
+            handleExploit()
+            return
+          }
+          subBtnX += subBtnW + 6
+          if (y >= subBtnY && y < subBtnY + subBtnH && x >= subBtnX && x < subBtnX + subBtnW) {
+            handleIdentify()
+            return
+          }
+        }
+      }
     }
+
+    // Close menu on click outside buttons
+    openCategory = null
   }
 
   function handlePointerMove(x: number, y: number): void {
