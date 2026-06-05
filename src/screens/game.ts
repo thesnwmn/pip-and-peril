@@ -32,6 +32,9 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   let dicePool: DicePool = starterPool()
   let inventory: Inventory = { gold: 0, items: [] }
 
+  // Floor transition tracking
+  let floorTransitionStartTime: number | null = null
+
   // Tile Pip stepped in from — updated on every move, used by Flee to retreat.
   let combatEntryFrom: { col: number; row: number } = { col: state.pip.col, row: state.pip.row }
 
@@ -112,6 +115,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         combatEntryFrom = { col: state.pip.col, row: state.pip.row }
 
         if (offering.roomType === 'stairwell') {
+          floorTransitionStartTime = performance.now()
           state = descendFloor(state)
           navPanel.clearTeases()
           const stairwellMsg = state.floor === 2 ? 'Pip descends deeper…' : 'The third floor. The air is wrong.'
@@ -239,6 +243,31 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     // Advance transition state machine and get animated map render params
     const { zoom, pipTargetX, pipTargetY } = registry.computeMapState(timestamp, pipNatX, pipNatY)
 
+    // Compute floor transition fade (out 0–150ms, stay hidden 150–200ms, fade in 200–350ms)
+    let floorTransitionAlpha = 1.0
+    if (floorTransitionStartTime !== null) {
+      const elapsed = timestamp - floorTransitionStartTime
+      const FADE_OUT_MS = 150
+      const FADE_HOLD_MS = 50
+      const FADE_IN_MS = 150
+      const TOTAL_MS = FADE_OUT_MS + FADE_HOLD_MS + FADE_IN_MS
+
+      if (elapsed < FADE_OUT_MS) {
+        // Fade out: 1.0 → 0
+        floorTransitionAlpha = 1.0 - (elapsed / FADE_OUT_MS)
+      } else if (elapsed < FADE_OUT_MS + FADE_HOLD_MS) {
+        // Stay hidden
+        floorTransitionAlpha = 0
+      } else if (elapsed < TOTAL_MS) {
+        // Fade in: 0 → 1.0
+        floorTransitionAlpha = (elapsed - FADE_OUT_MS - FADE_HOLD_MS) / FADE_IN_MS
+      } else {
+        // Animation complete
+        floorTransitionAlpha = 1.0
+        floorTransitionStartTime = null
+      }
+    }
+
     ctx.fillStyle = colors.bg
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 
@@ -256,7 +285,9 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       ctx.translate(-pipNatX, -pipNatY)
     }
 
+    ctx.globalAlpha = floorTransitionAlpha
     drawMap(ctx, state.grid, state.fog, state.camera, state.pip, DUNGEON)
+    ctx.globalAlpha = 1.0
     ctx.restore()
 
     // ── Navigation panel (background layer; hidden once encounter panel covers it) ──
