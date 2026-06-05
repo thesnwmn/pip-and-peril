@@ -65,10 +65,10 @@ See `docs/features/022-dungeon-structure.md` for the full spec.
 ### 024 · Run Summary Screen
 
 A full-screen parchment retrospective at the end of every run — reached by boss victory (after
-the 023 banner) or Pip's death. Shows floor reached, enemies defeated, total gold found, and on
+the 023 banner) or Pip's death. Its hero element is a hand-drawn **dungeon sketch** of the run just
+played (Idea 014), framed by the record: floor reached, enemies defeated, total gold found, and on
 defeat what felled Pip. Same screen serves both outcomes with different header tone. Introduces
-`RunState` counters (`enemiesDefeated`, `goldEarned`, `killedBy`). Step ① of two: the dungeon
-sketch centrepiece is deferred.
+`RunState` counters (`enemiesDefeated`, `goldEarned`, `killedBy`).
 **Depends on:** 023 (run-complete trigger and banner), 006 (defeat signal routing), 034 (encounter registry).
 See `docs/features/024-run-summary-screen.md` for the full spec.
 
@@ -148,25 +148,22 @@ room placement), 034 (encounter registry).
 
 ### 028 · NPC Encounter
 
-The blue **NPC**: dialogue-first, the inverse of combat — text and choices primary, a dice check
-appearing *inside* the dialogue only when a response calls for one. Delivers hints, small rewards,
-and world voice; completes the encounter-type set.
+The blue **NPC**: dialogue-first, the inverse of combat — text and choices primary, with branching
+choices and a dice check appearing *inside* the dialogue when a response calls for one (check-gated
+responses with rewards/consequences). Delivers hints, small rewards, and world voice; completes the
+encounter-type set.
 **Depends on:** 005 (dice for checks), 004 (entry trigger), 030 (encounter panel).
-**Suggested stepping (for the Designer):** ① dialogue + branching choices (no dice); ② check-gated
-responses with rewards/consequences.
 
 ### 029 · Meta-Progression: Shiny Scraps & Dice Upgrades
 
 The between-runs loop and the roguelike pillar's payoff: a run awards **shiny scraps** (persisted
-across runs), spent in a cool parchment **camp/hub** to upgrade the dice pool (swap/add dice) and,
-later, engrave faces or unlock passive skills. Dice upgrades are a choice of **risk profile**, not
-just bigger numbers — d4 consistent, d8 volatile, d10/d12 spikey — so swapping a die or adding one
-is a strategic identity choice, and engraving (locking a face) tames variance. Turns a single
-completable run into a reason to play again. **Deferrable:** the in-run loop is complete without
-it; include when the manager wants the outer loop closed.
+across runs), spent in a cool parchment **camp/hub** to earn and persist scraps, upgrade the dice
+pool (swap d6→d8, add dice), engrave faces, and unlock passive skills. Dice upgrades are a choice of
+**risk profile**, not just bigger numbers — d4 consistent, d8 volatile, d10/d12 spikey — so swapping
+a die or adding one is a strategic identity choice, and engraving (locking a face) tames variance.
+Turns a single completable run into a reason to play again. **Deferrable:** the in-run loop is
+complete without it; include when the manager wants the outer loop closed.
 **Depends on:** 024 (scraps awarded at run end), 019/016 (currency model + persistence).
-**Suggested stepping (for the Designer):** ① earn + persist scraps and a hub screen; ② dice
-upgrades (swap d6→d8, add a die) with risk profiles; ③ engrave faces / passive skills.
 *(Absorbs Idea 042 · Die Type Risk Profiles.)*
 **Related:** `docs/concept/overview.md` (Meta Progression), `docs/concept/screen-layout-and-transitions.md`
 (Meta-Progression Hub direction sketch).
