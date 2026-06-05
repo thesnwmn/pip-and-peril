@@ -59,13 +59,12 @@ export function drawCombatOverlay(
 
   // ── Row A: intent telegraph (enemy side, right-aligned) ───────────────────
   const intentIcon = combat.intent.kind === 'attack' ? '⚔️' : '🛡'
-  const intentKind = combat.intent.kind === 'attack' ? 'Attack' : 'Guard'
   const intentColor = combat.intent.kind === 'attack' ? ENEMY_RED : GUARD_STEEL
   ctx.font = 'bold 11px monospace'
   ctx.fillStyle = intentColor
   ctx.textAlign = 'right'
   ctx.textBaseline = 'middle'
-  ctx.fillText(`${intentIcon} ${intentKind} ${combat.intent.value}`, ENEMY_COL_X + HP_BAR_W, INTENT_ROW_Y)
+  ctx.fillText(`${intentIcon} ${combat.intent.value}`, ENEMY_COL_X + HP_BAR_W, INTENT_ROW_Y)
 
   // ── Row B: HP bars ────────────────────────────────────────────────────────
   // Pip

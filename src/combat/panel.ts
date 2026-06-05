@@ -43,7 +43,6 @@ const SUBMENU_BTN_H = 40
 const SUBMENU_NOTE_H = 20
 
 // Enemy action display — shown during awaiting-roll in the cat-button slot.
-const ENEMY_ACTION_BOX_H = 72
 const ENEMY_RED_COLOR = '#b03030'
 const GUARD_STEEL_COLOR = '#5a6b82'
 
@@ -455,9 +454,10 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     const boxX = MAP_X + SIDE_MARGIN
     const boxW = MAP_W - SIDE_MARGIN * 2
     const boxY = CAT_BTN_Y
+    const boxH = LOGICAL_H - boxY - 8
     const accentColor = lastEnemyKind === 'guard' ? GUARD_STEEL_COLOR : ENEMY_RED_COLOR
 
-    roundRect(ctx, boxX, boxY, boxW, ENEMY_ACTION_BOX_H, 8)
+    roundRect(ctx, boxX, boxY, boxW, boxH, 8)
     ctx.fillStyle = colors.surface
     ctx.fill()
     ctx.strokeStyle = accentColor
@@ -465,15 +465,17 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     ctx.stroke()
 
     const cx = MAP_X + MAP_W / 2
-    ctx.font = 'bold 15px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = accentColor
+    const midY = boxY + boxH / 2
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(lastEnemyHeadline, cx, boxY + 22)
+
+    ctx.font = 'bold 15px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = accentColor
+    ctx.fillText(lastEnemyHeadline, cx, midY - 14)
 
     ctx.font = '14px monospace'
     ctx.fillStyle = colors.textPrimary
-    ctx.fillText(lastEnemyDetail, cx, boxY + 50)
+    ctx.fillText(lastEnemyDetail, cx, midY + 14)
   }
 
   // ── Category buttons (visible once dice are rolled) ──
