@@ -84,6 +84,22 @@ intents. A 3–4 intent loop that the player decodes over the course of the figh
 threshold, the cycle accelerates or an additional intent is injected. This gives bosses the feel
 of a puzzle that rewards pattern recognition — something you can get better at.
 
+**Intent complexity scales on two axes:**
+
+The intent set available to an enemy is not fixed — it widens as the dungeon gets harder:
+
+| Axis | Effect |
+|---|---|
+| **Floor depth (within a run)** | Shallow rooms offer enemies with simple intent sets (Attack only or Attack + Guard). Deeper rooms and higher tiers access the full set. |
+| **Run-depth window (across the meta)** | As the meta-progression run counter climbs, the base intent complexity for every enemy tier shifts upward. An enemy that only Attacked on Run 1 may Guard and Empower on Run 8. |
+
+The two axes are independent and additive: a late-floor encounter on a late run is the most
+complex. An early-floor encounter on an early run is the simplest. This means the intent system
+teaches itself gradually across the player's first several runs, reaching its full expression only
+once the player is ready for it. The Designer should define per-tier intent sets (e.g. Tier-1
+intent pool, Tier-2 intent pool) and then document how the run-depth window gates access to the
+harder intents within each pool.
+
 ---
 
 ## Turn Structure
@@ -206,18 +222,10 @@ the colour it replaces.
 **Lucky Shot:** 1Y → Deal 1 damage, bypassing Guard entirely. Luck slips through defences that
 skill cannot.
 
-**Fortune accumulation (optional):** Yellow pips spent (in any direction) add to a per-combat
-*Fortune Track* (0–5). At certain thresholds:
-- Fortune 2: next roll may reroll one die
-- Fortune 4: enemy's next attack reduced by 1 automatically
-- Fortune 5: a windfall — small item drop or bonus pip at start of next turn
-
-The Fortune Track resets at the end of each combat. Meta-progression can let Pip start combats
-with Fortune 1 already built.
-
-**Design note:** Yellow is the "everything else" colour — it smooths out bad rolls, bridges
-colour gaps, and rewards consistent luck-spending with compounding benefits. A Yellow-heavy build
-is stable and forgiving; it rarely peaks as high as a Red build, but it rarely bottoms out either.
+**Design note:** Yellow is the "everything else" colour — it smooths out bad rolls and bridges
+colour gaps. A Yellow-heavy build is stable and forgiving; it rarely peaks as high as a Red build,
+but it rarely bottoms out either. The Fortune Track (a compounding luck-score mechanic) is a
+possible later addition but is not part of the base system — keep the panel simple first.
 
 ---
 
@@ -491,14 +499,17 @@ how far the numbers travel.
 These are the unresolved tensions this concept document leaves open. They require spec-level
 decisions before building.
 
-- **Dodge threshold.** Is a dodge binary (2G = full dodge, 1G = nothing) or graduated (each G
-  reduces damage by 1)? Binary is cleaner and more dramatic; graduated is more forgiving and
-  tunable. Both are defensible. The Designer should pick one and commit.
+- **Dodge threshold.** ~~Binary vs. graduated?~~ **Decided: binary.** 2G = full dodge of one
+  hit; anything less = no mitigation. Clean, dramatic, readable on a phone.
 
-- **Fortune Track implementation.** The Fortune Track adds a fifth UI element to the combat
-  panel. Is it worth the space and complexity? A simpler Yellow model (conversion + Lucky Shot
-  only, no Track) may be better for the first implementation. The Track could be added as a meta
-  unlock later.
+- **Fortune Track implementation.** ~~Worth it?~~ **Decided: no Track in the base system.**
+  Yellow is converter (2Y = 1 of any colour) + Lucky Shot only. The Track may be added later as
+  a meta-unlockable layer, not a day-one mechanic.
+
+- **Intent complexity scaling.** ~~Floor 1: full intents or simplified?~~ **Decided: scaled on
+  two axes** — floor depth within a run and run-depth window across the meta. See the Enemy
+  Intents section above for the full model. Low-tier enemies on early floors and early runs use
+  simple intent sets; the full set unlocks progressively.
 
 - **Number of starting dice.** The concept recommends starting at 3 dice (lean). This may feel
   too small in play — only one colour has two dice. Playtest with 3 and 4 before locking.
