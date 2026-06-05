@@ -198,14 +198,101 @@ None. Layout is fully specified per manager request. Engineer can proceed direct
 
 ---
 
-> The section below is filled in by the **Engineer** when the feature ships.
-
 ## Shipped
 
-**Date:** YYYY-MM-DD · **PR:** #NN
+**Date:** 2026-06-05 · **PR:** #82
 
 ### What was built
 
+Three-zone layout restructure for the combat panel:
+
+1. **Pip Buttons Zone** (Y: 534–560, 26px tall)
+   - Four clickable buttons (Red, Green, Blue, Yellow) showing emoji + pip count
+   - Positioned to align with dice centers above (via `dieCentres()` and `pipBtnX()`)
+   - Show open state (gold border + raised surface) when submenu is active
+   - Greyed to 0.38 opacity when insufficient pips and no actions available
+   - Only visible during player-turn phase
+
+2. **Middle Zone** (Y: 570–710, 140px tall)
+   - Displays colour category submenu when a pip button is open
+   - Shows enemy action headline + detail during awaiting-roll phase (after first turn)
+   - Reuses all existing submenu layouts (Red: Strike/Heavy; Green: Reserve/Clear; Blue: 4 actions; Yellow: Convert/Lucky)
+   - Maintains "No actions available" state when colour has zero pips but actions exist
+
+3. **Bottom Button Row** (Y: 720–764, 44px tall)
+   - Three fixed-width buttons: Flee (25%, ~79px) | ROLL DICE/END TURN (50%, ~150px) | Item (25%, ~79px)
+   - ROLL button is the hero element (bold gold border)
+   - Flee and Item buttons match pip button styling with conditional greying
+   - All three always visible and clickable (unlike old 6-button category row)
+   - Hit testing updated for new positions and dimensions
+
 ### Evidence
 
+- All 336 unit tests pass (no regressions in combat logic or panel interaction)
+- Type-check passes cleanly (no new type violations)
+- Production build succeeds (66.81 KB JS, gzip 21.70 KB)
+- Layout calculations verified:
+  - Pip buttons: centred on 4 dice (DIE_SIZE 68px spacing)
+  - Middle zone: 140px fixed height accommodates tallest submenu (Blue 2-row + 20px note)
+  - Bottom row: 328px total width subdivides correctly (79+10+150+10+79)
+- Hit testing: buildHitRects() returns correct rectangles for pip buttons (player-turn) and bottom buttons (all phases)
+- Interaction flow: openCategory state toggles pip buttons open/closed; bottom button IDs route to existing handlers (handleFlee, handleRoll, Item click)
+
 ### Play-test
+
+1. **Start a combat encounter** (enter an enemy room on the map)
+   - Observe: Dice pool at top, colour labels below, **no pip buttons yet**
+   - Bottom row visible: Flee (greyed), ROLL DICE (active), Item (greyed or active if you have usable items)
+   - Confirm ROLL DICE button is centered, ~50% of panel width, with gold border
+
+2. **Tap ROLL DICE** to enter player-turn phase
+   - Observe: Dice roll and animate (~500ms)
+   - After roll settles, **four pip buttons appear** (Red 🔴, Green 🟢, Blue 🔵, Yellow 🟡)
+   - Each shows emoji + current pip count (e.g., "🔴4")
+   - Buttons are horizontally spaced to align with dice centers above
+   - Bottom row buttons remain visible; ROLL DICE → END TURN label change
+   - Middle zone empty (no submenu yet)
+
+3. **Tap the RED pip button**
+   - Observe: Red button border turns gold and surface raises (open state)
+   - Middle zone fills with Red submenu: "Strike (2🔴)" and "Heavy Strike (4🔴)" buttons
+   - Other pip buttons remain visible but not highlighted
+
+4. **Tap a different pip button (e.g., GREEN)**
+   - Observe: Red button closes (border normal), Green button opens (gold border)
+   - Middle zone updates instantly to Green submenu: Reserve/Clear Reserve + live reserve state text
+   - Confirm smooth zone transition (no animation, content swap)
+
+5. **Tap a submenu action button (e.g., "Strike")**
+   - Observe: Action fires, pips spend, middle zone clears
+   - Pip button open state closes
+   - Bottom END TURN button remains active
+
+6. **Open a colour with zero pips (e.g., Red if depleted)**
+   - Observe: Red button shows open state even with 0 pips
+   - Middle zone displays single text line: "No actions available" (centered, muted colour)
+   - User can tap another colour button to switch, or tap end turn
+
+7. **Tap the Flee button** (if not facing boss)
+   - Observe: Flee button is NOT greyed
+   - Middle zone displays confirmation prompt: "Tap Flee again to escape — takes one free hit"
+   - Second Flee tap executes the flee action
+
+8. **Tap the Item button** (if you have usable items)
+   - Observe: Item button opens (gold border, raised)
+   - Middle zone displays item list (same as before, in 1-row or multi-row layout)
+   - Tap an item to use it
+
+9. **Tap END TURN** after spending some pips
+   - Observe: Pip buttons vanish
+   - Enemy turn executes
+   - Middle zone shows enemy action: headline (e.g., "Goblin attacks") + detail (e.g., "−2 HP (5→3)")
+   - Phase returns to awaiting-roll
+   - Return to step 2 for next player turn
+
+10. **Verify affordability greying** throughout:
+    - When Red has 0 pips and Strike costs 2, Red button is NOT greyed (action exists but unaffordable)
+    - When a submenu opens with no affordable actions, all submenu buttons are greyed
+    - Flee button greyed only against boss enemies
+    - Item button greyed only when inventory is empty or item already used this turn
+    - Bottom button row is never greyed except when rolling (ROLL button disabled during animation)

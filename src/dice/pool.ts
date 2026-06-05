@@ -24,8 +24,8 @@ export function starterPool(): DicePool {
   return {
     dice: [
       { color: 'red', sides: 6 },
-      { color: 'blue', sides: 6 },
       { color: 'green', sides: 6 },
+      { color: 'blue', sides: 6 },
       { color: 'yellow', sides: 6 },
     ],
     rolls: [],

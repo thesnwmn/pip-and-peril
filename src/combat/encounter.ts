@@ -59,8 +59,8 @@ export function applyAnalyse(combat: CombatState): CombatState {
 }
 
 export function applyExploit(combat: CombatState): StrikeResult {
-  // Bypass Guard entirely — always 2 damage to HP (ignoring block)
-  const damage = 2
+  // Bypass Guard entirely — always 3 damage to HP (ignoring block)
+  const damage = 3
   const newHp = Math.max(0, combat.enemy.hp - damage)
   const victory = newHp <= 0
   return {
@@ -97,8 +97,8 @@ export function applyConvert(combat: CombatState, toColor: 'red' | 'green' | 'bl
 }
 
 export function applyLuckyShot(combat: CombatState): StrikeResult {
-  // Bypass Guard entirely — always 1 damage to HP (ignoring block)
-  const damage = 1
+  // Bypass Guard entirely — 1-3 random damage to HP (ignoring block)
+  const damage = Math.floor(Math.random() * 3) + 1
   const newHp = Math.max(0, combat.enemy.hp - damage)
   const victory = newHp <= 0
   return {

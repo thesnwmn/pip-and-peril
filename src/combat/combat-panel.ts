@@ -7,6 +7,12 @@ import { selectIntent } from './intents'
 import {
   applyStrike,
   applyHeavyStrike,
+  applyAnalyse,
+  applyExploit,
+  applyResist,
+  applyIdentify,
+  applyConvert,
+  applyLuckyShot,
   applyEnemyTurn,
   applyFlee,
   canFlee,
@@ -125,7 +131,7 @@ export function createCombatEncounterPanel(
 
     if (combat.phase === 'awaiting-roll') {
       // First roll: start player turn.
-      combat = { ...combat, phase: 'player-turn', itemUsedThisTurn: false }
+      combat = { ...combat, phase: 'player-turn', itemUsedThisTurn: false, analysedThisTurn: false }
       startRoll()
       return
     }
@@ -137,7 +143,7 @@ export function createCombatEncounterPanel(
       const result = applyEnemyTurn(combat, prevHp)
       ctx.setPipHp(result.pipHp)
       // Return to awaiting-roll so the player sees the new intent before rolling again.
-      combat = { ...result.combat, phase: result.defeat ? 'defeat' : 'awaiting-roll', itemUsedThisTurn: false }
+      combat = { ...result.combat, phase: result.defeat ? 'defeat' : 'awaiting-roll', itemUsedThisTurn: false, analysedThisTurn: false }
       openCategory = null
       fleePending = false
 
@@ -203,6 +209,70 @@ export function createCombatEncounterPanel(
     const pool = ctx.getPool()
     ctx.setPool({ ...pool, totals: { ...pool.totals, green: pool.totals.green + returned } })
     combat = { ...combat, reservedGreen: 0 }
+  }
+
+  function handleAnalyse(): void {
+    if (!canAfford(ctx.getPool(), { blue: 2 })) { flash('sub-analyse'); return }
+    if (combat.analysedThisTurn) { flash('sub-analyse'); return }
+    const { pool: updated } = spendPips(ctx.getPool(), { blue: 2 })
+    ctx.setPool(updated)
+    combat = applyAnalyse(combat)
+  }
+
+  function handleExploit(): void {
+    if (!canAfford(ctx.getPool(), { blue: 4 })) { flash('sub-exploit'); return }
+    if (!combat.analysedThisTurn) { flash('sub-exploit'); return }
+    const { pool: updated } = spendPips(ctx.getPool(), { blue: 4 })
+    ctx.setPool(updated)
+    const result = applyExploit(combat)
+    combat = result.combat
+    if (result.victory) {
+      const goldEarned = rollGoldReward(combat.enemy)
+      ctx.setInventory({ ...ctx.getInventory(), gold: ctx.getInventory().gold + goldEarned })
+      combat = { ...combat, goldAwarded: goldEarned }
+      markRoomCleared()
+      bannerStartTime = performance.now()
+      openCategory = null
+    }
+  }
+
+  function handleResist(): void {
+    if (!canAfford(ctx.getPool(), { blue: 3 })) { flash('sub-resist'); return }
+    if (combat.pipPoison === null) { flash('sub-resist'); return }
+    const { pool: updated } = spendPips(ctx.getPool(), { blue: 3 })
+    ctx.setPool(updated)
+    combat = applyResist(combat)
+  }
+
+  function handleIdentify(): void {
+    if (!canAfford(ctx.getPool(), { blue: 1 })) { flash('sub-identify'); return }
+    if (combat.identified) { flash('sub-identify'); return }
+    const { pool: updated } = spendPips(ctx.getPool(), { blue: 1 })
+    ctx.setPool(updated)
+    combat = applyIdentify(combat)
+  }
+
+  function handleConvert(): void {
+    if (!canAfford(ctx.getPool(), { yellow: 3 })) { flash('sub-convert'); return }
+    const { pool: updated } = spendPips(ctx.getPool(), { yellow: 3 })
+    ctx.setPool(updated)
+    combat = applyConvert(combat, 'red')
+  }
+
+  function handleLuckyShot(): void {
+    if (!canAfford(ctx.getPool(), { yellow: 4 })) { flash('sub-lucky-shot'); return }
+    const { pool: updated } = spendPips(ctx.getPool(), { yellow: 4 })
+    ctx.setPool(updated)
+    const result = applyLuckyShot(combat)
+    combat = result.combat
+    if (result.victory) {
+      const goldEarned = rollGoldReward(combat.enemy)
+      ctx.setInventory({ ...ctx.getInventory(), gold: ctx.getInventory().gold + goldEarned })
+      combat = { ...combat, goldAwarded: goldEarned }
+      markRoomCleared()
+      bannerStartTime = performance.now()
+      openCategory = null
+    }
   }
 
   function handleFlee(): void {
@@ -374,6 +444,18 @@ export function createCombatEncounterPanel(
       fleePending = false
       return
     }
+    if (id === 'cat-blue') {
+      if (!canAfford(pool, { blue: 1 })) { flash('cat-blue'); return }
+      openCategory = openCategory === 'blue' ? null : 'blue'
+      fleePending = false
+      return
+    }
+    if (id === 'cat-yellow') {
+      if (!canAfford(pool, { yellow: 1 })) { flash('cat-yellow'); return }
+      openCategory = openCategory === 'yellow' ? null : 'yellow'
+      fleePending = false
+      return
+    }
     if (id === 'cat-item') {
       if (!ctx.getInventory().items.some(i => i.usableInCombat) || combat.itemUsedThisTurn) {
         flash('cat-item'); return
@@ -393,6 +475,12 @@ export function createCombatEncounterPanel(
     if (id === 'sub-heavy') { handleStrike(true); return }
     if (id === 'sub-reserve') { handleReserve(); return }
     if (id === 'sub-clear') { handleClearReserve(); return }
+    if (id === 'sub-analyse') { handleAnalyse(); return }
+    if (id === 'sub-exploit') { handleExploit(); return }
+    if (id === 'sub-resist') { handleResist(); return }
+    if (id === 'sub-identify') { handleIdentify(); return }
+    if (id === 'sub-convert') { handleConvert(); return }
+    if (id === 'sub-lucky-shot') { handleLuckyShot(); return }
 
     // Item slots
     if (id.startsWith('item-')) {

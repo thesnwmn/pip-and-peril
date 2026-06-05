@@ -15,34 +15,47 @@ const SIDE_MARGIN = 16
 // Dice row (no HP bars; dice are the hero element).
 export const DIE_ROW_Y = PANEL_TOP + 14
 export const DIE_SIZE = 68
-const DIE_GAP = 10
+const DIE_GAP = 12
 const DIE_RADIUS = 12
 const PIP_DOT_R = 4.5
 
-// Colour labels and pip-total badges.
+// Colour labels and pip-total badges (now become clickable pip buttons).
 const LABEL_Y = DIE_ROW_Y + DIE_SIZE + 6
-const BADGE_Y = LABEL_Y + 16
-const BADGE_H = 26
+export const PIP_BTN_Y = LABEL_Y + 16
+export const PIP_BTN_H = 44
 
-// ROLL / END TURN button.
-export const ROLL_BTN_Y = BADGE_Y + BADGE_H + 10
+// Middle zone (for submenu or enemy action display).
+const MIDDLE_ZONE_Y = PIP_BTN_Y + PIP_BTN_H + 10
+const MIDDLE_ZONE_H = 120
+export const SUBMENU_Y = MIDDLE_ZONE_Y + 12  // Add padding to top of submenu
+const SUBMENU_TOP_PAD = 12
+
+// Bottom button row (Flee | ROLL/END TURN | Item).
 export const ROLL_BTN_H = 44
+// Pinned to screen bottom with small margin
+const BOTTOM_BTN_Y = LOGICAL_H - ROLL_BTN_H - 10
+export const ROLL_BTN_Y = BOTTOM_BTN_Y
 const ROLL_BTN_X = MAP_X + SIDE_MARGIN
 const ROLL_BTN_W = MAP_W - SIDE_MARGIN * 2
 
-// Category buttons (Red / Green / Blue / Yellow / Item / Flee) — always shown in rolled state.
-export const CAT_BTN_Y = ROLL_BTN_Y + ROLL_BTN_H + 10
-export const CAT_BTN_H = 40
-const ACTION_GAP = 8
-// Six buttons fit in one row with at least 44px width each
-// (360 - 32) / 6 - (5*8)/6 ≈ 48px per button
-const CAT_BTN_W = Math.floor((MAP_W - SIDE_MARGIN * 2 - ACTION_GAP * 5) / 6)  // 48
+// Pip buttons sizing - spread across full width matching bottom buttons
+const PIP_BTN_W = Math.floor((ROLL_BTN_W - 24) / 4)  // 4 buttons with 6px gaps
+const PIP_BTN_GAP = 6
 
-// Submenu area — beneath the category row.
-export const SUBMENU_Y = CAT_BTN_Y + CAT_BTN_H + 10
-const SUBMENU_BTN_W = Math.floor((MAP_W - SIDE_MARGIN * 2 - ACTION_GAP) / 2)  // 160
-const SUBMENU_BTN_H = 40
-const SUBMENU_NOTE_H = 20
+// Bottom button row sizing
+const BTN_ROW_SIDE_W = Math.floor((ROLL_BTN_W - 10) / 4)  // Flee and Item: ~84px each
+const BTN_ROW_CENTER_W = ROLL_BTN_W - BTN_ROW_SIDE_W * 2 - 20  // ROLL/END TURN: ~180px
+
+// Submenu area
+const SUBMENU_BTN_W = Math.floor((MAP_W - SIDE_MARGIN * 2 - 8) / 2)  // 160
+const SUBMENU_BTN_H = 50  // Increased from 40
+const SUBMENU_NOTE_H = 32  // Increased from 20
+
+// Legacy category button constants (for compatibility)
+export const CAT_BTN_Y = PIP_BTN_Y
+export const CAT_BTN_H = PIP_BTN_H
+const ACTION_GAP = 8
+const CAT_BTN_W = Math.floor((MAP_W - SIDE_MARGIN * 2 - ACTION_GAP * 5) / 6)  // 48
 
 // Enemy action display — shown during awaiting-roll in the cat-button slot.
 const ENEMY_RED_COLOR = '#b03030'
@@ -120,6 +133,13 @@ export function dieCentres(diceCount: number): number[] {
   return Array.from({ length: diceCount }, (_, i) => startX + i * (DIE_SIZE + DIE_GAP))
 }
 
+export function pipBtnX(idx: number, totalDice: number): number {
+  // Spread pip buttons across full width, matching bottom button row
+  const totalW = totalDice * PIP_BTN_W + (totalDice - 1) * PIP_BTN_GAP
+  const startX = ROLL_BTN_X + (ROLL_BTN_W - totalW) / 2
+  return startX + idx * (PIP_BTN_W + PIP_BTN_GAP)
+}
+
 // ── Die face ──────────────────────────────────────────────────────────────────
 
 function drawDieFace(
@@ -161,7 +181,43 @@ function drawDieFace(
   }
 }
 
-// ── Pip-total badge ───────────────────────────────────────────────────────────
+// ── Pip button (clickable pip counter) ─────────────────────────────────────────
+
+function drawPipBtn(
+  ctx: CanvasRenderingContext2D,
+  color: DieColor,
+  total: number,
+  x: number,
+  isOpen: boolean,
+  affordable: boolean,
+  hovered: boolean,
+  flashing: boolean,
+): void {
+  const disabled = !affordable
+  ctx.globalAlpha = disabled ? 0.38 : 1
+
+  const emoji = COLOR_EMOJI[color]
+  const label = String(total)
+  const btnText = emoji + label
+
+  roundRect(ctx, x, PIP_BTN_Y, PIP_BTN_W, PIP_BTN_H, 6)
+  ctx.fillStyle = isOpen ? colors.surfaceRaised : (hovered && !disabled ? colors.surfaceRaised : colors.surface)
+  ctx.fill()
+
+  const borderColor = flashing ? '#ff3030' : isOpen ? colors.gold : colors.logNormal
+  ctx.strokeStyle = borderColor
+  ctx.lineWidth = flashing ? 2 : isOpen ? 1.5 : 1
+  ctx.stroke()
+
+  ctx.font = 'bold 12px monospace'
+  ctx.fillStyle = colors.textPrimary
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(btnText, x + PIP_BTN_W / 2, PIP_BTN_Y + PIP_BTN_H / 2)
+  ctx.globalAlpha = 1
+}
+
+// ── Pip-total badge (deprecated, kept for reference) ────────────────────────
 
 function drawBadge(ctx: CanvasRenderingContext2D, color: DieColor, total: number | null, cx: number): void {
   const label = total === null ? '—' : String(total)
@@ -174,14 +230,14 @@ function drawBadge(ctx: CanvasRenderingContext2D, color: DieColor, total: number
   const badgeW = innerW + 16
   const bx = cx - badgeW / 2
 
-  roundRect(ctx, bx, BADGE_Y, badgeW, BADGE_H, 6)
+  roundRect(ctx, bx, PIP_BTN_Y, badgeW, PIP_BTN_H, 6)
   ctx.fillStyle = BADGE_BG[color]
   ctx.fill()
   ctx.strokeStyle = BADGE_BORDER[color]
   ctx.lineWidth = 1
   ctx.stroke()
 
-  const midY = BADGE_Y + BADGE_H / 2
+  const midY = PIP_BTN_Y + PIP_BTN_H / 2
   ctx.textBaseline = 'middle'
   ctx.textAlign = 'left'
   ctx.font = '12px monospace'
@@ -191,47 +247,52 @@ function drawBadge(ctx: CanvasRenderingContext2D, color: DieColor, total: number
   ctx.fillText(label, bx + 8 + emojiW + 4, midY)
 }
 
-// ── Category button ───────────────────────────────────────────────────────────
+// ── Category button (for four colour categories plus item) ─────────────────────
 
-const CAT_LABELS: Record<string, string> = {
-  red: '🔴 Power', green: '🟢 Agility', blue: '🔵 Focus', yellow: '🟡 Fortune',
-  item: 'Item', flee: 'Flee',
-}
-
-const CAT_ORDER = ['red', 'green', 'blue', 'yellow', 'item', 'flee'] as const
-export type CatId = typeof CAT_ORDER[number]
+export type CatId = 'red' | 'green' | 'blue' | 'yellow' | 'item'
 
 export function catBtnX(idx: number): number {
-  return MAP_X + SIDE_MARGIN + idx * (CAT_BTN_W + ACTION_GAP)
+  return pipBtnX(idx, 4)
 }
 
-function drawCatBtn(
+// ── Bottom button row buttons ──────────────────────────────────────────────────
+
+function bottomBtnFleeX(): number {
+  return MAP_X + SIDE_MARGIN
+}
+
+function bottomBtnRollX(): number {
+  return bottomBtnFleeX() + BTN_ROW_SIDE_W + 10
+}
+
+function bottomBtnItemX(): number {
+  return bottomBtnRollX() + BTN_ROW_CENTER_W + 10
+}
+
+function drawBottomBtn(
   ctx: CanvasRenderingContext2D,
-  id: CatId,
-  idx: number,
-  isOpen: boolean,
-  affordable: boolean,
+  label: string,
+  x: number,
+  w: number,
   hovered: boolean,
-  flashing: boolean,
+  disabled: boolean,
+  isHero: boolean,
 ): void {
-  const x = catBtnX(idx)
-  const disabled = !affordable
-  ctx.globalAlpha = disabled ? 0.38 : 1
-
-  roundRect(ctx, x, CAT_BTN_Y, CAT_BTN_W, CAT_BTN_H, 8)
-  ctx.fillStyle = isOpen ? colors.surfaceRaised : (hovered && !disabled ? colors.surfaceRaised : colors.surface)
+  ctx.globalAlpha = disabled ? 0.4 : 1
+  roundRect(ctx, x, ROLL_BTN_Y, w, ROLL_BTN_H, 8)
+  ctx.fillStyle = hovered && !disabled ? colors.surfaceRaised : colors.surface
   ctx.fill()
-
-  const borderColor = flashing ? '#ff3030' : isOpen ? colors.gold : colors.logNormal
+  const borderColor = isHero ? colors.gold : colors.logNormal
+  const borderWidth = isHero ? 1.5 : 1
   ctx.strokeStyle = borderColor
-  ctx.lineWidth = flashing ? 2 : isOpen ? 1.5 : 1
+  ctx.lineWidth = borderWidth
   ctx.stroke()
 
-  ctx.font = '11px monospace'
-  ctx.fillStyle = id === 'flee' ? '#e8a0a0' : colors.textPrimary
+  ctx.font = isHero ? 'bold 16px system-ui, -apple-system, sans-serif' : 'bold 11px monospace'
+  ctx.fillStyle = isHero ? colors.gold : (label === 'Flee' ? '#e8a0a0' : colors.textPrimary)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText(CAT_LABELS[id], x + CAT_BTN_W / 2, CAT_BTN_Y + CAT_BTN_H / 2)
+  ctx.fillText(label, x + w / 2, ROLL_BTN_Y + ROLL_BTN_H / 2)
   ctx.globalAlpha = 1
 }
 
@@ -428,90 +489,32 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     ctx.fillText(COLOR_LABEL[pool.dice[i].color], centres[i] + DIE_SIZE / 2, LABEL_Y)
   }
 
-  // Pip badges
-  for (let i = 0; i < pool.dice.length; i++) {
-    const color = pool.dice[i].color
-    const total = pool.state === 'idle' ? null : pool.totals[color]
-    drawBadge(ctx, color, total, centres[i] + DIE_SIZE / 2)
-  }
-
-  // ── ROLL / END TURN button ──
-  const rollDisabled = pool.state === 'rolling'
-  const rollLabel = combat.phase === 'player-turn' ? 'END TURN' : 'ROLL DICE'
-  ctx.globalAlpha = rollDisabled ? 0.4 : 1
-  roundRect(ctx, ROLL_BTN_X, ROLL_BTN_Y, ROLL_BTN_W, ROLL_BTN_H, 8)
-  ctx.fillStyle = s.hoveredElement === 'roll' && !rollDisabled ? colors.surfaceRaised : colors.surface
-  ctx.fill()
-  ctx.strokeStyle = colors.gold
-  ctx.lineWidth = 1.5
-  ctx.stroke()
-  ctx.font = 'bold 16px system-ui, -apple-system, sans-serif'
-  ctx.fillStyle = colors.gold
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText(rollLabel, MAP_X + MAP_W / 2, ROLL_BTN_Y + ROLL_BTN_H / 2)
-  ctx.globalAlpha = 1
-
-  // ── Enemy action display (awaiting-roll only, after first turn) ──
-  if (!inPlayerTurn && lastEnemyHeadline) {
-    const boxX = MAP_X + SIDE_MARGIN
-    const boxW = MAP_W - SIDE_MARGIN * 2
-    const boxY = CAT_BTN_Y
-    const boxH = LOGICAL_H - boxY - 8
-    const accentColor = lastEnemyKind === 'guard' ? GUARD_STEEL_COLOR : ENEMY_RED_COLOR
-
-    roundRect(ctx, boxX, boxY, boxW, boxH, 8)
-    ctx.fillStyle = colors.surface
-    ctx.fill()
-    ctx.globalAlpha = 0.3
-    ctx.strokeStyle = accentColor
-    ctx.lineWidth = 1
-    ctx.stroke()
-    ctx.globalAlpha = 1
-
-    const cx = MAP_X + MAP_W / 2
-    const midY = boxY + boxH / 2
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-
-    ctx.font = 'bold 15px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = accentColor
-    ctx.fillText(lastEnemyHeadline, cx, midY - 14)
-
-    ctx.font = '14px monospace'
-    ctx.fillStyle = colors.textPrimary
-    ctx.fillText(lastEnemyDetail, cx, midY + 14)
-  }
-
-  // ── Category buttons (visible once dice are rolled) ──
+  // ── Pip buttons (only during player turn) ──
   if (inPlayerTurn) {
-    const hasItems = inventory.items.some(i => i.usableInCombat)
-    const itemUsed = combat.itemUsedThisTurn
     const flashing = s.flashingElement
     const flashActive = flashing !== null && s.flashEndTime !== null && timestamp < s.flashEndTime
+    const colors4 = ['red', 'green', 'blue', 'yellow'] as const
 
-    const catAffordable: Record<CatId, boolean> = {
-      red: canAfford(pool, { red: 2 }),
-      green: canAfford(pool, { green: 1 }),
-      blue: canAfford(pool, { blue: 1 }),
-      yellow: canAfford(pool, { yellow: 1 }),
-      item: hasItems && !itemUsed,
-      flee: !combat.enemy.isBoss,
+    for (let i = 0; i < 4 && i < pool.dice.length; i++) {
+      const color = colors4[i]
+      const total = pool.totals[color]
+      const x = catBtnX(i)
+      const isOpen = openCategory === color
+      const affordable = canAfford(pool, { [color]: color === 'yellow' ? 2 : color === 'red' ? 2 : 1 })
+      const hovered = s.hoveredElement === `cat-${color}`
+      const flash = flashActive && flashing === `cat-${color}`
+      drawPipBtn(ctx, color, total, x, isOpen, affordable, hovered, flash)
     }
+  }
 
-    for (let i = 0; i < CAT_ORDER.length; i++) {
-      const id = CAT_ORDER[i]
-      const isOpen = openCategory === id
-      const affordable = catAffordable[id]
-      const hovered = s.hoveredElement === `cat-${id}`
-      const flash = flashActive && flashing === `cat-${id}`
-      drawCatBtn(ctx, id, i, isOpen, affordable, hovered, flash)
-    }
-
-    // ── Submenu ──
+  // ── Middle zone: submenu or enemy action ──
+  if (inPlayerTurn && openCategory) {
+    // Draw submenu for open category
     if (openCategory === 'red') {
       const strikeAffordable = canAfford(pool, { red: 2 })
       const heavyAffordable = canAfford(pool, { red: 4 })
+      const flashing = s.flashingElement
+      const flashActive = flashing !== null && s.flashEndTime !== null && timestamp < s.flashEndTime
 
       drawSubmenuBtn(ctx, {
         id: 'strike', label: 'Strike', costLabel: '2🔴',
@@ -527,18 +530,21 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     }
 
     if (openCategory === 'green') {
+      const flashing = s.flashingElement
+      const flashActive = flashing !== null && s.flashEndTime !== null && timestamp < s.flashEndTime
+
       // Live note
       ctx.font = '11px monospace'
       ctx.fillStyle = colors.pipBadgeGreenText
-      ctx.textAlign = 'left'
+      ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(
         `Reserve: ${reserveNoteText(combat.reservedGreen)}`,
-        MAP_X + SIDE_MARGIN,
+        MAP_X + MAP_W / 2,
         SUBMENU_Y + SUBMENU_NOTE_H / 2,
       )
 
-      const btnY = SUBMENU_Y + SUBMENU_NOTE_H + 4
+      const btnY = SUBMENU_Y + SUBMENU_NOTE_H + 8
       drawSubmenuBtn(ctx, {
         id: 'reserve', label: '+Reserve', costLabel: '1🟢',
         affordable: canAfford(pool, { green: 1 }),
@@ -554,9 +560,11 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
 
     if (openCategory === 'blue') {
       const analyseAffordable = canAfford(pool, { blue: 2 }) && !combat.analysedThisTurn
-      const exploitAffordable = canAfford(pool, { blue: 2 }) && combat.analysedThisCombat
+      const exploitAffordable = canAfford(pool, { blue: 4 }) && combat.analysedThisTurn
       const resistAffordable = canAfford(pool, { blue: 3 }) && combat.pipPoison !== null
       const identifyAffordable = canAfford(pool, { blue: 1 }) && !combat.identified
+      const flashing = s.flashingElement
+      const flashActive = flashing !== null && s.flashEndTime !== null && timestamp < s.flashEndTime
 
       drawSubmenuBtn(ctx, {
         id: 'analyse', label: 'Analyse', costLabel: '2🔵',
@@ -565,7 +573,7 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
       flashActive && flashing === 'sub-analyse')
 
       drawSubmenuBtn(ctx, {
-        id: 'exploit', label: 'Exploit', costLabel: '2🔵',
+        id: 'exploit', label: 'Exploit', costLabel: '4🔵',
         affordable: exploitAffordable,
       }, 1, SUBMENU_Y, s.hoveredElement === 'sub-exploit',
       flashActive && flashing === 'sub-exploit')
@@ -585,17 +593,19 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     }
 
     if (openCategory === 'yellow') {
-      const convertAffordable = canAfford(pool, { yellow: 2 })
-      const luckyAffordable = canAfford(pool, { yellow: 1 })
+      const convertAffordable = canAfford(pool, { yellow: 3 })
+      const luckyAffordable = canAfford(pool, { yellow: 4 })
+      const flashing = s.flashingElement
+      const flashActive = flashing !== null && s.flashEndTime !== null && timestamp < s.flashEndTime
 
       drawSubmenuBtn(ctx, {
-        id: 'convert', label: 'Convert', costLabel: '2🟡',
+        id: 'convert', label: 'Convert', costLabel: '3🟡',
         affordable: convertAffordable,
       }, 0, SUBMENU_Y, s.hoveredElement === 'sub-convert',
       flashActive && flashing === 'sub-convert')
 
       drawSubmenuBtn(ctx, {
-        id: 'lucky-shot', label: 'Lucky Shot', costLabel: '1🟡',
+        id: 'lucky-shot', label: 'Lucky Shot', costLabel: '4🟡',
         affordable: luckyAffordable,
       }, 1, SUBMENU_Y, s.hoveredElement === 'sub-lucky-shot',
       flashActive && flashing === 'sub-lucky-shot')
@@ -604,15 +614,76 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     if (openCategory === 'item') {
       drawItemList(ctx, inventory, s.hoveredElement, SUBMENU_Y)
     }
-
-    if (s.fleePending) {
-      ctx.font = 'bold 12px monospace'
-      ctx.fillStyle = '#e8a0a0'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText('Tap Flee again to escape — takes one free hit', MAP_X + MAP_W / 2, SUBMENU_Y + SUBMENU_NOTE_H / 2)
-    }
   }
+
+  // Flee pending confirmation (drawn outside submenu block so it shows when openCategory is null)
+  if (inPlayerTurn && s.fleePending) {
+    const fleeY = ROLL_BTN_Y - 16
+    ctx.font = '11px monospace'
+    ctx.fillStyle = '#e8a0a0'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'bottom'
+    ctx.fillText('Tap Flee again to take one free hit', MAP_X + MAP_W / 2, fleeY)
+  } else if (!inPlayerTurn && lastEnemyHeadline) {
+    // ── Enemy action display (awaiting-roll only, after first turn) ──
+    // Center vertically between dice and bottom buttons
+    const diceBottomY = DIE_ROW_Y + DIE_SIZE
+    const topOfBottomBtn = ROLL_BTN_Y
+    const centerY = (diceBottomY + topOfBottomBtn) / 2
+
+    const cx = MAP_X + MAP_W / 2
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+
+    ctx.font = 'bold 15px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = lastEnemyKind === 'guard' ? GUARD_STEEL_COLOR : ENEMY_RED_COLOR
+    ctx.fillText(lastEnemyHeadline, cx, centerY - 16)
+
+    ctx.font = '14px monospace'
+    ctx.fillStyle = colors.textPrimary
+    ctx.fillText(lastEnemyDetail, cx, centerY + 16)
+  }
+
+  // ── Bottom button row (Flee | ROLL/END TURN | Item) ──
+  const fleeDisabled = !inPlayerTurn || combat.enemy.isBoss
+  const rollDisabled = pool.state === 'rolling'
+  const hasItems = inventory.items.some(i => i.usableInCombat)
+  const itemUsed = combat.itemUsedThisTurn
+  const itemDisabled = !hasItems || itemUsed
+  const rollLabel = combat.phase === 'player-turn' ? 'END TURN' : 'ROLL DICE'
+
+  // Flee button
+  drawBottomBtn(
+    ctx,
+    'Flee',
+    bottomBtnFleeX(),
+    BTN_ROW_SIDE_W,
+    s.hoveredElement === 'cat-flee' && !fleeDisabled,
+    fleeDisabled || rollDisabled,
+    false,
+  )
+
+  // ROLL/END TURN button (hero)
+  drawBottomBtn(
+    ctx,
+    rollLabel,
+    bottomBtnRollX(),
+    BTN_ROW_CENTER_W,
+    s.hoveredElement === 'roll' && !rollDisabled,
+    rollDisabled,
+    true,
+  )
+
+  // Item button
+  drawBottomBtn(
+    ctx,
+    'Item',
+    bottomBtnItemX(),
+    BTN_ROW_SIDE_W,
+    s.hoveredElement === 'cat-item' && !itemDisabled,
+    itemDisabled || rollDisabled,
+    false,
+  )
 
 }
 
@@ -626,20 +697,22 @@ function drawItemList(
   if (items.length === 0) {
     ctx.font = '11px monospace'
     ctx.fillStyle = colors.textMuted
-    ctx.textAlign = 'left'
+    ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('No items', MAP_X + SIDE_MARGIN, startY + SUBMENU_NOTE_H / 2)
+    ctx.fillText('No items', MAP_X + MAP_W / 2, startY + SUBMENU_BTN_H / 2)
     return
   }
 
-  const perRow = 4
-  const btnW = CAT_BTN_W
-  const btnH = 40
+  // Two-column layout (max 4 items = 2 rows × 2 columns)
   for (let i = 0; i < Math.min(items.length, 4); i++) {
     const item = items[i]
-    const x = MAP_X + SIDE_MARGIN + i * (btnW + ACTION_GAP)
+    const col = i % 2
+    const row = Math.floor(i / 2)
+    const x = subBtnX(col)
+    const y = startY + row * (SUBMENU_BTN_H + 8)
     const isHov = hovered === `item-${i}`
-    roundRect(ctx, x, startY, btnW, btnH, 8)
+
+    roundRect(ctx, x, y, SUBMENU_BTN_W, SUBMENU_BTN_H, 8)
     ctx.fillStyle = isHov ? colors.surfaceRaised : colors.surface
     ctx.fill()
     ctx.strokeStyle = colors.gold
@@ -650,12 +723,11 @@ function drawItemList(
     ctx.fillStyle = colors.textPrimary
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(item.name.slice(0, 8), x + btnW / 2, startY + btnH / 2 - 6)
-    ctx.font = '8px monospace'
+    ctx.fillText(item.name, x + SUBMENU_BTN_W / 2, y + SUBMENU_BTN_H / 2 - 8)
+    ctx.font = '9px monospace'
     ctx.fillStyle = colors.gold
-    ctx.fillText(`×${item.quantity}`, x + btnW / 2, startY + btnH / 2 + 8)
+    ctx.fillText(`×${item.quantity}`, x + SUBMENU_BTN_W / 2, y + SUBMENU_BTN_H / 2 + 8)
   }
-  void perRow
 }
 
 // ── Hit testing ───────────────────────────────────────────────────────────────
@@ -675,15 +747,15 @@ export function buildHitRects(
   const inPlayerTurn = combat.phase === 'player-turn'
   const rolling = pool.state === 'rolling'
 
-  if (!rolling) {
-    rects.push({ x: ROLL_BTN_X, y: ROLL_BTN_Y, w: ROLL_BTN_W, h: ROLL_BTN_H, id: 'roll' })
-  }
-
   if (inPlayerTurn) {
-    for (let i = 0; i < CAT_ORDER.length; i++) {
-      rects.push({ x: catBtnX(i), y: CAT_BTN_Y, w: CAT_BTN_W, h: CAT_BTN_H, id: `cat-${CAT_ORDER[i]}` })
+    // Pip buttons (colour categories)
+    const colors4 = ['red', 'green', 'blue', 'yellow'] as const
+    for (let i = 0; i < 4; i++) {
+      const x = catBtnX(i)
+      rects.push({ x, y: PIP_BTN_Y, w: PIP_BTN_W, h: PIP_BTN_H, id: `cat-${colors4[i]}` })
     }
 
+    // Submenu buttons
     if (openCategory === 'red') {
       rects.push({ x: subBtnX(0), y: SUBMENU_Y, w: SUBMENU_BTN_W, h: SUBMENU_BTN_H, id: 'sub-strike' })
       rects.push({ x: subBtnX(1), y: SUBMENU_Y, w: SUBMENU_BTN_W, h: SUBMENU_BTN_H, id: 'sub-heavy' })
@@ -711,12 +783,22 @@ export function buildHitRects(
     if (openCategory === 'item') {
       const items = inventory.items.filter((i: Item) => i.usableInCombat)
       for (let i = 0; i < Math.min(items.length, 4); i++) {
+        const col = i % 2
+        const row = Math.floor(i / 2)
+        const x = subBtnX(col)
+        const y = SUBMENU_Y + row * (SUBMENU_BTN_H + 8)
         rects.push({
-          x: MAP_X + SIDE_MARGIN + i * (CAT_BTN_W + ACTION_GAP),
-          y: SUBMENU_Y, w: CAT_BTN_W, h: 40, id: `item-${i}`,
+          x, y, w: SUBMENU_BTN_W, h: SUBMENU_BTN_H, id: `item-${i}`,
         })
       }
     }
+  }
+
+  // Bottom button row (always available)
+  if (!rolling) {
+    rects.push({ x: bottomBtnFleeX(), y: ROLL_BTN_Y, w: BTN_ROW_SIDE_W, h: ROLL_BTN_H, id: 'cat-flee' })
+    rects.push({ x: bottomBtnRollX(), y: ROLL_BTN_Y, w: BTN_ROW_CENTER_W, h: ROLL_BTN_H, id: 'roll' })
+    rects.push({ x: bottomBtnItemX(), y: ROLL_BTN_Y, w: BTN_ROW_SIDE_W, h: ROLL_BTN_H, id: 'cat-item' })
   }
 
   void fleePending

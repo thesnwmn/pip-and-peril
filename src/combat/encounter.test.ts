@@ -328,18 +328,18 @@ describe('applyAnalyse', () => {
 // ── Blue category — Exploit ───────────────────────────────────────────────────
 
 describe('applyExploit', () => {
-  it('deals 2 damage bypassing block entirely', () => {
+  it('deals 3 damage bypassing block entirely', () => {
     const combat = makeCombat({ enemy: { ...GOBLIN, block: 5 } })
     const result = applyExploit(combat)
-    expect(result.damage).toBe(2)
-    expect(result.combat.enemy.hp).toBe(4)  // 6 - 2
+    expect(result.damage).toBe(3)
+    expect(result.combat.enemy.hp).toBe(3)  // 6 - 3
     expect(result.combat.enemy.block).toBe(5)  // block not affected by Exploit
   })
 
   it('reduces enemy hp even when block is very high', () => {
     const combat = makeCombat({ enemy: { ...GOBLIN, block: 10 } })
     const result = applyExploit(combat)
-    expect(result.combat.enemy.hp).toBe(4)  // 6 - 2, block doesn't matter
+    expect(result.combat.enemy.hp).toBe(3)  // 6 - 3, block doesn't matter
     expect(result.combat.enemy.block).toBe(10)  // Exploit doesn't reduce block
   })
 })
@@ -379,15 +379,16 @@ describe('applyIdentify', () => {
 // ── Yellow category — Lucky Shot ──────────────────────────────────────────────
 
 describe('applyLuckyShot', () => {
-  it('deals 1 damage bypassing block', () => {
+  it('deals 1-3 random damage bypassing block', () => {
     const combat = makeCombat({ enemy: { ...GOBLIN, block: 3 } })
     const result = applyLuckyShot(combat)
-    expect(result.damage).toBe(1)
-    expect(result.combat.enemy.hp).toBe(5)  // 6 - 1
+    expect(result.damage).toBeGreaterThanOrEqual(1)
+    expect(result.damage).toBeLessThanOrEqual(3)
+    expect(result.combat.enemy.hp).toBe(6 - result.damage)
     expect(result.combat.enemy.block).toBe(3)  // block not reduced
   })
 
-  it('kills the enemy if hp is 1', () => {
+  it('kills the enemy if hp is low enough', () => {
     const combat = makeCombat({ enemy: { ...GOBLIN, hp: 1 } })
     const result = applyLuckyShot(combat)
     expect(result.victory).toBe(true)

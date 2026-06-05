@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 047 · Combat Panel Layout Redesign
+
+**Shipped:** 2026-06-05 · **PR:** #TBD · **Spec:** [docs/features/history/047-combat-panel-layout.md](docs/features/history/047-combat-panel-layout.md)
+
+Restructure the combat panel to fix button cramping and align with the "bottom quarter is thumb country" design principle. Move ROLL/END TURN and secondary controls (Flee, Item) to the screen bottom in a single row; repurpose pip-counter badges as clickable buttons that open submenus; create a clear middle zone for submenu or enemy action display. Improves usability without changing any combat mechanics.
+
+---
+
 ### 046 · Combat Depth: Blue & Yellow, Full Intents & Advanced Actions
 
 **Shipped:** 2026-06-05 · **PR:** #TBD · **Spec:** [docs/features/history/046-combat-depth.md](docs/features/history/046-combat-depth.md)
