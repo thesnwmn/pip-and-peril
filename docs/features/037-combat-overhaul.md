@@ -133,7 +133,7 @@ is direction, not yet a build.*
 - Intents beyond Attack/Guard: 💢 Empower, 😴 Recover, 🕸️ Status, ☠️ Lunge.
 - **Blue** actions (Analyse → two-turn telegraph, Exploit, Resist, Identify) and **Yellow**
   (2:1 convert, Lucky Shot). Phase 1 is a Red/Green fight.
-- Green *spend* actions Shove (3R), Feint (2G), Disengage (3G).
+- *Spend* actions beyond Strike/Heavy: Shove (3R, Red), Feint (2G) and Disengage (3G, Green).
 - The **Tenacity** post-spend window and the item interjection framework generally (Idea 044).
 - In-combat healing. 006's Blue **Focus** heal is **removed** — healing becomes an item concern
   (post-damage window, Phase 2 / Idea 044). See Open questions on whether a stopgap is needed.
@@ -242,8 +242,10 @@ Same document, next build once Phase 1 ships and the roster (038) needs richer t
   needs prior Analyse), Resist (clear a status), Identify (exact enemy HP). Blue dice are typically
   absent early — surfacing Blue mid-run is the discovery beat.
 - **Yellow:** 2:1 convert to any colour; Lucky Shot (1Y → 1 damage bypassing Guard).
-- **Green spend actions:** Shove (3R, skip current intent), Feint (2G, −2 enemy Guard),
-  Disengage (3G, enemy skips next attack).
+- **Red spend action:** Shove (3R, skip the enemy's current intent) — joins Strike/Heavy in the
+  Red submenu.
+- **Green spend actions:** Feint (2G, −2 enemy Guard), Disengage (3G, enemy skips next attack) —
+  join Reserve in the Green submenu.
 - **Tenacity window** (post-spend) — a hook for Idea 044's Tenacity items.
 
 ## Visual design
