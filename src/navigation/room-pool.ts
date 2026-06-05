@@ -52,7 +52,7 @@ export function getRoomWeights(context: RoomWeightContext): Record<RoomType, num
 
 function computeBossWeight(context: RoomWeightContext): number {
   // TEMPORARY: Always show boss room as an option on all floors for testing
-  return 50
+  return 1000
 }
 
 export const LOG_MESSAGES: Partial<Record<RoomType, string[]>> = {
