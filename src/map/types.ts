@@ -1,4 +1,4 @@
-export type RoomType = 'start' | 'corridor' | 'enemy' | 'shop' | 'npc' | 'item' | 'chest' | 'boss'
+export type RoomType = 'start' | 'corridor' | 'enemy' | 'shop' | 'npc' | 'item' | 'chest' | 'trap' | 'stairwell' | 'boss'
 
 export type ExitMask = number
 export const N: ExitMask = 1
@@ -19,6 +19,7 @@ export interface TileCell {
   cleared?: boolean
   fled?: boolean
   itemId?: string
+  trapDifficulty?: number
 }
 
 export interface GameMap {

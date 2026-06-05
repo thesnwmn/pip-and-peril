@@ -31,5 +31,7 @@ export const ROOM_ACCENTS: Partial<Record<RoomType, string>> = {
   npc: colors.roomNpc,
   item: colors.roomItem,
   chest: colors.roomChest,
+  trap: colors.roomTrap,
+  stairwell: colors.roomStairwell,
   boss: colors.roomBoss,
 }

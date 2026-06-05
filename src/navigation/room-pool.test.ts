@@ -1,36 +1,140 @@
 import { describe, expect, it } from 'vitest'
-import { CARD_TEASES, LOG_MESSAGES, logStyleForRoom, poolForDepth } from './room-pool'
+import { CARD_TEASES, LOG_MESSAGES, logStyleForRoom, getDepthPhase, getRoomWeights } from './room-pool'
 
-describe('poolForDepth', () => {
-  it('returns shallow pool for depth ≤2', () => {
-    const pool = poolForDepth(1)
-    expect(pool).toContain('corridor')
-    expect(pool).not.toContain('enemy')
-    expect(pool).not.toContain('boss')
+describe('getDepthPhase', () => {
+  it('returns early phase for tiles < mid threshold', () => {
+    expect(getDepthPhase(1, 5)).toBe('early')
+    expect(getDepthPhase(2, 7)).toBe('early')
+    expect(getDepthPhase(3, 9)).toBe('early')
   })
 
-  it('returns mid pool for depth 3–4', () => {
-    const pool = poolForDepth(3)
-    expect(pool).toContain('enemy')
-    expect(pool).not.toContain('boss')
+  it('returns mid phase for tiles in mid-late range', () => {
+    expect(getDepthPhase(1, 8)).toBe('mid')
+    expect(getDepthPhase(1, 14)).toBe('mid')
+    expect(getDepthPhase(2, 8)).toBe('mid')
   })
 
-  it('returns deep pool for depth ≥5', () => {
-    const pool = poolForDepth(5)
-    expect(pool).toContain('boss')
-    expect(pool).toContain('enemy')
+  it('returns late phase for tiles >= late threshold', () => {
+    expect(getDepthPhase(1, 15)).toBe('late')
+    expect(getDepthPhase(1, 30)).toBe('late')
+    expect(getDepthPhase(3, 20)).toBe('late')
+  })
+})
+
+describe('getRoomWeights', () => {
+  it('has positive weight for corridor in early phase', () => {
+    const weights = getRoomWeights({
+      floor: 1,
+      floorTilesPlaced: 2,
+      floorEntryPosition: { col: 6, row: 6 },
+      candidatePos: { col: 7, row: 6 },
+      shopPlacedThisFloor: false,
+    })
+    expect(weights.corridor).toBeGreaterThan(0)
   })
 
-  it('depth 2 uses shallow pool (boundary)', () => {
-    const pool = poolForDepth(2)
-    expect(pool).toContain('corridor')
-    expect(pool).not.toContain('enemy')
+  it('has zero weight for stairwell on floor 3', () => {
+    const weights = getRoomWeights({
+      floor: 3,
+      floorTilesPlaced: 15,
+      floorEntryPosition: { col: 6, row: 6 },
+      candidatePos: { col: 7, row: 6 },
+      shopPlacedThisFloor: false,
+    })
+    expect(weights.stairwell).toBe(0)
   })
 
-  it('depth 4 uses mid pool (boundary)', () => {
-    const pool = poolForDepth(4)
-    expect(pool).toContain('enemy')
-    expect(pool).not.toContain('boss')
+  it('has zero weight for stairwell before threshold on floor 1', () => {
+    const weights = getRoomWeights({
+      floor: 1,
+      floorTilesPlaced: 5,
+      floorEntryPosition: { col: 6, row: 6 },
+      candidatePos: { col: 7, row: 6 },
+      shopPlacedThisFloor: false,
+    })
+    expect(weights.stairwell).toBe(0)
+  })
+
+  it('has positive weight for stairwell after threshold on floor 1', () => {
+    const weights = getRoomWeights({
+      floor: 1,
+      floorTilesPlaced: 8,
+      floorEntryPosition: { col: 6, row: 6 },
+      candidatePos: { col: 7, row: 6 },
+      shopPlacedThisFloor: false,
+    })
+    expect(weights.stairwell).toBeGreaterThan(0)
+  })
+
+  it('zeroes shop weight if already placed', () => {
+    const weights = getRoomWeights({
+      floor: 1,
+      floorTilesPlaced: 5,
+      floorEntryPosition: { col: 6, row: 6 },
+      candidatePos: { col: 7, row: 6 },
+      shopPlacedThisFloor: true,
+    })
+    expect(weights.shop).toBe(0)
+  })
+
+  it('spikes shop weight at debt threshold', () => {
+    const weights = getRoomWeights({
+      floor: 1,
+      floorTilesPlaced: 14,
+      floorEntryPosition: { col: 6, row: 6 },
+      candidatePos: { col: 7, row: 6 },
+      shopPlacedThisFloor: false,
+    })
+    expect(weights.shop).toBeGreaterThan(50)
+  })
+
+  it('has zero boss weight on floors 1–2', () => {
+    const weights1 = getRoomWeights({
+      floor: 1,
+      floorTilesPlaced: 20,
+      floorEntryPosition: { col: 6, row: 6 },
+      candidatePos: { col: 7, row: 6 },
+      shopPlacedThisFloor: false,
+    })
+    expect(weights1.boss).toBe(0)
+
+    const weights2 = getRoomWeights({
+      floor: 2,
+      floorTilesPlaced: 20,
+      floorEntryPosition: { col: 6, row: 6 },
+      candidatePos: { col: 7, row: 6 },
+      shopPlacedThisFloor: false,
+    })
+    expect(weights2.boss).toBe(0)
+  })
+
+  it('has positive boss weight on floor 3 after exploration threshold', () => {
+    const weights = getRoomWeights({
+      floor: 3,
+      floorTilesPlaced: 15,
+      floorEntryPosition: { col: 6, row: 6 },
+      candidatePos: { col: 13, row: 13 },
+      shopPlacedThisFloor: false,
+    })
+    expect(weights.boss).toBeGreaterThan(0)
+  })
+
+  it('scales enemy weight higher on deeper floors', () => {
+    const w1 = getRoomWeights({
+      floor: 1,
+      floorTilesPlaced: 20,
+      floorEntryPosition: { col: 6, row: 6 },
+      candidatePos: { col: 7, row: 6 },
+      shopPlacedThisFloor: false,
+    })
+    const w3 = getRoomWeights({
+      floor: 3,
+      floorTilesPlaced: 20,
+      floorEntryPosition: { col: 6, row: 6 },
+      candidatePos: { col: 7, row: 6 },
+      shopPlacedThisFloor: false,
+    })
+    expect(w3.enemy).toBeGreaterThan(w1.enemy)
   })
 })
 
@@ -61,7 +165,7 @@ describe('LOG_MESSAGES', () => {
 
 describe('CARD_TEASES', () => {
   it('has teases for all room types including corridor', () => {
-    for (const type of ['enemy', 'boss', 'shop', 'npc', 'item', 'chest', 'corridor'] as const) {
+    for (const type of ['enemy', 'boss', 'shop', 'npc', 'item', 'chest', 'corridor', 'stairwell', 'trap'] as const) {
       expect(CARD_TEASES[type]).toBeDefined()
       expect(CARD_TEASES[type]!.length).toBeGreaterThan(0)
     }

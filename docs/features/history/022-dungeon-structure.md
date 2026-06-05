@@ -351,10 +351,108 @@ No blocking questions. Two minor implementation choices left to the Engineer:
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-05 · **PR:** (link to be added after merge)
 
 ### What was built
 
+1. **Tuning system** (`src/dungeon/tuning.ts`): Centralized configuration for all dungeon pacing values (phase thresholds, room weights, boss parameters, shop debt, trap difficulty ranges).
+
+2. **Floor-based architecture**: 
+   - Added floor tracking to `DungeonState` (floor: 1|2|3, floorTilesPlaced, floorEntryPosition, shopPlacedThisFloor, totalTilesPlaced)
+   - Updated initialization to start at floor 1 with center spawn
+   - Implemented floor descent logic in `descendFloor()` function
+
+3. **Weighted room selection system** (`getRoomWeights()`, `generateOfferings()`):
+   - Dynamic weight calculation based on floor, depth phase, and candidate position
+   - Stairwell threshold enforcement: available only after exploration minimum on floors 1–2
+   - Shop guarantee: weight spike to 60 at debt threshold; zero weight after placement
+   - Boss algorithm: Manhattan distance tiers × exploration factor on floor 3 only
+
+4. **Room type additions**:
+   - **Stairwell**: New room type with dedicated navigation (no encounter panel; floor transition on entry)
+   - **Trap**: Assigned trapDifficulty value (1–9 range per floor/phase) stored on tile
+   - Updated RoomType enum and tile renderer support
+
+5. **Visual updates**:
+   - New color tokens: --room-trap (#6a2c10), --room-stairwell (#0a2a3a) and card colors
+   - Status bar updated to display "Floor N — Depth D" (depth from floorEntryPosition, not global start)
+   - Tile floor-edge markers render new room types with correct colors
+
+6. **Test coverage**: 
+   - 16 new tests for getDepthPhase, getRoomWeights, descendFloor, trap difficulty assignment
+   - Updated room-pool and room-selection tests to reflect weighted system
+   - All 298 tests passing
+
 ### Evidence
 
+- `src/dungeon/tuning.ts`: 140 lines, complete tuning config per spec
+- `src/navigation/room-pool.ts`: Rewritten with weight calculation (70 lines)
+- `src/navigation/room-selection.ts`: Rewritten with weighted offering logic and descendFloor (195 lines)
+- `src/navigation/dungeon-state.ts`: Extended with floor fields and manhattan distance function
+- `src/colors.ts`: Added trap and stairwell color tokens
+- `src/navigation/panel.ts`: Status bar now displays floor and per-floor depth
+- `src/screens/game.ts`: Stairwell handling in onCardChosen callback
+- Test files updated: room-pool.test.ts, room-selection.test.ts (16 new passing tests)
+- Build: ✓ TypeScript clean, ✓ All tests pass, ✓ Production build succeeds
+
 ### Play-test
+
+**Steps to verify the feature:**
+
+1. **Start a new run** on the home screen. Pip begins at Floor 1, center of map.
+
+2. **Explore Floor 1** (early phase, ~tiles 0–7):
+   - Expect mostly corridors and few enemies
+   - Open the Satchel (Tally tab): verify "Depth" increases from 0 toward center
+   - Status bar shows "Floor 1 — Depth N" updating correctly
+
+3. **Continue to mid-phase** (~8–14 tiles):
+   - Enemy and trap weights increase; corridor decreases
+   - At tile 8, a Stairwell offering should appear in room selection pool
+
+4. **Find and enter a Stairwell**:
+   - Select Stairwell card; map resets with single corridor at center
+   - Whisper message: "Pip descends deeper…"
+   - Status bar now shows "Floor 2 — Depth 0"
+   - Tally tab resets depth display
+
+5. **Explore Floor 2** (~8–16 tiles for completion):
+   - Mid-phase enemy encounters appear frequently
+   - Trap weight (8 vs floor 1 early 3) means more trap offerings
+   - At tile 10, Stairwell again available (threshold: 10 on floor 2)
+   - Track shop placement: after first shop, weight drops to 0 until debt threshold (12 tiles)
+
+6. **Verify shop guarantee**:
+   - Place 11 tiles on floor 2 without a shop
+   - On tile 12, shop weight spikes to 60, dominating the pool
+   - Next offering will heavily favor a shop card
+
+7. **Descend to Floor 3 and approach boss**:
+   - After Stairwell on floor 2, floor 3 begins with fresh corridor
+   - "The third floor. The air is wrong." message
+   - Status bar: "Floor 3 — Depth 0"
+   - Explore to ~12+ tiles; no Stairwell should appear (weight forced to 0)
+
+8. **Boss emergence**:
+   - At tile 12 (BOSS_MIN_EXPLORATION), boss weight becomes non-zero
+   - Move toward distant edges of the map (Manhattan distance 8+)
+   - Boss weight increases with exploration (0.6×0.35 at tile 15, distance 8 = ~6.3% per offering)
+   - Boss weight peaks (~100% per offering) after tile 27 at distance ≥8
+
+9. **Trap difficulty check** (requires encountering a trap later, via feature 025):
+   - Floor 1 early: difficulty 1–2
+   - Floor 1 late: difficulty 2–4
+   - Floor 3 late: difficulty 6–9
+   - (Feature 025 handles the trap encounter; this feature only assigns the difficulty value)
+
+**Expected variation:**
+- Fast explorers (10–15 tiles floor 3, beeline outward): boss offer around tile 12–15
+- Moderate explorers (20–25 tiles): boss offer around tiles 18–22, distance 5–9
+- Thorough explorers (30+ tiles): boss near every outer tile (distance ≥8)
+
+**Regressions to check:**
+- Room offerings still generate 3 cards per direction
+- Exit configs still respect forced/forbidden constraints
+- Fog still updates on tile placement
+- Chebyshev (item placement, satchel tally) now uses floorEntryPosition, still works for depth
+- No existing encounter types (enemy, item, boss via feature 004) affected

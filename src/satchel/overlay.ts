@@ -448,7 +448,7 @@ function drawTallyTab(
   ctx: CanvasRenderingContext2D,
   dungeonState: DungeonState,
 ): void {
-  const depth = chebyshev(dungeonState.pip, dungeonState.startPos)
+  const depth = chebyshev(dungeonState.pip, dungeonState.floorEntryPosition)
   const rows: Array<{ label: string; value: number }> = [
     { label: 'Depth',          value: depth },
     { label: 'Rooms entered',  value: dungeonState.roomsEntered },

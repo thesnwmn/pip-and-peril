@@ -4,7 +4,7 @@ import { drawMap, MAP_X, MAP_W, MAP_Y, TILE_SIZE } from '../map/renderer'
 import type { DungeonState } from '../navigation/dungeon-state'
 import { DIR_DELTA, initDungeon, OPP } from '../navigation/dungeon-state'
 import { movePip } from '../navigation/movement'
-import { generateOfferings, placeRoom, CARD_TEASES } from '../navigation/room-selection'
+import { generateOfferings, placeRoom, descendFloor, CARD_TEASES } from '../navigation/room-selection'
 import { LOG_MESSAGES, pickRandom } from '../navigation/room-pool'
 import { createNavigationPanel } from '../navigation/panel'
 import type { ScreenController } from './main-menu'
@@ -110,12 +110,20 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         const { dc, dr } = DIR_DELTA[state.pendingDir!]
         const targetPos = { col: state.pip.col + dc, row: state.pip.row + dr }
         combatEntryFrom = { col: state.pip.col, row: state.pip.row }
-        state = placeRoom(state, offering, targetPos)
-        state = { ...state, roomsEntered: state.roomsEntered + 1 }
-        navPanel.clearTeases()
-        const cell = state.grid.cells[state.pip.row][state.pip.col]
-        if (cell) triggerWhisper(cell.roomType)
-        checkEncounterTrigger()
+
+        if (offering.roomType === 'stairwell') {
+          state = descendFloor(state)
+          navPanel.clearTeases()
+          const stairwellMsg = state.floor === 2 ? 'Pip descends deeper…' : 'The third floor. The air is wrong.'
+          navPanel.triggerWhisper(stairwellMsg)
+        } else {
+          state = placeRoom(state, offering, targetPos)
+          state = { ...state, roomsEntered: state.roomsEntered + 1 }
+          navPanel.clearTeases()
+          const cell = state.grid.cells[state.pip.row][state.pip.col]
+          if (cell) triggerWhisper(cell.roomType)
+          checkEncounterTrigger()
+        }
       },
       onDirButton: (dir, dirState) => {
         if (dirState === 'fog') {

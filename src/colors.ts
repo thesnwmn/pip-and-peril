@@ -12,6 +12,8 @@ export const colors = {
   roomNpc: '#1b5378',
   roomItem: '#19713e',
   roomChest: '#965216',
+  roomTrap: '#6a2c10',
+  roomStairwell: '#0a2a3a',
   roomBoss: '#5c0a0a',
 
   // Log entry colours
@@ -43,6 +45,12 @@ export const colors = {
   cardBorderChest: '#965216',
   cardBgChest: '#1a0e05',
   cardTextChest: '#f0a060',
+  cardBorderTrap: '#6a2c10',
+  cardBgTrap: '#14090a',
+  cardTextTrap: '#f08050',
+  cardBorderStairwell: '#0a2a3a',
+  cardBgStairwell: '#050d14',
+  cardTextStairwell: '#50b8f0',
   cardBorderCorridor: '#3a3530',
   cardBgCorridor: '#0e0c0a',
   cardTextCorridor: '#8b7355',
