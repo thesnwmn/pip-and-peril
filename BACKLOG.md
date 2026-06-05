@@ -20,6 +20,13 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
+---
+
+### 047 · Combat Panel Layout Redesign
+
+Restructure the combat panel to fix button cramping and align with the "bottom quarter is thumb country" design principle. Move ROLL/END TURN and secondary controls (Flee, Item) to the screen bottom in a single row; repurpose pip-counter badges as clickable buttons that open submenus; create a clear middle zone for submenu or enemy action display. Improves usability without changing any combat mechanics.
+**Depends on:** 046 (combat mechanics). See `docs/features/047-combat-panel-layout.md` for the full spec.
+
 ### 038 · Enemy Roster Expansion
 
 Feature 022 (dungeon structure) weights rooms toward "tier-1", "tier-2", and "tier-3" enemies
