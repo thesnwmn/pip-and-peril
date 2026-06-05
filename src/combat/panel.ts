@@ -460,9 +460,11 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     roundRect(ctx, boxX, boxY, boxW, boxH, 8)
     ctx.fillStyle = colors.surface
     ctx.fill()
+    ctx.globalAlpha = 0.3
     ctx.strokeStyle = accentColor
-    ctx.lineWidth = 1.5
+    ctx.lineWidth = 1
     ctx.stroke()
+    ctx.globalAlpha = 1
 
     const cx = MAP_X + MAP_W / 2
     const midY = boxY + boxH / 2

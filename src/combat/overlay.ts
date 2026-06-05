@@ -64,7 +64,7 @@ export function drawCombatOverlay(
   ctx.fillStyle = intentColor
   ctx.textAlign = 'right'
   ctx.textBaseline = 'middle'
-  ctx.fillText(`${intentIcon} ${combat.intent.value}`, ENEMY_COL_X + HP_BAR_W, INTENT_ROW_Y)
+  ctx.fillText(`${intentIcon}${combat.intent.value}`, ENEMY_COL_X + HP_BAR_W, INTENT_ROW_Y)
 
   // ── Row B: HP bars ────────────────────────────────────────────────────────
   // Pip
@@ -95,14 +95,21 @@ export function drawCombatOverlay(
   ctx.textAlign = 'right'
   ctx.fillText(`${pipHp}/${pipMaxHp}`, PIP_COL_X + HP_BAR_W, HP_LABEL_Y)
 
-  // Enemy — name left (enemy colour), total right; append block count if any
+  // Enemy — name left (enemy colour), HP total right at fixed position, block badge left of HP
   ctx.fillStyle = ENEMY_RED
   ctx.textAlign = 'left'
   ctx.fillText(combat.enemy.name.toUpperCase(), ENEMY_COL_X, HP_LABEL_Y)
+
+  const hpStr = `${combat.enemy.hp}/${combat.enemy.maxHp}`
   ctx.fillStyle = colors.textPrimary
   ctx.textAlign = 'right'
-  const hpText = `${combat.enemy.hp}/${combat.enemy.maxHp}${combat.enemy.block > 0 ? `  🛡${combat.enemy.block}` : ''}`
-  ctx.fillText(hpText, ENEMY_COL_X + HP_BAR_W, HP_LABEL_Y)
+  ctx.fillText(hpStr, ENEMY_COL_X + HP_BAR_W, HP_LABEL_Y)
+
+  if (combat.enemy.block > 0) {
+    const hpW = ctx.measureText(hpStr).width
+    ctx.fillStyle = GUARD_STEEL
+    ctx.fillText(`🛡${combat.enemy.block}`, ENEMY_COL_X + HP_BAR_W - hpW - 8, HP_LABEL_Y)
+  }
 
   ctx.restore()
 }
