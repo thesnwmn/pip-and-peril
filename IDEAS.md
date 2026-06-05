@@ -19,6 +19,12 @@ Optionally a rough shape (interface, screen, or data sketch) — but no acceptan
 code; the Designer writes those.
 ```
 
+> **Recently promoted / consolidated** (kept here only as a pointer so numbers aren't reused):
+> Ideas 039 + 040 → feature **037** (Combat Overhaul); 043 → item **023** (Boss); 012 → item
+> **038** (Enemy Roster); 042 → item **029** (Meta-Progression). The in-run item cluster
+> (019, 020, 021, 022, 024, 025, 026, 027, 028) has been consolidated into the two seeds below
+> (Ideas 044 + 045), both parked behind the combat overhaul.
+
 ---
 
 
@@ -78,213 +84,66 @@ must be vague enough not to feel like promises if the player never reaches the b
 
 ---
 
-## Idea 012 — Creature Personality Traits
-
-**Area:** System
-**Inspiration:** Enemies & Bosses concept; the weasel, toad, and adder all have distinct personalities that want distinct combat feel.
-
-Each creature type gets one **personality trait** — a single behavioural note that makes it read
-differently in the combat log and panel, without requiring new systems. Examples: the Weasel Scout
-*presses advantage* (its attack message sharpens when Pip's HP is low); Old Gloop *hunkers*
-(occasionally does nothing for a turn, then hits harder); the Pale Adder *strikes once, waits*
-(regular attack, then a long pause in the log before the next). These are flavour, not rule changes
-— they cost text and timing, not new mechanics. The sum is a roster that feels hand-made.
-
----
-
-## Idea 019 — Weapon Coatings
-
-**Area:** System
-**Inspiration:** Manager — "poisons or coatings for weapons that might cause ongoing damage to enemies"; `docs/concept/in-run-items.md`.
-
-A distinct item sub-category applied to Pip's weapon before a strike, modifying the Strike action
-rather than acting as a direct consumable. Common coatings fire on the next strike only (more
-tactical — when do you spend it?); rare coatings persist for a full combat. One coating slot at a
-time: finding a second coating before using the first forces a genuine choice — apply the new one
-(losing the old) or keep what you have. Starting examples: **Viper Oil** (next strike applies poison
-— 1 dmg/enemy turn for 3 turns), **Fire Resin** (next strike +2 damage, exhausted), **Blinding
-Dust** (next strike reduces enemy's next attack by 1). Risk: the ongoing poison counter needs a
-clear status display during combat or it will be ignored.
-
----
-
-## Idea 020 — Passive Armour Equipment Slot
-
-**Area:** System
-**Inspiration:** Manager — "armor items to decrease damage"; contrast with consumable single-use items; `docs/concept/in-run-items.md`.
-
-A run-long passive equipment slot for armour: Pip wears one armour piece for the whole run,
-passively reducing all incoming damage by a fixed amount. Acquiring a new armour piece replaces the
-old — no stacking, no activation required. A −1 flat reduction is powerful; this category should
-arrive primarily from chests or boss-room loot rather than ordinary item rooms. First candidate:
-**Iron Thimble** (already in the chest spec as a tier item — its persistence scope needs locking
-down). Further candidates: **Leather Jerkin** (−1 to all damage), **Padded Coat** (−2 but reduces
-maximum green dice for combat, opening an interesting trade-off). Risk: a flat passive reduction may
-need to be balanced against enemy scaling as floors deepen.
-
----
-
-## Idea 021 — Tenacity Item Class
-
-**Area:** System / Dice
-**Inspiration:** Manager — "a re-roll after spending their pips to get a second turn… one is about luck and the other about tenacity"; `docs/concept/in-run-items.md`.
-
-A named class of combat item — distinct from luck/reroll items — that grants an *additional
-combat turn* (a fresh roll-and-spend sequence) rather than reseeding the current roll. Activated
-only *after* pips have been spent this turn; unavailable at turn start and unavailable as a trap
-interrupt (that is luck territory). In a trap context, tenacity acts differently: the item fires
-*after damage is taken* and immediately restores 1–2 HP, representing Pip shaking off the blow
-rather than retrying the roll. Examples: **Grit Stone**, **Second Wind Vial**, **Bitter Root
-Brew**. Open question for the Designer: does using a tenacity item cost pips itself, or is it a
-free action? Free feels powerful; a pip cost would require careful tuning.
-
----
-
-## Idea 022 — Luck Item as Encounter Interrupt
-
-**Area:** UI / System
-**Inspiration:** Manager — "for trap it must be chosen just after roll by presenting user an option to apply it when they fail"; `docs/concept/in-run-items.md`.
-
-A specific UI mechanic for luck-class items (Lucky Acorn, Rabbit's Foot, Fortune Pebble): when Pip
-*fails* a dice check in a non-combat encounter — trap agility roll, NPC skill check, chest lock
-pick — the game pauses before applying consequences and presents a contextual prompt: "Use [item
-name]?" with a yes/no choice. Accepting reruns the roll immediately with the same dice pool;
-declining lets the failure land. The prompt fires only if the player holds a luck-class item. In
-combat, luck items work differently (available at turn start as a pre-spend reroll) — the interrupt
-mechanic is non-combat only. Risk: the prompt must be fast and low-friction — a 2-second auto-
-decline timeout avoids breaking trap tension for players who have no intention of using anything.
-
----
-
-## Idea 024 — Knowledge / Information Items
-
-**Area:** System / Flow
-**Inspiration:** Genre survey — NetHack scrolls of mapping, Slay the Spire enemy intent preview; `docs/concept/in-run-items.md`.
-
-Items that reveal dungeon secrets rather than strengthening Pip directly — a different axis of
-value where cunning substitutes for power. Four sub-types: **room preview** (reveal actual
-contents of one offered tile before committing during navigation), **trap detection** (mark nearby
-trap tiles on the map before Pip steps on them), **enemy scouting** (show enemy HP and attack
-value at combat entry before the first roll), **floor map** (reveal the full current floor layout
-briefly). Navigation-register primarily; enemy scouting sits at the combat-entry beat. These items
-do not interact with the dice system at all, making them a useful counterweight to power-focused
-categories. Risk: room preview may reduce tension in room selection — the Designer should consider
-whether full reveal or a partial hint (e.g. "enemy" vs. exact HP) is the right granularity.
-
----
-
-## Idea 025 — Charged / Multi-Use Items
-
-**Area:** System
-**Inspiration:** Genre survey — multi-charge items in NetHack, FTL augments; gap in persistence spectrum; `docs/concept/in-run-items.md`.
-
-A `charges: number` field on the item type, counting down with each use and removing the item at
-zero. Fills the gap between single-use consumables and run-long equipment: a **Healing Bandage
-Roll** with 3 charges, a **Whetstone** that sharpens the weapon for 2 combats, a **Smoke Canister**
-with 2 uses. The decision is different from single-use — not "is this the right moment to spend my
-last one?" but "is this worth one of my remaining charges?" A two-charge item is visibly more
-valuable than a one-charge item of the same type. Small data-model change (charges field on Item);
-Satchel should display remaining charges clearly. Risk: the Engineer should confirm the item
-catalog and `acquireItem` stacking logic handles charges vs. quantity correctly — these are
-different things.
-
----
-
-## Idea 026 — Death Prevention Item
-
-**Area:** System / Flow
-**Inspiration:** Genre survey — Hades Death Defiance, NetHack amulet of life saving, Isaac Dead Cat; `docs/concept/in-run-items.md`.
-
-When Pip would die, this item triggers once instead — Pip survives at 1 HP. The most emotionally
-impactful item category in the genre: when it fires, the player was *dead*. Should be very rare
-(chests or high-cost shop item; never an ordinary item room), one at a time, and the thematic
-frame should feel like a found object rather than a game mechanic. Candidates: **Saint's Acorn**
-(*One last chance. Use it well.*), **Nine Lives Token** (*Found near a cat. Somehow that feels
-right.*). The item fires automatically — no player action required — which means the data model
-needs a hook in the death resolution path to check for it before writing `pipHp = 0`. Risk: if
-too common it trivialises permadeath; rarity is the entire balance lever.
-
----
-
-## Idea 027 — Cursed / Burden Items
-
-**Area:** System / Flow
-**Inspiration:** Genre survey — Risk of Rain 2 Lunar items, NetHack cursed items, Hades Pact of Punishment; `docs/concept/in-run-items.md`.
-
-Items with a meaningful downside alongside their benefit, adding a risk/reward layer absent from
-the current all-positive catalog. Examples: **Tainted Mushroom** (+3 all pip pools this combat,
-deals 2 damage to Pip on use), **Stolen Idol** (+2 gold per room for the rest of the run, all
-enemies deal +1 damage — the dungeon wants it back), **Berserker Draught** (next three attacks
-deal double damage, but no dodging for three turns). A visual signal — faint red tint on the item
-border — should make cursed status visible before the player takes it; the decision is *knowing
-the cost and choosing anyway*. Risk: downsides must be real or the category collapses to flavour
-text; the Designer should playtest each example item to confirm the cost genuinely deters use in
-some situations.
-
----
-
-## Idea 039 — Enemy Intent System
-
-**Area:** System / Dice
-**Inspiration:** Slay the Spire (enemy intent preview); combat system concept; the need to make the attack/defence binary meaningful.
-
-Before Pip rolls each turn, the enemy reveals a single intent icon and value showing what they will do this turn (Attack N, Guard, Empower, Recover, Status, Lunge). Pip rolls and allocates pips with this information in hand — creating a genuine decision each turn: "Do I spend Green to dodge this hit, or race to kill them first?" The intent system is the lever that makes Active Defence (Idea 040) a real decision rather than an always-correct choice. For bosses, intents form a fixed learnable cycle rather than procedural generation — rewarding pattern recognition. Risk: requires a new data field on enemy definitions (intent sequence or intent set); the Designer should decide whether floor-1 enemies use full intents or simplified ones while the system teaches itself.
-
----
-
-## Idea 040 — Active Defence (Offence/Defence Binary)
-
-**Area:** Dice / System
-**Inspiration:** Combat system concept; the core problem with the current "spend everything" model.
-
-Defence is not passive. Pip takes full damage unless he deliberately holds Green pips back during his turn to act as a damage shield: 2G reserved fully dodges one hit; 1G reserved reduces one hit's damage by 1. Spending those Green pips on offence instead means taking the enemy's full hit. This single structural change creates the turn's dominant decision — hit harder now, or survive what's coming — without adding any new UI elements. The interjection model this creates: offence pips are spent actively; defence pips are *not spent* on offence (an absence, not a button). Risk: requires a mechanical separation between "pips spent on actions" and "pips reserved for defence" in the combat state model; the Engineer needs to handle the reserved pile as a distinct state.
-
----
-
 ## Idea 041 — Rattled / Emboldened Combat States
 
 **Area:** System / Character
 **Inspiration:** Entirely the Thinker's own — not a direct development of the manager's direction.
+**Parked behind:** feature 037 (Combat Overhaul) — these states layer on top of the new turn loop.
 
 Transient per-fight modifiers that track how the fight is going, without permanent complexity. **Rattled** triggers when Pip takes damage on two consecutive turns without landing a hit — one die locks to its minimum face until Pip lands an attack (representing flinching fear). **Emboldened** triggers when Pip lands a killing blow — the *next* combat starts with one free virtual Yellow pip on the first roll (confidence following a win). Both states clear naturally; neither compounds. They make fights feel like they have texture and momentum beyond HP tracking, and they create natural hooks for items (*Steadying Brew* clears Rattled) and meta-skills (*Counter-Strike* triggers on a full dodge; *Battle Cry* extends Emboldened). Risk: Rattled's visual representation — a "shaky" die — must read clearly on a small phone screen without being distracting mid-allocation.
 
 ---
 
-## Idea 042 — Die Type Risk Profiles
+## Idea 044 — Item Interjection Framework
 
-**Area:** Dice / Meta
-**Inspiration:** Combat system concept; board game dice theory; creating meaningful meta-progression choices beyond "bigger number."
+**Area:** System
+**Inspiration:** `docs/concept/combat-system.md` (the eight interjection windows) + `docs/concept/in-run-items.md`; consolidates the old item-idea cluster (019, 020, 021, 022, 024, 025, 026, 027, 028).
+**Parked behind:** feature 037 (Combat Overhaul) — the windows only exist once the new turn loop does. *(No point speccing items against a combat flow we're replacing.)*
 
-Different die sizes carry distinct strategic identities: d4s are consistent (narrow range, high floor relative to max); d8s are volatile (good ceiling, frequent low rolls, feast-or-famine); d10s and d12s are spikey (thrilling highs, crushing lows). Upgrading in meta-progression is therefore a choice of *risk tolerance*, not just raw power: a d6→d8 upgrade raises the ceiling but increases variance; adding a second d6 instead raises the floor. Engrave mechanics (locking one face) are most powerful on spikey large dice — a d10 with its "1" face engraved to "5" becomes much calmer. This creates build archetypes: Reliable (many small dice), Spike (fewer large dice), and tuned Hybrids. Risk: these profiles are only meaningful if combat scaling keeps them all relevant at late floors — a flat +N modifier per floor that outpaces the d4's ceiling would make d4s obsolete.
-
----
-
-## Idea 043 — Boss Fixed Intent Cycles
-
-**Area:** System / Flow
-**Inspiration:** Hades (boss patterns); combat system concept; the desire for bosses to feel like learnable puzzles rather than RNG.
-
-Bosses use a fixed, looping intent sequence (3–4 intents) rather than procedurally generated ones. The player can decode the pattern over the course of the fight and plan multiple turns ahead. At the Enrage threshold (50% HP), the cycle accelerates or a new intent is injected — the pattern breaks and must be re-established. Some bosses (the Pale Adder, Scratch) have a third phase near death with a signature move. This makes boss fights feel like rhythm games at their peaks: learning the pattern, then executing under pressure. It also makes each boss feel hand-crafted even within a randomised run. Risk: fixed cycles can feel mechanical to veterans after multiple runs — the boss pool's variety (five or six bosses) is the mitigation; no single cycle should be met too often.
-
----
-
-## Idea 028 — Dice-Face Manipulation
-
-**Area:** Dice / System
-**Inspiration:** Dicey Dungeons (entire game); gap in the dice-interaction design space; `docs/concept/in-run-items.md`.
-
-Items that act on the *current face values showing on individual dice* mid-turn, distinct from
-stat boosts (add pips) and die upgrades (change die types). Four sub-types: **Lock Pin** (lock one
-die to its current face — it won't change on next roll, protects a high result), **Pip Splitter**
-(split one die's face value into two smaller ones — a 6 becomes two 3s, useful for two cheap
-actions over one expensive one), **Colour Shift Vial** (treat one die as a different colour this
-turn, bridges a colour gap), **Mirror Shard** (duplicate one die's current face value as a virtual
-bonus pip count). All combat-only; all require access to per-die face values in combat state rather
-than only pip totals — may need a small combat state extension. This is the highest skill-expression
-category in the catalog: a player who understands their pool well gets disproportionate value.
-Risk: the Lock Pin in particular changes the game's feel significantly — locking a 6 across turns
-creates a very different rhythm; worth prototyping early.
+The *rules layer* for how every in-run item plugs into combat: a complete event model where each
+item lands in exactly **one** of eight windows, so two items never compete for the same moment and
+each item class gets a distinct feel. The windows (from the combat doc): **pre-roll/scout** ·
+**on-roll (Luck — full reroll, pre-spend only)** · **during-allocation (dice-face manipulation)** ·
+**on-strike (weapon coatings)** · **post-spend (Tenacity — a second roll-and-spend)** ·
+**on-enemy-hit (passive armour)** · **post-damage (healing; Luck's non-combat trap-interrupt mode)**
+· **between-turns (status ticks, expiry)**. This also names the item *classes* that occupy them —
+Luck vs Tenacity, coatings, passive armour, dice-face manipulation, knowledge/info, charged
+(multi-use), cursed/burden, death-prevention. The Designer's first question for any new item
+becomes: *which window?* Risk: the framework must define the data hook for each window (esp. the
+death-prevention check before `pipHp = 0`, and the charges-vs-quantity distinction) before the
+catalogue (Idea 045) can be built.
 
 ---
 
+## Idea 045 — Item Catalogue
 
+**Area:** System / Items
+**Inspiration:** the manager's item directions + genre survey; the concrete payload for Idea 044.
+**Parked behind:** Idea 044 (Item Interjection Framework) — each item is tagged to a window/class.
+
+The concrete items, each slotted into one window from Idea 044, preserving the creative content
+from the consolidated seeds:
+
+- **Coatings (on-strike):** Viper Oil (poison 1/turn ×3), Fire Resin (next strike +2), Blinding
+  Dust (−1 to enemy's next attack), Numbing Sap. One coating slot — a new one forces a swap choice.
+- **Passive armour (on-enemy-hit, run-long, one slot):** Iron Thimble (−1), Leather Jerkin (−1),
+  Padded Coat (−2 but reduces combat Green) — chest/boss-room loot, not ordinary item rooms.
+- **Tenacity (post-spend):** Grit Stone, Second Wind Vial, Bitter Root Brew — a second turn; in a
+  trap context, restore 1–2 HP instead.
+- **Luck (on-roll / trap-interrupt):** Lucky Acorn, Rabbit's Foot, Fortune Pebble — full reroll in
+  combat (pre-spend); a "Use [item]?" prompt on a *failed* non-combat check.
+- **Dice-face manipulation (during-allocation):** Lock Pin (lock a face across rolls), Pip Splitter
+  (split a face into two), Colour Shift Vial (recolour a die this turn), Mirror Shard (duplicate a
+  face). Highest skill-expression class; prototype Lock Pin early — it changes the rhythm.
+- **Knowledge / info (pre-roll / navigation):** room preview, trap detection, enemy scouting (HP +
+  attack at combat entry), floor map. Cunning as a value axis; doesn't touch the dice.
+- **Charged / multi-use:** a `charges` field counting down to removal — Healing Bandage Roll (3),
+  Whetstone (2 combats), Smoke Canister (2). Distinct from quantity; Satchel shows charges.
+- **Cursed / burden:** real downside alongside benefit — Tainted Mushroom (+3 pips, 2 self-damage),
+  Stolen Idol (+2 gold/room, enemies +1 damage), Berserker Draught (double damage but no dodging
+  for three turns). Faint red border signals the cost before taking it.
+- **Death-prevention (death-resolution hook):** Saint's Acorn, Nine Lives Token — fires once at
+  Pip's death, survives at 1 HP. Must be very rare; rarity is the entire balance lever.
+
+Risk: this is a lot of surface — spec it in batches by window once 044 fixes the hooks, rather than
+all at once.

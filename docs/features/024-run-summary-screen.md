@@ -18,8 +18,10 @@ Victory and defeat reach the screen differently: the victory path goes through t
 Complete" banner first (the in-dungeon triumph beat), then taps through to this retrospective.
 The defeat path fades straight here, no prior banner.
 
-This is **step ①** of a two-step plan. The visual centrepiece here is the styled stats card.
-The hand-drawn dungeon-sketch centrepiece (Idea 014) is reserved for step ②.
+This feature is the whole run-summary screen. Its eventual hero element is a hand-drawn
+dungeon-sketch of the run just played (Idea 014); the acceptance criteria below detail the styled
+stats card and routing, which stand on their own. A builder may fold the sketch into this feature
+or split it into a follow-up — whichever is more useful when the time comes.
 
 ---
 
@@ -119,7 +121,9 @@ The hand-drawn dungeon-sketch centrepiece (Idea 014) is reserved for step ②.
 
 ## Scope / non-goals
 
-- **No dungeon sketch.** The hand-drawn map as centrepiece (Idea 014, step ②) is deferred.
+- **Dungeon sketch (Idea 014).** The hand-drawn map centrepiece is the screen's hero element but
+  is not detailed in the criteria below; include it with this feature or split it out as a builder's
+  call. The stats card stands on its own until then.
 - **No shiny scraps display.** Depends on 029 (meta-progression); that feature will add a
   scraps row to the stats card when it ships.
 - **No items-remaining display.** Showing what Pip had left in their satchel is future.

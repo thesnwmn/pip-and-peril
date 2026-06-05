@@ -22,6 +22,23 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
+### 037 · Combat Overhaul: Intents, Active Defence & Panel Redesign
+
+The combat keystone, and the prerequisite for everything that touches a fight. Replaces the
+"spend everything every turn" loop with a real decision: the enemy **telegraphs an intent** before
+Pip rolls, and **defence is active** — Pip *reserves* Green pips (2G fully dodges the coming hit,
+1G shaves 1) instead of spending them. The combat **panel is redesigned** in the same feature:
+**HP bars and the intent telegraph move onto the map** (Pip and the enemy facing off, bars beneath
+each, intent icon above the enemy), freeing the panel to be the **dice pool plus category buttons**
+(Red / Green / Item / Flee) that open submenus — clean room for the actions and item slots still to
+come. Folds in **Raw Flee** (escape a non-boss fight for one free enemy hit; Pip retreats to
+the entry tile and the room is left in the fled state — the seed for future roaming enemies).
+Scoped as a self-contained unblocker: Attack/Guard intents, reserve defence, Strike/Heavy/Reserve/
+Flee, and the new panel. The richer combat layer (Blue/Yellow, the full intent set, advanced
+actions, Tenacity) is **046**, built on top.
+**Depends on:** 006 (combat loop), 030 (elastic canvas panel), 005 (dice), 020 (fled state).
+See `docs/features/037-combat-overhaul.md` for the full spec.
+
 ### 027 · Shop Encounter
 
 The gold **Shop**: a warm merchant panel where Pip spends earned gold on items — the *sink* that
@@ -45,22 +62,13 @@ the `trapDifficulty` values and enemy tier definitions it introduces. 022 can sh
 as the sole tier-1 enemy and with trap tiles placed but not yet triggering an encounter.)*
 See `docs/features/022-dungeon-structure.md` for the full spec.
 
-### 023 · Boss Encounter & Run Completion
-
-A cinematic intro (camera pull-back, title card, camera tighten) leads into a fight against
-**The Rat King** — 20 HP, 3 attack, permanently enraging to 5 attack at half HP. Defeating him
-ends the run with a parchment-toned "Run Complete" banner and routes to Home. Also corrects all
-combat defeat paths to route to Home (not Main Menu).
-**Depends on:** 006 (combat loop), 019 (gold reward pattern), 022 (boss room placement), 034 (encounter registry).
-See `docs/features/023-boss-encounter.md` for the full spec.
-
 ### 024 · Run Summary Screen
 
 A full-screen parchment retrospective at the end of every run — reached by boss victory (after
-the 023 banner) or Pip's death. Shows floor reached, enemies defeated, total gold found, and on
+the 023 banner) or Pip's death. Its hero element is a hand-drawn **dungeon sketch** of the run just
+played (Idea 014), framed by the record: floor reached, enemies defeated, total gold found, and on
 defeat what felled Pip. Same screen serves both outcomes with different header tone. Introduces
-`RunState` counters (`enemiesDefeated`, `goldEarned`, `killedBy`). Step ① of two: the dungeon
-sketch centrepiece is deferred.
+`RunState` counters (`enemiesDefeated`, `goldEarned`, `killedBy`).
 **Depends on:** 023 (run-complete trigger and banner), 006 (defeat signal routing), 034 (encounter registry).
 See `docs/features/024-run-summary-screen.md` for the full spec.
 
@@ -85,65 +93,78 @@ See `docs/features/026-chest-encounter.md` for the full spec.
 
 ## NEEDS SPEC
 
-> **Remaining run-loop features.** Items 022–029 complete the *full gameplay run loop* — every
-> encounter type from the concept plus the structural and meta layers a player needs to experience a
-> whole run. Items 020 and 021 have shipped. The order below is **recommended build order**
-> (dependency-respecting; the Planner sets final priority): **022–024 close the minimal loop**
-> (structure → boss → summary), **025–028 add encounter breadth**, with **029** the optional
-> between-runs outer loop the manager may defer. Each item's *Depends on* notes carry the real
-> ordering constraints.
+> **The combat overhaul (037) comes first.** 037 replaces the combat flow itself, so every item
+> that touches a fight sits behind it — **046** (the combat depth layer), **023** (boss), **038**
+> (enemy roster, which now needs per-tier *intent sets*), and the whole item layer. The non-combat
+> encounters (**025** trap, **026** chest, **027** shop) and the dungeon structure (**022**) are
+> independent of the combat loop and proceed in parallel — they are in READY above. The order below
+> is **recommended build order** (dependency-respecting; the Planner sets final priority):
+> **037 → 038 → 046 → 023 → 028 → 029**. Each item's *Depends on* notes carry the real ordering
+> constraints.
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
-> model) and **020 · Item System** — both already shipped.
-
-### 037 · Combat Panel Redesign
-
-The combat encounter panel is cramped — actions and item slots are squeezed into too little space
-and will only get tighter as more actions (e.g. Flee from 036) and item slots are added. Redesign
-the panel layout to give both areas room to breathe and scale. Exact approach TBD by the Designer.
-**Depends on:** 006 (combat panel), 020 (item action button).
-*(Spec this before 036 — adding a Flee button to the current layout before redesigning it creates
-double work.)*
-
-### 036 · Raw Flee: Combat Escape Action
-
-A **Flee** option in the combat panel that lets Pip escape any non-boss fight without an item —
-but at a cost: the enemy lands one unblocked hit before she goes, and Pip is pushed back to the
-tile she entered the room from (not the room she's fleeing). The room is left in the **fled state**
-introduced by feature 020 (red enemy marker, combat restarts on re-entry). The cost distinction
-makes the Smoke Pellet meaningfully better: no free attack, stay in the room. Flee is available
-any turn, requires no pips, and cannot be used against a boss.
-**Depends on:** 020 (fled tile state), 006 (combat phase), 034 (encounter panel — Flee button placement).
+> model) and **020 · Item System** — both already shipped. *(Item 036 · Raw Flee has been folded
+> into 037, which now owns the Flee action as part of the redesigned panel.)*
 
 ### 038 · Enemy Roster Expansion
 
 Feature 022 (dungeon structure) weights rooms toward "tier-1", "tier-2", and "tier-3" enemies
 across floors and depth phases, but today only one enemy type exists (the Goblin). This feature
-fills the roster: new named creatures at each tier, with stats (HP, attack, gold reward range) and
-at least one distinguishing behaviour per tier. Weaker enemies (tier-1) can appear at any depth but
-dominate shallowly; tier-2 and tier-3 creatures gate to deeper floors and phases, so progression
-feels earned. Enemy room placement in 022 will pull from this roster once it ships.
-**Depends on:** 022 (tier references and weighting system), 006 (combat loop).
+fills the roster: new named creatures at each tier, with stats (HP, attack, gold reward range),
+their **per-tier intent sets** (which of the 037 intents each tier can telegraph, gated by floor
+depth and run-depth window), and a **personality trait** per creature — one behavioural note that
+makes it read differently in the log/panel without new mechanics (Weasel *presses advantage*, Old
+Gloop *hunkers*, Pale Adder *strikes once, waits*). Weaker enemies dominate shallowly; tier-2/3
+gate to deeper floors. Enemy room placement in 022 pulls from this roster once it ships.
+**Depends on:** 037 (combat overhaul — intents, the action model enemies plug into), 022 (tier
+references and weighting system), 006 (combat loop).
+*(Absorbs Idea 012 · Creature Personality Traits.)*
+
+### 046 · Combat Depth: Blue & Yellow, Full Intents & Advanced Actions
+
+The richer combat layer that builds on the 037 overhaul, once the basic fight is in. Adds the
+remaining **enemy intents** (💢 Empower, 😴 Recover, 🕸️ Status, ☠️ Lunge) and the two-turn
+telegraph; the **Blue** category (Analyse, Exploit, Resist, Identify) and **Yellow** (2:1 convert,
+Lucky Shot); the extra colour-spend actions (Shove 3🔴; Feint 2🟢, Disengage 3🟢); and the
+**Tenacity** post-spend window — the in-combat hook the item framework (Idea 044) plugs into. 037
+is built to take all of this as data without a refactor (string-union intents, data-driven category
+submenus, headroom in the intent overlay). The per-tier intent *pools* and floor/run-depth gating
+are 038's to populate; 046 owns the *mechanisms*.
+**Depends on:** 037 (combat overhaul — the structures this extends). Pairs with 038 (roster intent
+sets) and 044 (item framework, for the Tenacity window).
+
+### 023 · Boss Encounter & Run Completion
+
+The cinematic boss fight and run-completion flow. The intro (camera pull-back, title card, camera
+tighten) and the completion plumbing (parchment "Run Complete" banner → Home; all defeat paths to
+Home) are sound, **but the fight itself must be re-specced against 037**: the boss uses a **fixed,
+learnable intent cycle** (3–4 intents) that the player decodes and plans against, escalating at the
+Enrage threshold — not the old fixed "20 HP, 3 atk, enrage to 5" against the superseded combat
+loop. The existing `docs/features/023-boss-encounter.md` predates the overhaul and needs a
+Designer revision pass before it is READY.
+**Depends on:** 037 (combat overhaul + boss intent cycles), 019 (gold reward pattern), 022 (boss
+room placement), 034 (encounter registry).
+*(Absorbs Idea 043 · Boss Fixed Intent Cycles. Old spec retained for reference until re-specced.)*
 
 ### 028 · NPC Encounter
 
-The blue **NPC**: dialogue-first, the inverse of combat — text and choices primary, a dice check
-appearing *inside* the dialogue only when a response calls for one. Delivers hints, small rewards,
-and world voice; completes the encounter-type set.
+The blue **NPC**: dialogue-first, the inverse of combat — text and choices primary, with branching
+choices and a dice check appearing *inside* the dialogue when a response calls for one (check-gated
+responses with rewards/consequences). Delivers hints, small rewards, and world voice; completes the
+encounter-type set.
 **Depends on:** 005 (dice for checks), 004 (entry trigger), 030 (encounter panel).
-**Suggested stepping (for the Designer):** ① dialogue + branching choices (no dice); ② check-gated
-responses with rewards/consequences.
 
 ### 029 · Meta-Progression: Shiny Scraps & Dice Upgrades
 
 The between-runs loop and the roguelike pillar's payoff: a run awards **shiny scraps** (persisted
-across runs), spent in a cool parchment **camp/hub** to upgrade the dice pool (swap/add dice) and,
-later, engrave faces or unlock passive skills. Turns a single completable run into a reason to play
-again. **Deferrable:** the in-run loop (022–028) is complete without it; include when the manager
-wants the outer loop closed.
+across runs), spent in a cool parchment **camp/hub** to earn and persist scraps, upgrade the dice
+pool (swap d6→d8, add dice), engrave faces, and unlock passive skills. Dice upgrades are a choice of
+**risk profile**, not just bigger numbers — d4 consistent, d8 volatile, d10/d12 spikey — so swapping
+a die or adding one is a strategic identity choice, and engraving (locking a face) tames variance.
+Turns a single completable run into a reason to play again. **Deferrable:** the in-run loop is
+complete without it; include when the manager wants the outer loop closed.
 **Depends on:** 024 (scraps awarded at run end), 019/016 (currency model + persistence).
-**Suggested stepping (for the Designer):** ① earn + persist scraps and a hub screen; ② dice
-upgrades (swap d6→d8, add a die); ③ engrave faces / passive skills.
+*(Absorbs Idea 042 · Die Type Risk Profiles.)*
 **Related:** `docs/concept/overview.md` (Meta Progression), `docs/concept/screen-layout-and-transitions.md`
 (Meta-Progression Hub direction sketch).
 
