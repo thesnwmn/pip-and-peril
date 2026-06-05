@@ -1,26 +1,84 @@
-import type { RoomType } from '../map/types'
+import type { GridPos, RoomType } from '../map/types'
 import type { LogStyle } from './dungeon-state'
+import { DUNGEON_TUNING } from '../dungeon/tuning'
 
-export const DEPTH_POOLS: { maxChebyshev: number; pool: RoomType[] }[] = [
-  {
-    maxChebyshev: 2,
-    pool: ['corridor', 'corridor', 'shop', 'npc', 'item'],
-  },
-  {
-    maxChebyshev: 4,
-    pool: ['enemy', 'enemy', 'shop', 'chest', 'npc', 'item'],
-  },
-  {
-    maxChebyshev: Infinity,
-    pool: ['enemy', 'enemy', 'enemy', 'chest', 'item', 'shop', 'boss'],
-  },
-]
+export function getDepthPhase(floor: 1 | 2 | 3, floorTilesPlaced: number): 'early' | 'mid' | 'late' {
+  const { mid, late } = DUNGEON_TUNING.phaseThresholds[floor]
+  if (floorTilesPlaced < mid) return 'early'
+  if (floorTilesPlaced < late) return 'mid'
+  return 'late'
+}
 
-export function poolForDepth(depth: number): RoomType[] {
-  for (const band of DEPTH_POOLS) {
-    if (depth <= band.maxChebyshev) return band.pool
+export interface RoomWeightContext {
+  floor: 1 | 2 | 3
+  floorTilesPlaced: number
+  floorEntryPosition: GridPos
+  candidatePos: GridPos
+  shopPlacedThisFloor: boolean
+}
+
+export function getRoomWeights(context: RoomWeightContext): Record<RoomType, number> {
+  const depthPhase = getDepthPhase(context.floor, context.floorTilesPlaced)
+  const baseWeights = DUNGEON_TUNING.roomWeights[context.floor][depthPhase]
+
+  const weights: Record<RoomType, number> = {
+    start: 0,
+    corridor: baseWeights.corridor,
+    enemy: baseWeights.enemy,
+    shop: context.shopPlacedThisFloor ? 0 : baseWeights.shop,
+    npc: baseWeights.npc,
+    item: baseWeights.item,
+    chest: baseWeights.chest,
+    trap: baseWeights.trap,
+    stairwell: 0,
+    boss: 0,
   }
-  return DEPTH_POOLS[DEPTH_POOLS.length - 1].pool
+
+  // Stairwell override: available if threshold met and not on floor 3
+  if (context.floor !== 3 && context.floorTilesPlaced >= DUNGEON_TUNING.stairwellThreshold[context.floor]) {
+    weights.stairwell = baseWeights.stairwell
+  }
+
+  // Shop debt override: spike weight if threshold reached and no shop placed
+  if (context.shopPlacedThisFloor === false && context.floorTilesPlaced >= DUNGEON_TUNING.SHOP_DEBT_THRESHOLD[context.floor]) {
+    weights.shop = DUNGEON_TUNING.SHOP_DEBT_WEIGHT
+  }
+
+  // Boss override: only on floor 3, with distance-based weighting
+  if (context.floor === 3) {
+    weights.boss = computeBossWeight(context)
+  }
+
+  return weights
+}
+
+function computeBossWeight(context: RoomWeightContext): number {
+  if (context.floor !== 3) return 0
+  if (context.floorTilesPlaced < DUNGEON_TUNING.BOSS_MIN_EXPLORATION) return 0
+
+  const distance = Math.abs(context.candidatePos.col - context.floorEntryPosition.col) +
+                   Math.abs(context.candidatePos.row - context.floorEntryPosition.row)
+
+  if (distance < DUNGEON_TUNING.BOSS_DIST_MIN) return 0
+
+  let tierFactor: number
+  if (distance < DUNGEON_TUNING.BOSS_DIST_MID) {
+    tierFactor = 0.10
+  } else if (distance < DUNGEON_TUNING.BOSS_DIST_OUTER) {
+    tierFactor = 0.35
+  } else {
+    tierFactor = 1.00
+  }
+
+  const explorationFactor = Math.min(
+    1.0,
+    Math.max(
+      0,
+      (context.floorTilesPlaced - DUNGEON_TUNING.BOSS_MIN_EXPLORATION) / DUNGEON_TUNING.BOSS_EXPLORATION_SCALE,
+    ),
+  )
+
+  return DUNGEON_TUNING.BASE_BOSS_WEIGHT * explorationFactor * tierFactor
 }
 
 export const LOG_MESSAGES: Partial<Record<RoomType, string[]>> = {
@@ -52,6 +110,11 @@ export const LOG_MESSAGES: Partial<Record<RoomType, string[]>> = {
     'Gold light under the lid.',
     'Heavy iron lock. Weak hinges.',
   ],
+  trap: [
+    'Tiles click ominously beneath your feet.',
+    'Something sharp glints in the darkness.',
+    'You sense danger.',
+  ],
 }
 
 export const CARD_TEASES: Partial<Record<RoomType, string[]>> = {
@@ -62,6 +125,8 @@ export const CARD_TEASES: Partial<Record<RoomType, string[]>> = {
   item: ['A faint gleam in the dark.', 'Something shiny, half-buried.', 'Discarded and forgotten.'],
   chest: ['The dull gleam of iron.', 'Someone locked this for a reason.', 'Heavy. Promising.'],
   corridor: ['Quiet. Just dust.', 'A draft from ahead.', 'Footsteps, long silent.'],
+  stairwell: ['Descend deeper. You won\'t come back up.', 'Stone steps fade into shadow below.'],
+  trap: ['Sharp edges glint in shadows.', 'Something dangerous lurks here.', 'You sense a trap.'],
 }
 
 export function logStyleForRoom(roomType: RoomType): LogStyle {

@@ -66,13 +66,15 @@ const DIR_SPECS: DirSpec[] = [
 
 function cardColors(roomType: RoomType): { border: string; bg: string; text: string } {
   switch (roomType) {
-    case 'enemy':  return { border: colors.cardBorderEnemy,    bg: colors.cardBgEnemy,    text: colors.cardTextEnemy }
-    case 'boss':   return { border: colors.cardBorderBoss,     bg: colors.cardBgBoss,     text: colors.cardTextBoss }
-    case 'shop':   return { border: colors.cardBorderShop,     bg: colors.cardBgShop,     text: colors.cardTextShop }
-    case 'npc':    return { border: colors.cardBorderNpc,      bg: colors.cardBgNpc,      text: colors.cardTextNpc }
-    case 'item':   return { border: colors.cardBorderItem,     bg: colors.cardBgItem,     text: colors.cardTextItem }
-    case 'chest':  return { border: colors.cardBorderChest,    bg: colors.cardBgChest,    text: colors.cardTextChest }
-    default:       return { border: colors.cardBorderCorridor, bg: colors.cardBgCorridor, text: colors.cardTextCorridor }
+    case 'enemy':     return { border: colors.cardBorderEnemy,    bg: colors.cardBgEnemy,    text: colors.cardTextEnemy }
+    case 'boss':      return { border: colors.cardBorderBoss,     bg: colors.cardBgBoss,     text: colors.cardTextBoss }
+    case 'shop':      return { border: colors.cardBorderShop,     bg: colors.cardBgShop,     text: colors.cardTextShop }
+    case 'npc':       return { border: colors.cardBorderNpc,      bg: colors.cardBgNpc,      text: colors.cardTextNpc }
+    case 'item':      return { border: colors.cardBorderItem,     bg: colors.cardBgItem,     text: colors.cardTextItem }
+    case 'chest':     return { border: colors.cardBorderChest,    bg: colors.cardBgChest,    text: colors.cardTextChest }
+    case 'trap':      return { border: colors.cardBorderTrap,     bg: colors.cardBgTrap,     text: colors.cardTextTrap }
+    case 'stairwell': return { border: colors.cardBorderStairwell, bg: colors.cardBgStairwell, text: colors.cardTextStairwell }
+    default:          return { border: colors.cardBorderCorridor, bg: colors.cardBgCorridor, text: colors.cardTextCorridor }
   }
 }
 
@@ -117,9 +119,10 @@ function drawStatusBar(ctx: CanvasRenderingContext2D, state: DungeonState): void
   ctx.fillStyle = colors.textMuted
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('FLOOR 1', LOGICAL_W / 2, barMidY)
+  const floorLabel = `Floor ${state.floor}`
+  ctx.fillText(floorLabel, LOGICAL_W / 2, barMidY)
 
-  const depth = chebyshev(state.pip, state.startPos)
+  const depth = chebyshev(state.pip, state.floorEntryPosition)
   ctx.textAlign = 'right'
   ctx.font = '12px monospace'
   ctx.fillStyle = colors.textMuted

@@ -40,6 +40,52 @@ function drawCorridorFlags(
   }
 }
 
+function drawStairwellSpiral(
+  ctx: CanvasRenderingContext2D,
+  px: number,
+  py: number,
+  s: number,
+  color: string,
+): void {
+  const cx = px + s / 2
+  const cy = py + s / 2
+  const maxRadius = s / 4.5  // Reduced from s/2.5 to keep it smaller
+
+  // Draw spiral with high contrast
+  ctx.strokeStyle = color
+  ctx.lineWidth = 3.5  // Thicker line for better visibility
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  ctx.beginPath()
+
+  // Draw spiral from center outward with more steps for smoother appearance
+  const spiralSteps = 4
+  for (let i = 0; i <= spiralSteps * Math.PI * 2; i += 0.12) {
+    const r = (i / (spiralSteps * Math.PI * 2)) * maxRadius
+    const x = cx + Math.cos(i) * r
+    const y = cy + Math.sin(i) * r
+    if (i === 0) ctx.moveTo(x, y)
+    else ctx.lineTo(x, y)
+  }
+  ctx.stroke()
+
+  // Draw arrow pointing downward with increased visibility
+  const arrowSize = s * 0.1
+  const arrowY = cy + maxRadius * 0.6
+  ctx.strokeStyle = color
+  ctx.lineWidth = 3
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  ctx.beginPath()
+  ctx.moveTo(cx, arrowY - arrowSize)
+  ctx.lineTo(cx, arrowY + arrowSize)
+  ctx.moveTo(cx - arrowSize * 0.7, arrowY + arrowSize * 0.5)
+  ctx.lineTo(cx, arrowY + arrowSize)
+  ctx.lineTo(cx + arrowSize * 0.7, arrowY + arrowSize * 0.5)
+  ctx.stroke()
+}
+
+
 function drawCell(
   ctx: CanvasRenderingContext2D,
   cell: TileCell | null,
@@ -111,6 +157,11 @@ function drawCell(
   if (exits & S) drawCorridorFlags(ctx, px + co, py + s - wt, cw, wt, 1, fs, biome, true)
   if (exits & E) drawCorridorFlags(ctx, px + s - wt, py + co, wt, cw, 1, fs, biome, false, true)
   if (exits & W) drawCorridorFlags(ctx, px, py + co, wt, cw, 0, fs, biome)
+
+  // Step 5.5 — special room graphics (stairwell spiral)
+  if (cell.roomType === 'stairwell') {
+    drawStairwellSpiral(ctx, px, py, s, colors.roomStairwell)
+  }
 
   // Step 6 — floor-edge marker (skip corridor and start)
   const markerColor = ROOM_ACCENTS[cell.roomType]
@@ -283,6 +334,11 @@ export function drawSingleTile(
   if (exits & S) drawCorridorFlags(ctx, x + co, y + s - wt, cw, wt, 1, fs, biome, true)
   if (exits & E) drawCorridorFlags(ctx, x + s - wt, y + co, wt, cw, 1, fs, biome, false, true)
   if (exits & W) drawCorridorFlags(ctx, x, y + co, wt, cw, 0, fs, biome)
+
+  // Special room graphics (stairwell spiral)
+  if (cell.roomType === 'stairwell') {
+    drawStairwellSpiral(ctx, x, y, s, colors.roomStairwell)
+  }
 
   const markerColor = ROOM_ACCENTS[cell.roomType]
   if (markerColor) {

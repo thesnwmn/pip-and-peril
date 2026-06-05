@@ -22,6 +22,11 @@ export interface DungeonState {
   pip: GridPos
   camera: GridPos
   startPos: GridPos
+  floorEntryPosition: GridPos
+  floor: 1 | 2 | 3
+  floorTilesPlaced: number
+  totalTilesPlaced: number
+  shopPlacedThisFloor: boolean
   uiState: 'idle' | 'choosing'
   pendingDir: ExitMask | null
   offerings: RoomOffering[]
@@ -43,19 +48,24 @@ export function initDungeon(): DungeonState {
   cells[START_ROW][START_COL] = { roomType: 'start', exits: N | E | S | W }
 
   const grid: GameMap = { cells, width: GRID_W, height: GRID_H }
-  const startPos: GridPos = { col: START_COL, row: START_ROW }
+  const floorEntryPosition: GridPos = { col: START_COL, row: START_ROW }
 
   const rawFog: FogState[][] = Array.from({ length: GRID_H }, () =>
     Array<FogState>(GRID_W).fill('hidden'),
   )
-  const fog = computeFog(rawFog, grid, startPos, 3)
+  const fog = computeFog(rawFog, grid, floorEntryPosition, 3)
 
   return {
     grid,
     fog,
     pip: { col: START_COL, row: START_ROW },
     camera: { col: START_COL, row: START_ROW },
-    startPos,
+    floorEntryPosition,
+    startPos: floorEntryPosition,
+    floor: 1,
+    floorTilesPlaced: 0,
+    totalTilesPlaced: 0,
+    shopPlacedThisFloor: false,
     uiState: 'idle',
     pendingDir: null,
     offerings: [],
@@ -67,6 +77,10 @@ export function initDungeon(): DungeonState {
 
 export function chebyshev(a: GridPos, b: GridPos): number {
   return Math.max(Math.abs(a.col - b.col), Math.abs(a.row - b.row))
+}
+
+export function manhattan(a: GridPos, b: GridPos): number {
+  return Math.abs(a.col - b.col) + Math.abs(a.row - b.row)
 }
 
 export const OPP: Record<number, ExitMask> = {

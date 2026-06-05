@@ -3,8 +3,9 @@ import type { ExitMask, GridPos, RoomType, TileCell } from '../map/types'
 import { E, N, S, W } from '../map/types'
 import { chebyshev, DIR_DELTA, OPP, updateCamera } from './dungeon-state'
 import type { DungeonState, RoomOffering } from './dungeon-state'
-import { pickRandom, poolForDepth, CARD_TEASES } from './room-pool'
+import { pickRandom, CARD_TEASES, getRoomWeights, getDepthPhase } from './room-pool'
 import { CATALOG_ITEMS } from '../satchel/catalog'
+import { DUNGEON_TUNING } from '../dungeon/tuning'
 
 export { CARD_TEASES }
 
@@ -15,6 +16,10 @@ const ALL_EXIT_CONFIGS: ExitMask[] = [
   N | E | S, N | W | S, E | S | W, N | E | W,
   N | E | S | W,
 ]
+
+function randomIntRange(min: number, max: number): number {
+  return min + Math.floor(Math.random() * (max - min + 1))
+}
 
 export function validExitConfigs(
   grid: DungeonState['grid'],
@@ -55,17 +60,40 @@ export function generateOfferings(
   targetPos: GridPos,
   entryDir: ExitMask,
 ): RoomOffering[] {
-  const depth = chebyshev(targetPos, state.startPos)
-  const pool = poolForDepth(depth)
-
   const types: RoomType[] = []
-  const shuffled = [...pool].sort(() => Math.random() - 0.5)
-  for (const t of shuffled) {
-    if (!types.includes(t)) types.push(t)
-    if (types.length === 3) break
-  }
-  while (types.length < 3) {
-    types.push(pool[Math.floor(Math.random() * pool.length)])
+  const directions = [N, E, S, W]
+
+  for (let i = 0; i < 3; i++) {
+    const { dc, dr } = DIR_DELTA[directions[i]]
+    const candidatePos: GridPos = {
+      col: targetPos.col + dc,
+      row: targetPos.row + dr,
+    }
+
+    const weights = getRoomWeights({
+      floor: state.floor,
+      floorTilesPlaced: state.floorTilesPlaced,
+      floorEntryPosition: state.floorEntryPosition,
+      candidatePos,
+      shopPlacedThisFloor: state.shopPlacedThisFloor,
+    })
+
+    // Normalize and pick
+    const roomTypes: RoomType[] = ['corridor', 'enemy', 'shop', 'npc', 'item', 'chest', 'trap', 'stairwell', 'boss']
+    const totalWeight = roomTypes.reduce((sum, rt) => sum + (weights[rt] || 0), 0)
+    let rand = Math.random() * totalWeight
+    let selectedType: RoomType = 'corridor'
+
+    for (const rt of roomTypes) {
+      const w = weights[rt] || 0
+      if (rand < w) {
+        selectedType = rt
+        break
+      }
+      rand -= w
+    }
+
+    types.push(selectedType)
   }
 
   const configs = validExitConfigs(state.grid, targetPos, entryDir)
@@ -79,6 +107,12 @@ export function generateOfferings(
   return types.map((roomType, i) => ({ roomType, exits: pickedConfigs[i] }))
 }
 
+function getTrapDifficulty(floor: 1 | 2 | 3, floorTilesPlaced: number): number {
+  const depthPhase = getDepthPhase(floor, floorTilesPlaced)
+  const range = DUNGEON_TUNING.trapDifficultyRange[floor][depthPhase]
+  return randomIntRange(range.min, range.max)
+}
+
 export function placeRoom(
   state: DungeonState,
   offering: RoomOffering,
@@ -86,15 +120,24 @@ export function placeRoom(
 ): DungeonState {
   const newCells = state.grid.cells.map(row => [...row])
   const cell: TileCell = { roomType: offering.roomType, exits: offering.exits }
+
   if (offering.roomType === 'item') {
     cell.itemId = CATALOG_ITEMS[Math.floor(Math.random() * CATALOG_ITEMS.length)].id
   }
+
+  if (offering.roomType === 'trap') {
+    cell.trapDifficulty = getTrapDifficulty(state.floor, state.floorTilesPlaced)
+  }
+
   newCells[targetPos.row][targetPos.col] = cell
   const newGrid = { ...state.grid, cells: newCells }
 
   const newPip = { ...targetPos }
   const newFog = computeFog(state.fog, newGrid, newPip, 3)
   const newCamera = updateCamera(state.camera, newPip, newGrid.width, newGrid.height)
+
+  // Track shop placement
+  const shopPlacedThisFloor = state.shopPlacedThisFloor || offering.roomType === 'shop'
 
   return {
     ...state,
@@ -106,5 +149,48 @@ export function placeRoom(
     pendingDir: null,
     offerings: [],
     stepCount: state.stepCount + 1,
+    floorTilesPlaced: state.floorTilesPlaced + 1,
+    totalTilesPlaced: state.totalTilesPlaced + 1,
+    shopPlacedThisFloor,
+  }
+}
+
+export function descendFloor(state: DungeonState): DungeonState {
+  const nextFloor = (state.floor + 1) as 1 | 2 | 3
+  if (nextFloor > 3) return state
+
+  const GRID_W = state.grid.width
+  const GRID_H = state.grid.height
+  const centerCol = Math.floor(GRID_W / 2)
+  const centerRow = Math.floor(GRID_H / 2)
+
+  const cells: (TileCell | null)[][] = Array.from(
+    { length: GRID_H },
+    () => Array(GRID_W).fill(null),
+  )
+  cells[centerRow][centerCol] = { roomType: 'corridor', exits: N | E | S | W }
+
+  const newGrid = { ...state.grid, cells }
+  const floorEntryPosition: GridPos = { col: centerCol, row: centerRow }
+
+  const rawFog: (typeof state.fog) = Array.from({ length: GRID_H }, () =>
+    Array<'hidden'>(GRID_W).fill('hidden'),
+  )
+  const newFog = computeFog(rawFog, newGrid, floorEntryPosition, 3)
+  const newCamera = updateCamera(state.camera, floorEntryPosition, GRID_W, GRID_H)
+
+  return {
+    ...state,
+    grid: newGrid,
+    fog: newFog,
+    pip: { ...floorEntryPosition },
+    camera: newCamera,
+    floorEntryPosition,
+    floor: nextFloor,
+    floorTilesPlaced: 0,
+    shopPlacedThisFloor: false,
+    uiState: 'idle',
+    pendingDir: null,
+    offerings: [],
   }
 }

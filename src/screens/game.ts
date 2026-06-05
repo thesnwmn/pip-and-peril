@@ -4,7 +4,7 @@ import { drawMap, MAP_X, MAP_W, MAP_Y, TILE_SIZE } from '../map/renderer'
 import type { DungeonState } from '../navigation/dungeon-state'
 import { DIR_DELTA, initDungeon, OPP } from '../navigation/dungeon-state'
 import { movePip } from '../navigation/movement'
-import { generateOfferings, placeRoom, CARD_TEASES } from '../navigation/room-selection'
+import { generateOfferings, placeRoom, descendFloor, CARD_TEASES } from '../navigation/room-selection'
 import { LOG_MESSAGES, pickRandom } from '../navigation/room-pool'
 import { createNavigationPanel } from '../navigation/panel'
 import type { ScreenController } from './main-menu'
@@ -31,6 +31,9 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   let isMouseDevice = false
   let dicePool: DicePool = starterPool()
   let inventory: Inventory = { gold: 0, items: [] }
+
+  // Floor transition tracking
+  let floorTransitionStartTime: number | null = null
 
   // Tile Pip stepped in from — updated on every move, used by Flee to retreat.
   let combatEntryFrom: { col: number; row: number } = { col: state.pip.col, row: state.pip.row }
@@ -110,12 +113,21 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         const { dc, dr } = DIR_DELTA[state.pendingDir!]
         const targetPos = { col: state.pip.col + dc, row: state.pip.row + dr }
         combatEntryFrom = { col: state.pip.col, row: state.pip.row }
-        state = placeRoom(state, offering, targetPos)
-        state = { ...state, roomsEntered: state.roomsEntered + 1 }
-        navPanel.clearTeases()
-        const cell = state.grid.cells[state.pip.row][state.pip.col]
-        if (cell) triggerWhisper(cell.roomType)
-        checkEncounterTrigger()
+
+        if (offering.roomType === 'stairwell') {
+          floorTransitionStartTime = performance.now()
+          state = descendFloor(state)
+          navPanel.clearTeases()
+          const stairwellMsg = state.floor === 2 ? 'Pip descends deeper…' : 'The third floor. The air is wrong.'
+          navPanel.triggerWhisper(stairwellMsg)
+        } else {
+          state = placeRoom(state, offering, targetPos)
+          state = { ...state, roomsEntered: state.roomsEntered + 1 }
+          navPanel.clearTeases()
+          const cell = state.grid.cells[state.pip.row][state.pip.col]
+          if (cell) triggerWhisper(cell.roomType)
+          checkEncounterTrigger()
+        }
       },
       onDirButton: (dir, dirState) => {
         if (dirState === 'fog') {
@@ -231,6 +243,31 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     // Advance transition state machine and get animated map render params
     const { zoom, pipTargetX, pipTargetY } = registry.computeMapState(timestamp, pipNatX, pipNatY)
 
+    // Compute floor transition fade (out 500ms, stay hidden 200ms, fade in 500ms = 1200ms total)
+    let floorTransitionAlpha = 1.0
+    if (floorTransitionStartTime !== null) {
+      const elapsed = timestamp - floorTransitionStartTime
+      const FADE_OUT_MS = 500
+      const FADE_HOLD_MS = 200
+      const FADE_IN_MS = 500
+      const TOTAL_MS = FADE_OUT_MS + FADE_HOLD_MS + FADE_IN_MS
+
+      if (elapsed < FADE_OUT_MS) {
+        // Fade out: 1.0 → 0
+        floorTransitionAlpha = 1.0 - (elapsed / FADE_OUT_MS)
+      } else if (elapsed < FADE_OUT_MS + FADE_HOLD_MS) {
+        // Stay hidden
+        floorTransitionAlpha = 0
+      } else if (elapsed < TOTAL_MS) {
+        // Fade in: 0 → 1.0
+        floorTransitionAlpha = (elapsed - FADE_OUT_MS - FADE_HOLD_MS) / FADE_IN_MS
+      } else {
+        // Animation complete
+        floorTransitionAlpha = 1.0
+        floorTransitionStartTime = null
+      }
+    }
+
     ctx.fillStyle = colors.bg
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 
@@ -248,7 +285,9 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       ctx.translate(-pipNatX, -pipNatY)
     }
 
+    ctx.globalAlpha = floorTransitionAlpha
     drawMap(ctx, state.grid, state.fog, state.camera, state.pip, DUNGEON)
+    ctx.globalAlpha = 1.0
     ctx.restore()
 
     // ── Navigation panel (background layer; hidden once encounter panel covers it) ──

@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 022 · Dungeon Structure: Multi-Floor, Pacing & Boss Gate
+
+**Shipped:** 2026-06-05 · **PR:** (link to be added after merge) · **Spec:** [docs/features/history/022-dungeon-structure.md](docs/features/history/022-dungeon-structure.md)
+
+Three floors replace the endless map. Room offers are **depth-and-floor weighted** from a tuning config (corridors and shops shallow, enemies and traps deep). A **Stairwell** room type unlocks at a per-floor tile threshold and descends one-way. On Floor 3 the **Boss room** is the only exit — its offer weight is a product of a tiles-explored factor and a Manhattan-distance tier factor, so it lurks far from where Pip arrived. Exactly one Shop is guaranteed per floor via a debt mechanism. Trap tiles carry a `trapDifficulty` value scaled to floor and depth. All constants live in `src/dungeon/tuning.ts`.
+
+---
+
 ### 037 · Combat Overhaul: Intents, Active Defence & Panel Redesign
 
 **Shipped:** 2026-06-05 · **PR:** [#77](https://github.com/thesnwmn/pip-and-peril/pull/77) · **Spec:** [docs/features/history/037-combat-overhaul.md](docs/features/history/037-combat-overhaul.md)

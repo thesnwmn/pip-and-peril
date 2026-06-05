@@ -41,19 +41,6 @@ parchment-warm panel styling all specced.
 **Depends on:** 019 (gold), 020 (items, `acquireItem`), 034 (encounter registry).
 See `docs/features/027-shop-encounter.md` for the full spec.
 
-### 022 · Dungeon Structure: Multi-Floor, Pacing & Boss Gate
-
-Three floors replace the endless map. Room offers are **depth-and-floor weighted** from a tuning
-config (corridors and shops shallow, enemies and traps deep). A **Stairwell** room type unlocks at
-a per-floor tile threshold and descends one-way. On Floor 3 the **Boss room** is the only exit —
-its offer weight is a product of a tiles-explored factor and a Manhattan-distance tier factor, so it
-lurks far from where Pip arrived. Exactly one Shop is guaranteed per floor via a debt mechanism.
-Trap tiles carry a `trapDifficulty` value scaled to floor and depth. All constants live in
-`src/dungeon/tuning.ts`.
-**Depends on:** 004 (room offer logic). *(Note: 025 and 038 both depend on this item — they consume
-the `trapDifficulty` values and enemy tier definitions it introduces. 022 can ship with the Goblin
-as the sole tier-1 enemy and with trap tiles placed but not yet triggering an encounter.)*
-See `docs/features/022-dungeon-structure.md` for the full spec.
 
 ### 024 · Run Summary Screen
 
