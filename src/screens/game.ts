@@ -16,6 +16,7 @@ import type { Inventory } from '../satchel/types'
 import { applyItemEffect } from '../satchel/items'
 import { createEncounterRegistry } from '../encounter/registry'
 import { createCombatEncounterPanel } from '../combat/combat-panel'
+import { createBossEncounterPanel, RAT_KING } from '../combat/boss-panel'
 import { createItemEncounterPanel } from '../encounter/item-panel'
 import { ITEM_CONFIG } from '../encounter/config'
 import {
@@ -217,6 +218,37 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         state = { ...state, pip: { col, row }, camera: { col, row }, uiState: 'idle' }
         dicePool = resetPool(dicePool)
         navPanel.clearWhisper()
+      },
+    },
+  })
+
+  // Register boss encounter.
+  registry.register({
+    trigger: (cell) => cell.roomType === 'boss' && cell.cleared !== true,
+    factory: (onComplete) => createBossEncounterPanel(
+      onComplete,
+      {
+        getPool: () => dicePool,
+        setPool: (p) => { dicePool = p },
+        getPipHp: () => pipHp,
+        setPipHp: (hp) => { pipHp = hp },
+        getPipMaxHp: () => pipMaxHp,
+        getInventory: () => inventory,
+        setInventory: (inv) => { inventory = inv },
+        getDungeonState: () => state,
+        setDungeonState: (s) => { state = s },
+      },
+      RAT_KING,
+      combatEntryFrom,
+    ),
+    handlers: {
+      'run-complete': () => {
+        resetRunState()
+        transitionTo('home')
+      },
+      defeat: () => {
+        resetRunState()
+        transitionTo('home')
       },
     },
   })
