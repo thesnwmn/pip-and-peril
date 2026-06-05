@@ -37,6 +37,12 @@ export interface EnemySpec {
   goldMax: number
   intents: IntentSet
   personality: EnemyPersonality
+  isBoss?: boolean
+  // Fixed-cycle intents: traversed in order instead of random selection
+  intentCycle?: Intent[]
+  enrageThreshold?: number   // HP at which to switch to enragedCycle (checked after player damage)
+  enragedCycle?: Intent[]    // intent cycle used once enraged
+  bossTitleCard?: { name: string; flavour: string }  // shown during intro sequence
 }
 
 export interface Enemy {
@@ -52,6 +58,12 @@ export interface Enemy {
   goldMin: number
   goldMax: number
   intents: IntentSet
+  // Cyclic intent state (copied from spec if intentCycle is set)
+  intentCycle?: Intent[]
+  cyclePosition?: number     // index of currently-shown intent in intentCycle
+  enrageThreshold?: number
+  enragedCycle?: Intent[]
+  enraged?: boolean
 }
 
 export interface PipState {

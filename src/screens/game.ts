@@ -16,7 +16,7 @@ import type { Inventory } from '../satchel/types'
 import { applyItemEffect } from '../satchel/items'
 import { createEncounterRegistry } from '../encounter/registry'
 import { createCombatEncounterPanel } from '../combat/combat-panel'
-import { createBossEncounterPanel, RAT_KING } from '../combat/boss-panel'
+import { getEnemySpec } from '../combat/roster'
 import { createItemEncounterPanel } from '../encounter/item-panel'
 import { ITEM_CONFIG } from '../encounter/config'
 import {
@@ -222,25 +222,34 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     },
   })
 
-  // Register boss encounter.
+  // Register boss encounter — same combat panel, different options.
   registry.register({
     trigger: (cell) => cell.roomType === 'boss' && cell.cleared !== true,
-    factory: (onComplete) => createBossEncounterPanel(
-      onComplete,
-      {
-        getPool: () => dicePool,
-        setPool: (p) => { dicePool = p },
-        getPipHp: () => pipHp,
-        setPipHp: (hp) => { pipHp = hp },
-        getPipMaxHp: () => pipMaxHp,
-        getInventory: () => inventory,
-        setInventory: (inv) => { inventory = inv },
-        getDungeonState: () => state,
-        setDungeonState: (s) => { state = s },
-      },
-      RAT_KING,
-      combatEntryFrom,
-    ),
+    factory: (onComplete) => {
+      const tile = state.grid.cells[state.pip.row][state.pip.col]
+      const bossSpec = getEnemySpec(tile?.enemyId ?? 'rat-king')
+      return createCombatEncounterPanel(
+        onComplete,
+        {
+          getPool: () => dicePool,
+          setPool: (p) => { dicePool = p },
+          getPipHp: () => pipHp,
+          setPipHp: (hp) => { pipHp = hp },
+          getPipMaxHp: () => pipMaxHp,
+          getInventory: () => inventory,
+          setInventory: (inv) => { inventory = inv },
+          getDungeonState: () => state,
+          setDungeonState: (s) => { state = s },
+        },
+        combatEntryFrom,
+        {
+          victoryOutcome: 'run-complete',
+          intro: bossSpec.bossTitleCard
+            ? { titleCard: bossSpec.bossTitleCard, wideZoom: 0.75 }
+            : undefined,
+        },
+      )
+    },
     handlers: {
       'run-complete': () => {
         resetRunState()

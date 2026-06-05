@@ -151,6 +151,10 @@ export function placeRoom(
     cell.enemyId = selectEnemyOfTier(tier)
   }
 
+  if (offering.roomType === 'boss') {
+    cell.enemyId = 'rat-king'
+  }
+
   newCells[targetPos.row][targetPos.col] = cell
   const newGrid = { ...state.grid, cells: newCells }
 

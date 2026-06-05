@@ -241,6 +241,39 @@ const IRON_BEETLE: EnemySpec = {
   },
 }
 
+// ── BOSS ─────────────────────────────────────────────────────────────────────
+
+export const RAT_KING_SPEC: EnemySpec = {
+  id: 'rat-king',
+  name: 'The Rat King',
+  tier: 3,
+  maxHp: 20,
+  attack: 0,
+  goldMin: 15,
+  goldMax: 25,
+  intents: [],  // not used — intentCycle drives all intent selection
+  isBoss: true,
+  intentCycle: [
+    { kind: 'attack', value: 4 },
+    { kind: 'guard', value: 3 },
+    { kind: 'empower', value: 0 },
+    { kind: 'attack', value: 4 },
+  ],
+  enrageThreshold: 10,
+  enragedCycle: [
+    { kind: 'attack', value: 5 },
+    { kind: 'lunge', value: 8 },
+    { kind: 'attack', value: 5 },
+  ],
+  bossTitleCard: { name: 'THE RAT KING', flavour: 'Ancient. Patient. Hungry.' },
+  personality: {
+    attackLine: 'surges forward',
+    guardLine: 'coils defensively',
+    empowerLine: 'swells with dark energy',
+    lungeLine: 'leaps with terrible speed',
+  },
+}
+
 export const ENEMY_ROSTER: EnemySpec[] = [
   DUNGEON_RAT,
   GOBLIN_RUNT,
@@ -254,10 +287,11 @@ export const ENEMY_ROSTER: EnemySpec[] = [
   DUNGEON_ADDER,
   SHADOW_RAVEN,
   IRON_BEETLE,
+  RAT_KING_SPEC,
 ]
 
 export function spawnEnemy(spec: EnemySpec): Enemy {
-  return {
+  const base: Enemy = {
     id: spec.id,
     name: spec.name,
     hp: spec.maxHp,
@@ -266,11 +300,18 @@ export function spawnEnemy(spec: EnemySpec): Enemy {
     block: 0,
     empowered: false,
     disengaged: false,
-    isBoss: false,
+    isBoss: spec.isBoss ?? false,
     goldMin: spec.goldMin,
     goldMax: spec.goldMax,
     intents: spec.intents,
   }
+  if (spec.intentCycle) {
+    base.intentCycle = spec.intentCycle
+    base.cyclePosition = 0
+  }
+  if (spec.enrageThreshold !== undefined) base.enrageThreshold = spec.enrageThreshold
+  if (spec.enragedCycle) base.enragedCycle = spec.enragedCycle
+  return base
 }
 
 export function getEnemySpec(id: string): EnemySpec {
