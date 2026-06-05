@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 038 · Enemy Roster Expansion
+
+**Shipped:** 2026-06-05 · **PR:** (pending merge) · **Spec:** [docs/features/history/038-enemy-roster.md](docs/features/history/038-enemy-roster.md)
+
+Fills the 12-creature roster across three tiers with distinct personalities, weighted intent pools, and accurate stat distributions. Enemies are now selected by tier during room placement and spawned correctly at combat entry. Battle log uses personality-specific lines for immersion.
+
+---
+
 ### 047 · Combat Panel Layout Redesign
 
 **Shipped:** 2026-06-05 · **PR:** #TBD · **Spec:** [docs/features/history/047-combat-panel-layout.md](docs/features/history/047-combat-panel-layout.md)
