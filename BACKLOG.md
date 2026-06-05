@@ -32,6 +32,21 @@ all of this without a refactor. After 046, combat is mechanically complete at th
 data), 044 (items that fire in the Tenacity window).
 See `docs/features/046-combat-depth.md` for the full spec.
 
+### 038 · Enemy Roster Expansion
+
+Feature 022 (dungeon structure) weights rooms toward "tier-1", "tier-2", and "tier-3" enemies
+across floors and depth phases, but today only one enemy type exists (the Goblin). This feature
+fills the roster: twelve named creatures across three tiers, each with HP, gold range, a
+**weighted intent pool** (Tier 1 uses Attack/Guard; Tier 2 adds Empower/Recover; Tier 3 adds
+Lunge/Status-Poison), and a **personality** object with per-intent-kind log-line strings that
+make each fight feel distinct. Enemy rooms store the selected creature ID on the tile at placement
+time; combat reads that ID to spawn the correct enemy. Run-depth-window intent scaling is deferred
+to 029.
+**Depends on:** 037 (combat overhaul), 046 (full intent set — 038 removes the TODO-038 Goblin
+test entries and populates the production roster), 022 (tier references and weighting system).
+*(Absorbs Idea 012 · Creature Personality Traits.)*
+See `docs/features/038-enemy-roster.md` for the full spec.
+
 ### 027 · Shop Encounter
 
 The gold **Shop**: a warm merchant panel where Pip spends earned gold on items — the *sink* that
@@ -84,34 +99,14 @@ See `docs/features/023-boss-encounter.md` for the full spec.
 
 ## NEEDS SPEC
 
-> **The combat overhaul (037) comes first, then 046 immediately after.** 037 replaces the combat
-> flow itself; 046 completes the base combat layer (Blue/Yellow, full intents, advanced actions).
-> Everything that touches a fight sits behind both — **038** (enemy roster, which now needs
-> per-tier intent sets including the 046 intents) and the whole item layer. The non-combat
-> encounters (**025** trap, **026** chest, **027** shop) and the dungeon structure (**022**) are
-> independent of the combat loop and proceed in parallel — they are in READY above. **023** (boss)
-> is now also READY and moves above. The order below is **recommended build order**
-> (dependency-respecting; the Planner sets final priority): **037 → 046 → 038 → 028 → 029**.
-> Each item's *Depends on* notes carry the real ordering constraints.
+> **Recommended build order (dependency-respecting):** 037 → 046 → 038 → 028 → 029. 037 and
+> 046 are in READY above; 038 is now also READY. The non-combat encounters (025, 026, 027) and
+> dungeon structure (022) proceeded in parallel and are in READY above. 023 (boss) is READY above.
+> The Planner sets final priority; *Depends on* notes carry the real ordering constraints.
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) and **020 · Item System** — both already shipped. *(Item 036 · Raw Flee has been folded
 > into 037, which now owns the Flee action as part of the redesigned panel.)*
-
-### 038 · Enemy Roster Expansion
-
-Feature 022 (dungeon structure) weights rooms toward "tier-1", "tier-2", and "tier-3" enemies
-across floors and depth phases, but today only one enemy type exists (the Goblin). This feature
-fills the roster: new named creatures at each tier, with stats (HP, attack, gold reward range),
-their **per-tier intent sets** (which intents each tier can telegraph — including the 046 intents:
-Empower, Recover, Status/Poison, Lunge — gated by floor depth and run-depth window), and a
-**personality trait** per creature — one behavioural note that makes it read differently in the
-log/panel without new mechanics (Weasel *presses advantage*, Old Gloop *hunkers*, Pale Adder
-*strikes once, waits*). Weaker enemies dominate shallowly; tier-2/3 gate to deeper floors. Enemy
-room placement in 022 pulls from this roster once it ships.
-**Depends on:** 037 (combat overhaul), 046 (full intent set — 038 populates intent data for all
-six kinds), 022 (tier references and weighting system), 006 (combat loop).
-*(Absorbs Idea 012 · Creature Personality Traits.)*
 
 ### 028 · NPC Encounter
 
