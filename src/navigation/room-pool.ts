@@ -54,31 +54,8 @@ export function getRoomWeights(context: RoomWeightContext): Record<RoomType, num
 
 function computeBossWeight(context: RoomWeightContext): number {
   if (context.floor !== 3) return 0
-  if (context.floorTilesPlaced < DUNGEON_TUNING.BOSS_MIN_EXPLORATION) return 0
-
-  const distance = Math.abs(context.candidatePos.col - context.floorEntryPosition.col) +
-                   Math.abs(context.candidatePos.row - context.floorEntryPosition.row)
-
-  if (distance < DUNGEON_TUNING.BOSS_DIST_MIN) return 0
-
-  let tierFactor: number
-  if (distance < DUNGEON_TUNING.BOSS_DIST_MID) {
-    tierFactor = 0.10
-  } else if (distance < DUNGEON_TUNING.BOSS_DIST_OUTER) {
-    tierFactor = 0.35
-  } else {
-    tierFactor = 1.00
-  }
-
-  const explorationFactor = Math.min(
-    1.0,
-    Math.max(
-      0,
-      (context.floorTilesPlaced - DUNGEON_TUNING.BOSS_MIN_EXPLORATION) / DUNGEON_TUNING.BOSS_EXPLORATION_SCALE,
-    ),
-  )
-
-  return DUNGEON_TUNING.BASE_BOSS_WEIGHT * explorationFactor * tierFactor
+  // TEMPORARY: Always show boss room as an option on floor 3 for testing
+  return 50
 }
 
 export const LOG_MESSAGES: Partial<Record<RoomType, string[]>> = {
