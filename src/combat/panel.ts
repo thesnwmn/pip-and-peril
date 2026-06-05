@@ -618,30 +618,12 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
 
   // Flee pending confirmation (drawn outside submenu block so it shows when openCategory is null)
   if (inPlayerTurn && s.fleePending) {
-    const fleeMidY = MIDDLE_ZONE_Y + MIDDLE_ZONE_H / 2
-    const fleeText = 'Tap Flee again to escape — takes one free hit'
-
-    // Draw semi-transparent background box
-    ctx.font = 'bold 13px monospace'
-    const textW = ctx.measureText(fleeText).width
-    const boxW = textW + 20
-    const boxH = 32
-    const boxX = MAP_X + MAP_W / 2 - boxW / 2
-    const boxY = fleeMidY - boxH / 2
-
-    roundRect(ctx, boxX, boxY, boxW, boxH, 6)
-    ctx.fillStyle = 'rgba(139, 0, 0, 0.3)'
-    ctx.fill()
-    ctx.strokeStyle = '#ff6060'
-    ctx.lineWidth = 1.5
-    ctx.stroke()
-
-    // Draw text
-    ctx.font = 'bold 13px monospace'
-    ctx.fillStyle = '#ff8080'
+    const fleeY = ROLL_BTN_Y - 16
+    ctx.font = '11px monospace'
+    ctx.fillStyle = '#e8a0a0'
     ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(fleeText, MAP_X + MAP_W / 2, fleeMidY)
+    ctx.textBaseline = 'bottom'
+    ctx.fillText('Tap Flee again to take one free hit', MAP_X + MAP_W / 2, fleeY)
   } else if (!inPlayerTurn && lastEnemyHeadline) {
     // ── Enemy action display (awaiting-roll only, after first turn) ──
     // Center vertically between dice and bottom buttons
