@@ -69,6 +69,17 @@ that make chests feel like a genuine reward tier above item rooms.
 **Depends on:** 019 (gold), 020 (items), 025 (trapped variant), 030 (encounter panel), 034 (encounter registry).
 See `docs/features/026-chest-encounter.md` for the full spec.
 
+### 023 · Boss Encounter & Run Completion
+
+The cinematic boss fight and run-completion flow. Intro sequence (camera pull-back, title card,
+camera tighten), then the **Rat King** combat: a 4-intent Phase 1 cycle (Attack → Guard → Empower
+→ Attack×2) giving way at 50% HP to a brutal 3-intent Phase 2 (Attack → Lunge → Attack). A
+`BossSpec` data shape makes adding further bosses a data change, not a panel rewrite. Run
+completion and all defeat routing to Home specced.
+**Depends on:** 037 (combat overhaul), 046 (combat depth — Empower and Lunge intent kinds), 019
+(gold reward), 022 (boss room placement), 034 (encounter registry).
+See `docs/features/023-boss-encounter.md` for the full spec.
+
 ---
 
 ## NEEDS SPEC
@@ -76,12 +87,12 @@ See `docs/features/026-chest-encounter.md` for the full spec.
 > **The combat overhaul (037) comes first, then 046 immediately after.** 037 replaces the combat
 > flow itself; 046 completes the base combat layer (Blue/Yellow, full intents, advanced actions).
 > Everything that touches a fight sits behind both — **038** (enemy roster, which now needs
-> per-tier intent sets including the 046 intents), **023** (boss), and the whole item layer. The
-> non-combat encounters (**025** trap, **026** chest, **027** shop) and the dungeon structure
-> (**022**) are independent of the combat loop and proceed in parallel — they are in READY above.
-> The order below is **recommended build order** (dependency-respecting; the Planner sets final
-> priority): **037 → 046 → 038 → 023 → 028 → 029**. Each item's *Depends on* notes carry the real
-> ordering constraints.
+> per-tier intent sets including the 046 intents) and the whole item layer. The non-combat
+> encounters (**025** trap, **026** chest, **027** shop) and the dungeon structure (**022**) are
+> independent of the combat loop and proceed in parallel — they are in READY above. **023** (boss)
+> is now also READY and moves above. The order below is **recommended build order**
+> (dependency-respecting; the Planner sets final priority): **037 → 046 → 038 → 028 → 029**.
+> Each item's *Depends on* notes carry the real ordering constraints.
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) and **020 · Item System** — both already shipped. *(Item 036 · Raw Flee has been folded
@@ -101,19 +112,6 @@ room placement in 022 pulls from this roster once it ships.
 **Depends on:** 037 (combat overhaul), 046 (full intent set — 038 populates intent data for all
 six kinds), 022 (tier references and weighting system), 006 (combat loop).
 *(Absorbs Idea 012 · Creature Personality Traits.)*
-
-### 023 · Boss Encounter & Run Completion
-
-The cinematic boss fight and run-completion flow. The intro (camera pull-back, title card, camera
-tighten) and the completion plumbing (parchment "Run Complete" banner → Home; all defeat paths to
-Home) are sound, **but the fight itself must be re-specced against 037**: the boss uses a **fixed,
-learnable intent cycle** (3–4 intents) that the player decodes and plans against, escalating at the
-Enrage threshold — not the old fixed "20 HP, 3 atk, enrage to 5" against the superseded combat
-loop. The existing `docs/features/023-boss-encounter.md` predates the overhaul and needs a
-Designer revision pass before it is READY.
-**Depends on:** 037 (combat overhaul + boss intent cycles), 019 (gold reward pattern), 022 (boss
-room placement), 034 (encounter registry).
-*(Absorbs Idea 043 · Boss Fixed Intent Cycles. Old spec retained for reference until re-specced.)*
 
 ### 028 · NPC Encounter
 
