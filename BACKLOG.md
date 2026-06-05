@@ -39,6 +39,18 @@ actions, Tenacity) is **046**, built on top.
 **Depends on:** 006 (combat loop), 030 (elastic canvas panel), 005 (dice), 020 (fled state).
 See `docs/features/037-combat-overhaul.md` for the full spec.
 
+### 046 · Combat Depth: Blue & Yellow, Full Intents & Advanced Actions
+
+The second combat layer, built directly on top of 037. Adds the four remaining **enemy intents**
+(💢 Empower, 😴 Recover, 🕸️ Status/Poison, ☠️ Lunge) and the **two-turn telegraph** revealed via
+Analyse; the **Blue category** (Analyse, Exploit, Resist, Identify) and **Yellow** (Convert 2:1,
+Lucky Shot); the extra spend actions (Shove 3🔴; Feint 2🟢, Disengage 3🟢); and the **Tenacity
+post-spend window** — the hook the item framework (Idea 044) plugs into. 037 was built to accept
+all of this without a refactor. After 046, combat is mechanically complete at the base layer.
+**Depends on:** 037 (combat overhaul). *Pairs with:* 038 (populates new intent sets in enemy
+data), 044 (items that fire in the Tenacity window).
+See `docs/features/046-combat-depth.md` for the full spec.
+
 ### 027 · Shop Encounter
 
 The gold **Shop**: a warm merchant panel where Pip spends earned gold on items — the *sink* that
@@ -93,14 +105,15 @@ See `docs/features/026-chest-encounter.md` for the full spec.
 
 ## NEEDS SPEC
 
-> **The combat overhaul (037) comes first.** 037 replaces the combat flow itself, so every item
-> that touches a fight sits behind it — **046** (the combat depth layer), **023** (boss), **038**
-> (enemy roster, which now needs per-tier *intent sets*), and the whole item layer. The non-combat
-> encounters (**025** trap, **026** chest, **027** shop) and the dungeon structure (**022**) are
-> independent of the combat loop and proceed in parallel — they are in READY above. The order below
-> is **recommended build order** (dependency-respecting; the Planner sets final priority):
-> **037 → 038 → 046 → 023 → 028 → 029**. Each item's *Depends on* notes carry the real ordering
-> constraints.
+> **The combat overhaul (037) comes first, then 046 immediately after.** 037 replaces the combat
+> flow itself; 046 completes the base combat layer (Blue/Yellow, full intents, advanced actions).
+> Everything that touches a fight sits behind both — **038** (enemy roster, which now needs
+> per-tier intent sets including the 046 intents), **023** (boss), and the whole item layer. The
+> non-combat encounters (**025** trap, **026** chest, **027** shop) and the dungeon structure
+> (**022**) are independent of the combat loop and proceed in parallel — they are in READY above.
+> The order below is **recommended build order** (dependency-respecting; the Planner sets final
+> priority): **037 → 046 → 038 → 023 → 028 → 029**. Each item's *Depends on* notes carry the real
+> ordering constraints.
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) and **020 · Item System** — both already shipped. *(Item 036 · Raw Flee has been folded
@@ -111,27 +124,15 @@ See `docs/features/026-chest-encounter.md` for the full spec.
 Feature 022 (dungeon structure) weights rooms toward "tier-1", "tier-2", and "tier-3" enemies
 across floors and depth phases, but today only one enemy type exists (the Goblin). This feature
 fills the roster: new named creatures at each tier, with stats (HP, attack, gold reward range),
-their **per-tier intent sets** (which of the 037 intents each tier can telegraph, gated by floor
-depth and run-depth window), and a **personality trait** per creature — one behavioural note that
-makes it read differently in the log/panel without new mechanics (Weasel *presses advantage*, Old
-Gloop *hunkers*, Pale Adder *strikes once, waits*). Weaker enemies dominate shallowly; tier-2/3
-gate to deeper floors. Enemy room placement in 022 pulls from this roster once it ships.
-**Depends on:** 037 (combat overhaul — intents, the action model enemies plug into), 022 (tier
-references and weighting system), 006 (combat loop).
+their **per-tier intent sets** (which intents each tier can telegraph — including the 046 intents:
+Empower, Recover, Status/Poison, Lunge — gated by floor depth and run-depth window), and a
+**personality trait** per creature — one behavioural note that makes it read differently in the
+log/panel without new mechanics (Weasel *presses advantage*, Old Gloop *hunkers*, Pale Adder
+*strikes once, waits*). Weaker enemies dominate shallowly; tier-2/3 gate to deeper floors. Enemy
+room placement in 022 pulls from this roster once it ships.
+**Depends on:** 037 (combat overhaul), 046 (full intent set — 038 populates intent data for all
+six kinds), 022 (tier references and weighting system), 006 (combat loop).
 *(Absorbs Idea 012 · Creature Personality Traits.)*
-
-### 046 · Combat Depth: Blue & Yellow, Full Intents & Advanced Actions
-
-The richer combat layer that builds on the 037 overhaul, once the basic fight is in. Adds the
-remaining **enemy intents** (💢 Empower, 😴 Recover, 🕸️ Status, ☠️ Lunge) and the two-turn
-telegraph; the **Blue** category (Analyse, Exploit, Resist, Identify) and **Yellow** (2:1 convert,
-Lucky Shot); the extra colour-spend actions (Shove 3🔴; Feint 2🟢, Disengage 3🟢); and the
-**Tenacity** post-spend window — the in-combat hook the item framework (Idea 044) plugs into. 037
-is built to take all of this as data without a refactor (string-union intents, data-driven category
-submenus, headroom in the intent overlay). The per-tier intent *pools* and floor/run-depth gating
-are 038's to populate; 046 owns the *mechanisms*.
-**Depends on:** 037 (combat overhaul — the structures this extends). Pairs with 038 (roster intent
-sets) and 044 (item framework, for the Tenacity window).
 
 ### 023 · Boss Encounter & Run Completion
 
