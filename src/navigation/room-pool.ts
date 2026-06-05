@@ -53,8 +53,7 @@ export function getRoomWeights(context: RoomWeightContext): Record<RoomType, num
 }
 
 function computeBossWeight(context: RoomWeightContext): number {
-  if (context.floor !== 3) return 0
-  // TEMPORARY: Always show boss room as an option on floor 3 for testing
+  // TEMPORARY: Always show boss room as an option on all floors for testing
   return 50
 }
 
