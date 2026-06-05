@@ -1,7 +1,7 @@
 # 022 · Dungeon Structure: Multi-Floor, Pacing & Boss Gate
 
 **Status:** READY
-**Source idea:** Manager request; `docs/concept.md` (Dungeon Structure)
+**Source idea:** Manager request; `docs/concept/overview.md` (Dungeon Structure)
 **Depends on:** 004 (room offer logic). *(Note: 025 and 038 depend on this spec — 025 reads the `trapDifficulty` values set here; 038 fills the enemy tier slots defined in tuning. This item can ship with Goblin as the sole tier-1 entry and trap tiles placed but not yet triggering an encounter.)*
 
 ---

@@ -307,7 +307,7 @@ The coating slot rule above is a natural early pressure point even before any fo
 ---
 
 *Related:*
-- `docs/concept.md` — core pillars, dice pool, meta-progression overview
+- `docs/concept/overview.md` — core pillars, dice pool, meta-progression overview
 - `IDEAS.md` — specific item ideas seeded from this document (Ideas 019–022, 024–028)
 - `docs/features/history/020-item-system-consumables.md` — current item catalog and data model
 - `docs/features/026-chest-encounter.md` — chest as item source (Iron Thimble already specced)

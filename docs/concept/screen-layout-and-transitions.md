@@ -622,5 +622,5 @@ should feel like it could blow away in a dungeon draft.
 
 *Related:*
 - `IDEAS.md` Idea 012 — Immersive Combat Overlay (the original seed this expands from)
-- `docs/concept.md` — core pillars, palette, game states
+- `docs/concept/overview.md` — core pillars, palette, game states
 - `docs/concept/tiles-and-props.md` — tile rendering; the "stage" this layout sits on top of

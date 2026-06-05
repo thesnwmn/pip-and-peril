@@ -144,7 +144,7 @@ wants the outer loop closed.
 **Depends on:** 024 (scraps awarded at run end), 019/016 (currency model + persistence).
 **Suggested stepping (for the Designer):** ① earn + persist scraps and a hub screen; ② dice
 upgrades (swap d6→d8, add a die); ③ engrave faces / passive skills.
-**Related:** `docs/concept.md` (Meta Progression), `docs/concept/screen-layout-and-transitions.md`
+**Related:** `docs/concept/overview.md` (Meta Progression), `docs/concept/screen-layout-and-transitions.md`
 (Meta-Progression Hub direction sketch).
 
 ---

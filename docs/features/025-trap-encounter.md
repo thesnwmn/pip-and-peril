@@ -1,7 +1,7 @@
 # 025 · Trap Encounter
 
 **Status:** READY
-**Source idea:** Manager request; backlog item; `docs/concept.md` (Non-combat encounters); `docs/concept/screen-layout-and-transitions.md` (Trap)
+**Source idea:** Manager request; backlog item; `docs/concept/overview.md` (Non-combat encounters); `docs/concept/screen-layout-and-transitions.md` (Trap)
 **Depends on:** 004 (room entry trigger), 005 (dice pool), 022 (sets `trapDifficulty` on tile at placement), 030 (encounter panel + snap camera mode — shipped)
 
 ---

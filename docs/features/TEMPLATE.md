@@ -51,7 +51,7 @@ logic/data features.*
 
 **Color tokens**
 
-New named tokens introduced by this feature. Extend the palette established in `docs/concept.md`;
+New named tokens introduced by this feature. Extend the palette established in `docs/concept/overview.md`;
 don't invent new values without a rationale.
 
 | Token | Value | Used for |
