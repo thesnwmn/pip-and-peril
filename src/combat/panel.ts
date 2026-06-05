@@ -15,7 +15,7 @@ const SIDE_MARGIN = 16
 // Dice row (no HP bars; dice are the hero element).
 export const DIE_ROW_Y = PANEL_TOP + 14
 export const DIE_SIZE = 68
-const DIE_GAP = 10
+const DIE_GAP = 12
 const DIE_RADIUS = 12
 const PIP_DOT_R = 4.5
 
@@ -27,7 +27,8 @@ export const PIP_BTN_H = 44
 // Middle zone (for submenu or enemy action display).
 const MIDDLE_ZONE_Y = PIP_BTN_Y + PIP_BTN_H + 10
 const MIDDLE_ZONE_H = 120
-export const SUBMENU_Y = MIDDLE_ZONE_Y
+export const SUBMENU_Y = MIDDLE_ZONE_Y + 12  // Add padding to top of submenu
+const SUBMENU_TOP_PAD = 12
 
 // Bottom button row (Flee | ROLL/END TURN | Item).
 export const ROLL_BTN_H = 44
@@ -37,9 +38,9 @@ export const ROLL_BTN_Y = BOTTOM_BTN_Y
 const ROLL_BTN_X = MAP_X + SIDE_MARGIN
 const ROLL_BTN_W = MAP_W - SIDE_MARGIN * 2
 
-// Pip buttons sizing
-const PIP_BTN_W = DIE_SIZE  // ~68px
-const PIP_BTN_CENTER_GAP = DIE_GAP
+// Pip buttons sizing - spread across full width matching bottom buttons
+const PIP_BTN_W = Math.floor((ROLL_BTN_W - 24) / 4)  // 4 buttons with 6px gaps
+const PIP_BTN_GAP = 6
 
 // Bottom button row sizing
 const BTN_ROW_SIDE_W = Math.floor((ROLL_BTN_W - 10) / 4)  // Flee and Item: ~84px each
@@ -47,8 +48,8 @@ const BTN_ROW_CENTER_W = ROLL_BTN_W - BTN_ROW_SIDE_W * 2 - 20  // ROLL/END TURN:
 
 // Submenu area
 const SUBMENU_BTN_W = Math.floor((MAP_W - SIDE_MARGIN * 2 - 8) / 2)  // 160
-const SUBMENU_BTN_H = 40
-const SUBMENU_NOTE_H = 20
+const SUBMENU_BTN_H = 50  // Increased from 40
+const SUBMENU_NOTE_H = 32  // Increased from 20
 
 // Legacy category button constants (for compatibility)
 export const CAT_BTN_Y = PIP_BTN_Y
@@ -133,10 +134,10 @@ export function dieCentres(diceCount: number): number[] {
 }
 
 export function pipBtnX(idx: number, totalDice: number): number {
-  // Align pip buttons with bottom button row left edge, spaced evenly across the panel
-  const totalW = totalDice * PIP_BTN_W + (totalDice - 1) * 8  // 8px gap between buttons
-  const startX = MAP_X + (MAP_W - totalW) / 2
-  return startX + idx * (PIP_BTN_W + 8)
+  // Spread pip buttons across full width, matching bottom button row
+  const totalW = totalDice * PIP_BTN_W + (totalDice - 1) * PIP_BTN_GAP
+  const startX = ROLL_BTN_X + (ROLL_BTN_W - totalW) / 2
+  return startX + idx * (PIP_BTN_W + PIP_BTN_GAP)
 }
 
 // ── Die face ──────────────────────────────────────────────────────────────────
@@ -535,15 +536,15 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
       // Live note
       ctx.font = '11px monospace'
       ctx.fillStyle = colors.pipBadgeGreenText
-      ctx.textAlign = 'left'
+      ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(
         `Reserve: ${reserveNoteText(combat.reservedGreen)}`,
-        MAP_X + SIDE_MARGIN,
+        MAP_X + MAP_W / 2,
         SUBMENU_Y + SUBMENU_NOTE_H / 2,
       )
 
-      const btnY = SUBMENU_Y + SUBMENU_NOTE_H + 4
+      const btnY = SUBMENU_Y + SUBMENU_NOTE_H + 8
       drawSubmenuBtn(ctx, {
         id: 'reserve', label: '+Reserve', costLabel: '1🟢',
         affordable: canAfford(pool, { green: 1 }),
@@ -615,41 +616,31 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     }
 
     if (s.fleePending) {
-      ctx.font = 'bold 12px monospace'
+      ctx.font = 'bold 13px monospace'
       ctx.fillStyle = '#e8a0a0'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText('Tap Flee again to escape — takes one free hit', MAP_X + MAP_W / 2, SUBMENU_Y + SUBMENU_NOTE_H / 2)
+      const fleeMidY = MIDDLE_ZONE_Y + MIDDLE_ZONE_H / 2
+      ctx.fillText('Tap Flee again to escape — takes one free hit', MAP_X + MAP_W / 2, fleeMidY)
     }
   } else if (!inPlayerTurn && lastEnemyHeadline) {
     // ── Enemy action display (awaiting-roll only, after first turn) ──
-    const boxX = MAP_X + SIDE_MARGIN
-    const boxW = MAP_W - SIDE_MARGIN * 2
-    const boxY = MIDDLE_ZONE_Y
-    const boxH = MIDDLE_ZONE_H
-    const accentColor = lastEnemyKind === 'guard' ? GUARD_STEEL_COLOR : ENEMY_RED_COLOR
-
-    roundRect(ctx, boxX, boxY, boxW, boxH, 8)
-    ctx.fillStyle = colors.surface
-    ctx.fill()
-    ctx.globalAlpha = 0.3
-    ctx.strokeStyle = accentColor
-    ctx.lineWidth = 1
-    ctx.stroke()
-    ctx.globalAlpha = 1
+    // Center vertically between dice and bottom buttons
+    const diceBottomY = DIE_ROW_Y + DIE_SIZE
+    const topOfBottomBtn = ROLL_BTN_Y
+    const centerY = (diceBottomY + topOfBottomBtn) / 2
 
     const cx = MAP_X + MAP_W / 2
-    const midY = boxY + boxH / 2
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
 
     ctx.font = 'bold 15px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = accentColor
-    ctx.fillText(lastEnemyHeadline, cx, midY - 14)
+    ctx.fillStyle = lastEnemyKind === 'guard' ? GUARD_STEEL_COLOR : ENEMY_RED_COLOR
+    ctx.fillText(lastEnemyHeadline, cx, centerY - 16)
 
     ctx.font = '14px monospace'
     ctx.fillStyle = colors.textPrimary
-    ctx.fillText(lastEnemyDetail, cx, midY + 14)
+    ctx.fillText(lastEnemyDetail, cx, centerY + 16)
   }
 
   // ── Bottom button row (Flee | ROLL/END TURN | Item) ──
