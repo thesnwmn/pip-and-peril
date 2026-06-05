@@ -368,3 +368,59 @@ describe('descendFloor', () => {
     expect(next.floor).toBe(3)
   })
 })
+
+describe('Enemy tier selection and placement', () => {
+  it('places enemy rooms with an enemyId', () => {
+    const base = initDungeon()
+    const state = stateWithCell(base, 5, 5, 'corridor', N | S)
+    const offering = { roomType: 'enemy' as const, exits: N }
+    const next = placeRoom(state, offering, { col: 6, row: 5 })
+    const cell = next.grid.cells[5][6]
+    expect(cell).not.toBeNull()
+    expect(cell!.enemyId).toBeDefined()
+    expect(typeof cell!.enemyId).toBe('string')
+  })
+
+  it('assigns valid enemyIds', () => {
+    const base = initDungeon()
+    const validIds = [
+      'dungeon-rat', 'goblin-runt', 'cave-bat-pup', 'dung-beetle',
+      'weasel-scout', 'toad-sentry', 'goblin-guard', 'cave-spider',
+      'stoat-champion', 'dungeon-adder', 'shadow-raven', 'iron-beetle',
+    ]
+    for (let i = 0; i < 50; i++) {
+      const state = stateWithCell(base, 5, 5, 'corridor', N | S)
+      const offering = { roomType: 'enemy' as const, exits: N }
+      const next = placeRoom(state, offering, { col: 6, row: 5 })
+      const cell = next.grid.cells[5][6]
+      expect(validIds).toContain(cell!.enemyId)
+    }
+  })
+
+  it('respects tier distribution for floor 1 early phase', () => {
+    const base = initDungeon()
+    const tierCounts: Record<1 | 2 | 3, number> = { 1: 0, 2: 0, 3: 0 }
+    const tierMap: Record<string, 1 | 2 | 3> = {
+      'dungeon-rat': 1, 'goblin-runt': 1, 'cave-bat-pup': 1, 'dung-beetle': 1,
+      'weasel-scout': 2, 'toad-sentry': 2, 'goblin-guard': 2, 'cave-spider': 2,
+      'stoat-champion': 3, 'dungeon-adder': 3, 'shadow-raven': 3, 'iron-beetle': 3,
+    }
+    for (let i = 0; i < 1000; i++) {
+      const state = stateWithCell(base, 5, 5, 'corridor', N | S)
+      const offering = { roomType: 'enemy' as const, exits: N }
+      const next = placeRoom(state, offering, { col: 6, row: 5 })
+      const cell = next.grid.cells[5][6]
+      const tier = tierMap[cell!.enemyId!]
+      tierCounts[tier]++
+    }
+    const total = 1000
+    const t1Pct = tierCounts[1] / total
+    const t2Pct = tierCounts[2] / total
+    const t3Pct = tierCounts[3] / total
+    expect(t1Pct).toBeGreaterThan(0.8)
+    expect(t1Pct).toBeLessThan(1.0)
+    expect(t2Pct).toBeGreaterThan(0.0)
+    expect(t2Pct).toBeLessThan(0.2)
+    expect(t3Pct).toBe(0)
+  })
+})

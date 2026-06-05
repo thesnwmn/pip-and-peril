@@ -6,6 +6,7 @@ import type { DungeonState, RoomOffering } from './dungeon-state'
 import { pickRandom, CARD_TEASES, getRoomWeights, getDepthPhase } from './room-pool'
 import { CATALOG_ITEMS } from '../satchel/catalog'
 import { DUNGEON_TUNING } from '../dungeon/tuning'
+import { ENEMY_ROSTER } from '../combat/roster'
 
 export { CARD_TEASES }
 
@@ -113,6 +114,22 @@ function getTrapDifficulty(floor: 1 | 2 | 3, floorTilesPlaced: number): number {
   return randomIntRange(range.min, range.max)
 }
 
+function selectEnemyTier(floor: 1 | 2 | 3, floorTilesPlaced: number): 1 | 2 | 3 {
+  const depthPhase = getDepthPhase(floor, floorTilesPlaced)
+  const weights = DUNGEON_TUNING.enemyTierWeights[floor][depthPhase]
+  const total = weights.t1 + weights.t2 + weights.t3
+  let rand = Math.random() * total
+  if (rand < weights.t1) return 1
+  rand -= weights.t1
+  if (rand < weights.t2) return 2
+  return 3
+}
+
+function selectEnemyOfTier(tier: 1 | 2 | 3): string {
+  const candidates = ENEMY_ROSTER.filter(e => e.tier === tier)
+  return candidates[Math.floor(Math.random() * candidates.length)].id
+}
+
 export function placeRoom(
   state: DungeonState,
   offering: RoomOffering,
@@ -127,6 +144,11 @@ export function placeRoom(
 
   if (offering.roomType === 'trap') {
     cell.trapDifficulty = getTrapDifficulty(state.floor, state.floorTilesPlaced)
+  }
+
+  if (offering.roomType === 'enemy') {
+    const tier = selectEnemyTier(state.floor, state.floorTilesPlaced)
+    cell.enemyId = selectEnemyOfTier(tier)
   }
 
   newCells[targetPos.row][targetPos.col] = cell

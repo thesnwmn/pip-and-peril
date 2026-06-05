@@ -20,6 +20,7 @@ export interface TileCell {
   fled?: boolean
   itemId?: string
   trapDifficulty?: number
+  enemyId?: string
 }
 
 export interface GameMap {

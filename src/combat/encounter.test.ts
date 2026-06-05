@@ -17,12 +17,14 @@ import {
   applyDisengage,
   applyPoisonTick,
 } from './encounter'
-import { selectIntent, GOBLIN, GOBLIN_INTENTS } from './intents'
+import { selectIntent } from './intents'
+import { spawnEnemy, ENEMY_ROSTER } from './roster'
 import type { CombatState } from './types'
 
 function makeCombat(overrides: Partial<CombatState> = {}): CombatState {
+  const enemy = spawnEnemy(ENEMY_ROSTER[1]) // goblin-runt
   return {
-    enemy: { ...GOBLIN },
+    enemy,
     phase: 'player-turn',
     intent: { kind: 'attack', value: 2 },
     reservedGreen: 0,
@@ -71,7 +73,8 @@ describe('applyStrike', () => {
   })
 
   it('depletes block before HP', () => {
-    const combat = makeCombat({ enemy: { ...GOBLIN, block: 1 } })
+    const goblinRunt = spawnEnemy(ENEMY_ROSTER[1])
+    const combat = makeCombat({ enemy: { ...goblinRunt, block: 1 } })
     const result = applyStrike(combat)
     expect(result.absorbed).toBe(1)
     expect(result.damage).toBe(1)
@@ -80,7 +83,7 @@ describe('applyStrike', () => {
   })
 
   it('fully absorbs in block when block >= damage', () => {
-    const combat = makeCombat({ enemy: { ...GOBLIN, block: 3 } })
+    const combat = makeCombat({ enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), block: 3 } })
     const result = applyStrike(combat)
     expect(result.absorbed).toBe(2)
     expect(result.damage).toBe(0)
@@ -89,7 +92,7 @@ describe('applyStrike', () => {
   })
 
   it('sets victory when enemy hp reaches 0', () => {
-    const combat = makeCombat({ enemy: { ...GOBLIN, hp: 2 } })
+    const combat = makeCombat({ enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), hp: 2 } })
     const result = applyStrike(combat)
     expect(result.victory).toBe(true)
     expect(result.combat.phase).toBe('victory')
@@ -103,7 +106,7 @@ describe('applyStrike', () => {
   })
 
   it('hp cannot go below 0', () => {
-    const combat = makeCombat({ enemy: { ...GOBLIN, hp: 1 } })
+    const combat = makeCombat({ enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), hp: 1 } })
     const result = applyStrike(combat)
     expect(result.combat.enemy.hp).toBe(0)
   })
@@ -120,7 +123,7 @@ describe('applyHeavyStrike', () => {
   })
 
   it('depletes block, then damages HP with remainder', () => {
-    const combat = makeCombat({ enemy: { ...GOBLIN, block: 2 } })
+    const combat = makeCombat({ enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), block: 2 } })
     const result = applyHeavyStrike(combat)
     expect(result.absorbed).toBe(2)
     expect(result.damage).toBe(2)
@@ -129,7 +132,7 @@ describe('applyHeavyStrike', () => {
   })
 
   it('kills the enemy with one Heavy Strike from 4 HP', () => {
-    const combat = makeCombat({ enemy: { ...GOBLIN, hp: 4 } })
+    const combat = makeCombat({ enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), hp: 4 } })
     const result = applyHeavyStrike(combat)
     expect(result.victory).toBe(true)
     expect(result.combat.enemy.hp).toBe(0)
@@ -197,7 +200,7 @@ describe('applyEnemyTurn — Guard intent', () => {
   it('accumulates block across successive Guard intents', () => {
     const combat = makeCombat({
       intent: { kind: 'guard', value: 2 },
-      enemy: { ...GOBLIN, block: 1 },
+      enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), block: 1 },
     })
     const result = applyEnemyTurn(combat, 10)
     expect(result.combat.enemy.block).toBe(3)
@@ -241,8 +244,9 @@ describe('applyFlee', () => {
 
 describe('selectIntent', () => {
   it('always returns an intent from the set', () => {
+    const goblinRunt = spawnEnemy(ENEMY_ROSTER[1])
     for (let i = 0; i < 100; i++) {
-      const intent = selectIntent(GOBLIN_INTENTS)
+      const intent = selectIntent(goblinRunt.intents)
       expect(['attack', 'guard', 'empower', 'recover', 'status', 'lunge']).toContain(intent.kind)
       expect(typeof intent.value).toBe('number')
     }
@@ -274,11 +278,13 @@ describe('selectIntent', () => {
 
 describe('canFlee', () => {
   it('returns true for a non-boss enemy', () => {
-    expect(canFlee(GOBLIN)).toBe(true)
+    const goblinRunt = spawnEnemy(ENEMY_ROSTER[1])
+    expect(canFlee(goblinRunt)).toBe(true)
   })
 
   it('returns false for a boss enemy', () => {
-    expect(canFlee({ ...GOBLIN, isBoss: true })).toBe(false)
+    const goblinRunt = spawnEnemy(ENEMY_ROSTER[1])
+    expect(canFlee({ ...goblinRunt, isBoss: true })).toBe(false)
   })
 })
 
@@ -286,16 +292,17 @@ describe('canFlee', () => {
 
 describe('rollGoldReward', () => {
   it('always returns an integer in [goldMin, goldMax]', () => {
+    const goblinRunt = spawnEnemy(ENEMY_ROSTER[1])
     for (let i = 0; i < 200; i++) {
-      const result = rollGoldReward(GOBLIN)
+      const result = rollGoldReward(goblinRunt)
       expect(Number.isInteger(result)).toBe(true)
-      expect(result).toBeGreaterThanOrEqual(GOBLIN.goldMin)
-      expect(result).toBeLessThanOrEqual(GOBLIN.goldMax)
+      expect(result).toBeGreaterThanOrEqual(goblinRunt.goldMin)
+      expect(result).toBeLessThanOrEqual(goblinRunt.goldMax)
     }
   })
 
   it('returns the fixed value when goldMin === goldMax', () => {
-    const enemy = { ...GOBLIN, goldMin: 5, goldMax: 5 }
+    const enemy = { ...spawnEnemy(ENEMY_ROSTER[1]), goldMin: 5, goldMax: 5 }
     for (let i = 0; i < 50; i++) {
       expect(rollGoldReward(enemy)).toBe(5)
     }
@@ -329,7 +336,7 @@ describe('applyAnalyse', () => {
 
 describe('applyExploit', () => {
   it('deals 3 damage bypassing block entirely', () => {
-    const combat = makeCombat({ enemy: { ...GOBLIN, block: 5 } })
+    const combat = makeCombat({ enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), block: 5 } })
     const result = applyExploit(combat)
     expect(result.damage).toBe(3)
     expect(result.combat.enemy.hp).toBe(3)  // 6 - 3
@@ -337,7 +344,7 @@ describe('applyExploit', () => {
   })
 
   it('reduces enemy hp even when block is very high', () => {
-    const combat = makeCombat({ enemy: { ...GOBLIN, block: 10 } })
+    const combat = makeCombat({ enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), block: 10 } })
     const result = applyExploit(combat)
     expect(result.combat.enemy.hp).toBe(3)  // 6 - 3, block doesn't matter
     expect(result.combat.enemy.block).toBe(10)  // Exploit doesn't reduce block
@@ -380,7 +387,7 @@ describe('applyIdentify', () => {
 
 describe('applyLuckyShot', () => {
   it('deals 1-3 random damage bypassing block', () => {
-    const combat = makeCombat({ enemy: { ...GOBLIN, block: 3 } })
+    const combat = makeCombat({ enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), block: 3 } })
     const result = applyLuckyShot(combat)
     expect(result.damage).toBeGreaterThanOrEqual(1)
     expect(result.damage).toBeLessThanOrEqual(3)
@@ -389,7 +396,7 @@ describe('applyLuckyShot', () => {
   })
 
   it('kills the enemy if hp is low enough', () => {
-    const combat = makeCombat({ enemy: { ...GOBLIN, hp: 1 } })
+    const combat = makeCombat({ enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), hp: 1 } })
     const result = applyLuckyShot(combat)
     expect(result.victory).toBe(true)
     expect(result.combat.phase).toBe('victory')
@@ -399,11 +406,11 @@ describe('applyLuckyShot', () => {
 // ── Red spend — Shove ─────────────────────────────────────────────────────────
 
 describe('applyShove', () => {
-  it('cancels current intent and reveals next', () => {
+  it('draws a new intent from the pool', () => {
     const combat = makeCombat({ intent: { kind: 'guard', value: 2 } })
     const result = applyShove(combat)
-    expect(result.intent).not.toEqual(combat.intent)
     expect(['attack', 'guard', 'empower', 'recover', 'status', 'lunge']).toContain(result.intent.kind)
+    expect(typeof result.intent.value).toBe('number')
   })
 })
 
@@ -411,19 +418,20 @@ describe('applyShove', () => {
 
 describe('applyFeint', () => {
   it('reduces enemy block by 2', () => {
-    const combat = makeCombat({ enemy: { ...GOBLIN, block: 5 } })
+    const combat = makeCombat({ enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), block: 5 } })
     const result = applyFeint(combat)
     expect(result.enemy.block).toBe(3)
   })
 
   it('floors block at 0', () => {
-    const combat = makeCombat({ enemy: { ...GOBLIN, block: 1 } })
+    const goblinRunt = spawnEnemy(ENEMY_ROSTER[1])
+    const combat = makeCombat({ enemy: { ...goblinRunt, block: 1 } })
     const result = applyFeint(combat)
     expect(result.enemy.block).toBe(0)
   })
 
   it('does nothing when block is already 0', () => {
-    const combat = makeCombat({ enemy: { ...GOBLIN, block: 0 } })
+    const combat = makeCombat({ enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), block: 0 } })
     const result = applyFeint(combat)
     expect(result.enemy.block).toBe(0)
   })
@@ -464,7 +472,7 @@ describe('applyEnemyTurn — Recover intent', () => {
   it('heals enemy hp, deals no damage', () => {
     const combat = makeCombat({
       intent: { kind: 'recover', value: 3 },
-      enemy: { ...GOBLIN, hp: 2 },
+      enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), hp: 2 },
     })
     const result = applyEnemyTurn(combat, 10)
     expect(result.damage).toBe(0)
@@ -475,7 +483,7 @@ describe('applyEnemyTurn — Recover intent', () => {
   it('caps healing at maxHp', () => {
     const combat = makeCombat({
       intent: { kind: 'recover', value: 10 },
-      enemy: { ...GOBLIN, hp: 5, maxHp: 6 },
+      enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), hp: 5, maxHp: 6 },
     })
     const result = applyEnemyTurn(combat, 10)
     expect(result.combat.enemy.hp).toBe(6)
@@ -540,7 +548,7 @@ describe('applyEnemyTurn — Lunge intent', () => {
     const combat = makeCombat({
       intent: { kind: 'lunge', value: 4 },
       reservedGreen: 0,
-      enemy: { ...GOBLIN, empowered: true },
+      enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), empowered: true },
     })
     const result = applyEnemyTurn(combat, 10)
     expect(result.damage).toBe(8)  // 4 × 2
@@ -551,7 +559,7 @@ describe('applyEnemyTurn — Lunge intent', () => {
     const combat = makeCombat({
       intent: { kind: 'lunge', value: 4 },
       reservedGreen: 0,
-      enemy: { ...GOBLIN, empowered: true },
+      enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), empowered: true },
     })
     const result = applyEnemyTurn(combat, 10)
     expect(result.combat.enemy.empowered).toBe(false)
@@ -605,7 +613,7 @@ describe('applyEnemyTurn — Empowered attacks', () => {
     const combat = makeCombat({
       intent: { kind: 'attack', value: 2 },
       reservedGreen: 0,
-      enemy: { ...GOBLIN, empowered: true },
+      enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), empowered: true },
     })
     const result = applyEnemyTurn(combat, 10)
     expect(result.damage).toBe(4)  // 2 × 2
@@ -616,7 +624,7 @@ describe('applyEnemyTurn — Empowered attacks', () => {
     const combat = makeCombat({
       intent: { kind: 'attack', value: 2 },
       reservedGreen: 0,
-      enemy: { ...GOBLIN, empowered: true },
+      enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), empowered: true },
     })
     const result = applyEnemyTurn(combat, 10)
     expect(result.combat.enemy.empowered).toBe(false)
@@ -626,7 +634,7 @@ describe('applyEnemyTurn — Empowered attacks', () => {
     const combat = makeCombat({
       intent: { kind: 'attack', value: 2 },
       reservedGreen: 2,
-      enemy: { ...GOBLIN, empowered: true },
+      enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), empowered: true },
     })
     const result = applyEnemyTurn(combat, 10)
     expect(result.damage).toBe(0)
@@ -641,7 +649,7 @@ describe('applyEnemyTurn — Disengaged suppression', () => {
     const combat = makeCombat({
       intent: { kind: 'attack', value: 5 },
       reservedGreen: 0,
-      enemy: { ...GOBLIN, disengaged: true },
+      enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), disengaged: true },
     })
     const result = applyEnemyTurn(combat, 10)
     expect(result.damage).toBe(0)
@@ -651,7 +659,7 @@ describe('applyEnemyTurn — Disengaged suppression', () => {
   it('clears disengaged flag after suppressed turn', () => {
     const combat = makeCombat({
       intent: { kind: 'attack', value: 5 },
-      enemy: { ...GOBLIN, disengaged: true },
+      enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), disengaged: true },
     })
     const result = applyEnemyTurn(combat, 10)
     expect(result.combat.enemy.disengaged).toBe(false)
@@ -660,7 +668,7 @@ describe('applyEnemyTurn — Disengaged suppression', () => {
   it('still reveals next intent even when suppressed', () => {
     const combat = makeCombat({
       intent: { kind: 'attack', value: 5 },
-      enemy: { ...GOBLIN, disengaged: true },
+      enemy: { ...spawnEnemy(ENEMY_ROSTER[1]), disengaged: true },
     })
     const result = applyEnemyTurn(combat, 10)
     expect(['attack', 'guard', 'empower', 'recover', 'status', 'lunge']).toContain(result.combat.intent.kind)

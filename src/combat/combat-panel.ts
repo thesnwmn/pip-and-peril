@@ -2,8 +2,8 @@ import type { EncounterPanel, MapViewConfig } from '../encounter/panel'
 import type { DicePool } from '../dice/pool'
 import { canAfford, resetPool, rollPool, spendPips } from '../dice/pool'
 import type { CombatState } from './types'
-import { GOBLIN } from './intents'
 import { selectIntent } from './intents'
+import { getEnemySpec, spawnEnemy } from './roster'
 import {
   applyStrike,
   applyHeavyStrike,
@@ -45,10 +45,16 @@ export function createCombatEncounterPanel(
 ): EncounterPanel {
   // ── Combat state ─────────────────────────────────────────────────────────
 
+  const dungeonState = ctx.getDungeonState()
+  const tile = dungeonState.grid.cells[dungeonState.pip.row][dungeonState.pip.col]
+  const enemyId = tile?.enemyId || 'goblin-runt' // fallback to goblin-runt if no enemyId
+  const spec = getEnemySpec(enemyId)
+  const enemy = spawnEnemy(spec)
+
   let combat: CombatState = {
-    enemy: { ...GOBLIN },
+    enemy,
     phase: 'awaiting-roll',
-    intent: selectIntent(GOBLIN.intents),  // telegraph before first roll
+    intent: selectIntent(enemy.intents),  // telegraph before first roll
     reservedGreen: 0,
     entryFrom,
     goldAwarded: 0,
@@ -62,6 +68,7 @@ export function createCombatEncounterPanel(
   let lastEnemyHeadline = ''
   let lastEnemyDetail = ''
   let lastEnemyKind: CombatState['intent']['kind'] | null = null
+  const personality = spec.personality
   let bannerStartTime: number | null = null
   let completed = false
 
@@ -155,21 +162,40 @@ export function createCombatEncounterPanel(
       // Record what the enemy just did for the awaiting-roll display.
       lastEnemyKind = firedIntent.kind as any
       if (firedIntent.kind === 'guard') {
-        lastEnemyHeadline = `${combat.enemy.name} guards`
+        const guardLine = personality.guardLine || 'guards'
+        lastEnemyHeadline = `The ${combat.enemy.name} ${guardLine}`
         lastEnemyDetail = `+${firedIntent.value} block`
       } else if (firedIntent.kind === 'empower') {
-        lastEnemyHeadline = `${combat.enemy.name} empowers`
+        const empowerLine = personality.empowerLine || 'empowers'
+        lastEnemyHeadline = `The ${combat.enemy.name} ${empowerLine}`
         lastEnemyDetail = 'Next attack ×2!'
       } else if (firedIntent.kind === 'recover') {
-        lastEnemyHeadline = `${combat.enemy.name} recovers`
+        const recoverLine = personality.recoverLine || 'recovers'
+        lastEnemyHeadline = `The ${combat.enemy.name} ${recoverLine}`
         lastEnemyDetail = `+${firedIntent.value} HP`
       } else if (result.damage === 0) {
-        const intentName = firedIntent.kind === 'lunge' ? 'lunges' : 'attacks'
-        lastEnemyHeadline = `${combat.enemy.name} ${intentName}`
+        const fallbackName = firedIntent.kind === 'lunge' ? 'lunges' : 'attacks'
+        let actionLine = fallbackName
+        if (firedIntent.kind === 'lunge') {
+          actionLine = personality.lungeLine || 'lunges'
+        } else if (firedIntent.kind === 'attack') {
+          actionLine = personality.attackLine || 'attacks'
+        } else if (firedIntent.kind === 'status') {
+          actionLine = personality.statusLine || 'strikes'
+        }
+        lastEnemyHeadline = `The ${combat.enemy.name} ${actionLine}`
         lastEnemyDetail = 'Dodged!'
       } else {
-        const intentName = firedIntent.kind === 'lunge' ? 'lunges' : 'attacks'
-        lastEnemyHeadline = `${combat.enemy.name} ${intentName}`
+        const fallbackName = firedIntent.kind === 'lunge' ? 'lunges' : 'attacks'
+        let actionLine = fallbackName
+        if (firedIntent.kind === 'lunge') {
+          actionLine = personality.lungeLine || 'lunges'
+        } else if (firedIntent.kind === 'attack') {
+          actionLine = personality.attackLine || 'attacks'
+        } else if (firedIntent.kind === 'status') {
+          actionLine = personality.statusLine || 'strikes'
+        }
+        lastEnemyHeadline = `The ${combat.enemy.name} ${actionLine}`
         lastEnemyDetail = `−${result.damage} HP  (${prevHp} → ${ctx.getPipHp()})`
       }
 

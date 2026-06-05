@@ -20,7 +20,7 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
----
+## IN PROGRESS
 
 ### 038 · Enemy Roster Expansion
 
