@@ -368,20 +368,22 @@ src/
 
 ## Open questions
 
-- **Disengage cost/effect balance.** Disengage spends 3G and cancels two consecutive enemy
-  intent executions. The cost (3G spent = no dodge that same turn) is the main balance lever.
-  If play-test shows this is too dominant, raise the cost to 4G or limit it to cancelling the
-  current intent only (reducing to a single-turn version). Confirm before building.
+*All blocking questions resolved — this item is READY.*
 
-- **Status variants (Slow / Stun).** Scoped to Poison only here. When a creature that warrants
-  Slow or Stun arrives (likely in 038), the Designer should define those variant mechanics.
-  Placeholder: `statusKind: 'poison' | 'slow' | 'stun'` can be stubbed in the type but the
-  `slow` and `stun` handlers are not built.
+**Resolved decisions (recorded for the Engineer):**
 
-- **Shove against bosses.** The boss has a fixed intent cycle (to be specced in 023). Shove
-  cancels the current intent in the cycle but does not skip the cycle position — the following
-  turn the cycle advances normally. This seems correct (Shove buys a turn, not a skip in the
-  pattern). Confirm with the 023 spec.
+- **Disengage at 3G** — confirmed. The 3G spend (forfeiting dodge on the same turn) is the
+  intended balance lever. No adjustment needed before building.
+
+- **Status variants (Slow / Stun)** — confirmed deferred. This feature builds Poison only.
+  `statusKind: 'poison' | 'slow' | 'stun'` may be stubbed in the type union; the `slow` and
+  `stun` handlers are not built. A later feature adds them when a creature's personality
+  warrants them.
+
+- **Shove against bosses** — confirmed. Shove cancels the current intent in the boss's fixed
+  cycle; the cycle position advances normally on the following turn (Shove buys a turn, not a
+  skip in the pattern). Individual boss intents may be flagged `uncancellable` in the 023 spec
+  if needed — that is 023's decision, not 046's.
 
 ---
 
