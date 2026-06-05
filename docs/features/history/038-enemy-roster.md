@@ -617,10 +617,56 @@ use `spawnEnemy(ENEMY_ROSTER[0])` or similar so it still compiles after GOBLIN i
 
 ## Shipped
 
-**Date:** YYYY-MM-DD · **PR:** #NN
+**Date:** 2026-06-05 · **PR:** (pending merge)
 
 ### What was built
 
+Implemented the full enemy roster system with all 12 creatures (4 per tier) with distinct
+personalities, weighted intent pools, and accurate stat distributions. Enemies are now
+selected by tier during room placement (weighted by floor and depth phase) and spawned
+correctly at combat entry. Battle log messages use creature-specific personality lines
+for flavor and immersion.
+
+**Key deliverables:**
+- `EnemySpec` type with id, tier (1-3), maxHp, attack (flee), gold range, intents, personality
+- `EnemyPersonality` type with per-intent-kind log strings
+- 12 full enemy specs in ENEMY_ROSTER: 4 Tier-1 (nuisances), 4 Tier-2 (threats), 4 Tier-3 (horrors)
+- `spawnEnemy(spec)` factory function; `getEnemySpec(id)` lookup
+- Tier-weighted random selection during room placement (values tuned in DUNGEON_TUNING)
+- Combat panel reads `tile.enemyId`, spawns enemy from roster instead of hardcoded GOBLIN
+- Personality log lines integrated into battle log output
+- Removed GOBLIN constant; GOBLIN Runt (tier-1) replaces it in the roster
+
 ### Evidence
 
+**Unit tests** (18 test files, 353 tests total, all passing):
+- `roster.test.ts`: 12 roster completeness tests, spawnEnemy state validation, getEnemySpec lookup
+- `encounter.test.ts`: Updated 36 tests to use roster system instead of GOBLIN constant
+- `room-selection.test.ts`: Added 3 tests for enemy placement and tier distribution
+
+**Type checking:** `npm run typecheck` returns zero errors (tsc --noEmit)
+**Build:** `npm run build` succeeds; dist/ contains valid output
+**All tests pass:** `npm run test` shows 353 passing tests, no skipped or commented-out tests
+
 ### Play-test
+
+To verify the feature in browser:
+
+1. **Start a new run** from the home screen
+2. **Explore Floor 1** (early phase):
+   - Most enemy rooms spawn Tier-1 enemies (Dungeon Rat, Goblin Runt, Cave Bat Pup, Dung Beetle)
+   - Verify HP and gold ranges match spec (e.g., Goblin Runt: 6 HP, 1–3 gold)
+3. **Enter several combats** and verify:
+   - Enemy names render correctly in the combat overlay
+   - Battle log uses personality-specific lines (e.g., "The Dungeon Rat bites and scurries" vs. "The Goblin Runt swings clumsily")
+   - Intent pools are correct (Tier-1 use only attack/guard)
+4. **Progress to Floor 2** (mid/late phases):
+   - Tier-2 enemies start appearing; verify Tier-1 remains common early, rare late
+   - Tier-2 battles show Empower/Recover intents in log
+5. **Reach Floor 3**:
+   - Heavy Tier-3 enemy presence by mid/late phases
+   - Verify Lunge and Status (poison) intents appear in personality lines and battle log
+   - Example: Shadow Raven "dives with terrible purpose" (Lunge line)
+6. **Complete or lose a run**:
+   - Verify floor summary and final tallies are unaffected
+   - Confirm no crashes or log errors in console

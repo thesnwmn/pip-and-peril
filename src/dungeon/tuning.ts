@@ -22,6 +22,9 @@ export interface DungeonTuning {
 
   // Trap difficulty ranges (min–max, inclusive)
   trapDifficultyRange: Record<1 | 2 | 3, Record<'early' | 'mid' | 'late', { min: number; max: number }>>
+
+  // Enemy tier weights for weighted random selection by floor and depth phase
+  enemyTierWeights: Record<1 | 2 | 3, Record<'early' | 'mid' | 'late', { t1: number; t2: number; t3: number }>>
 }
 
 export const DUNGEON_TUNING: DungeonTuning = {
@@ -173,6 +176,24 @@ export const DUNGEON_TUNING: DungeonTuning = {
       early: { min: 4, max: 6 },
       mid: { min: 5, max: 7 },
       late: { min: 6, max: 9 },
+    },
+  },
+
+  enemyTierWeights: {
+    1: {
+      early: { t1: 9, t2: 1, t3: 0 },
+      mid: { t1: 7, t2: 3, t3: 0 },
+      late: { t1: 5, t2: 4, t3: 1 },
+    },
+    2: {
+      early: { t1: 3, t2: 6, t3: 1 },
+      mid: { t1: 1, t2: 6, t3: 3 },
+      late: { t1: 0, t2: 4, t3: 6 },
+    },
+    3: {
+      early: { t1: 0, t2: 3, t3: 7 },
+      mid: { t1: 0, t2: 2, t3: 8 },
+      late: { t1: 0, t2: 1, t3: 9 },
     },
   },
 }

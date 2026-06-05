@@ -20,23 +20,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
----
-
-### 038 · Enemy Roster Expansion
-
-Feature 022 (dungeon structure) weights rooms toward "tier-1", "tier-2", and "tier-3" enemies
-across floors and depth phases, but today only one enemy type exists (the Goblin). This feature
-fills the roster: twelve named creatures across three tiers, each with HP, gold range, a
-**weighted intent pool** (Tier 1 uses Attack/Guard; Tier 2 adds Empower/Recover; Tier 3 adds
-Lunge/Status-Poison), and a **personality** object with per-intent-kind log-line strings that
-make each fight feel distinct. Enemy rooms store the selected creature ID on the tile at placement
-time; combat reads that ID to spawn the correct enemy. Run-depth-window intent scaling is deferred
-to 029.
-**Depends on:** 037 (combat overhaul), 046 (full intent set — 038 removes the TODO-038 Goblin
-test entries and populates the production roster), 022 (tier references and weighting system).
-*(Absorbs Idea 012 · Creature Personality Traits.)*
-See `docs/features/038-enemy-roster.md` for the full spec.
-
 ### 027 · Shop Encounter
 
 The gold **Shop**: a warm merchant panel where Pip spends earned gold on items — the *sink* that

@@ -18,6 +18,27 @@ export interface WeightedIntent {
 
 export type IntentSet = WeightedIntent[]
 
+export interface EnemyPersonality {
+  attackLine?: string
+  guardLine?: string
+  empowerLine?: string
+  recoverLine?: string
+  lungeLine?: string
+  statusLine?: string
+}
+
+export interface EnemySpec {
+  id: string
+  name: string
+  tier: 1 | 2 | 3
+  maxHp: number
+  attack: number
+  goldMin: number
+  goldMax: number
+  intents: IntentSet
+  personality: EnemyPersonality
+}
+
 export interface Enemy {
   id: string
   name: string
