@@ -42,8 +42,10 @@ const SUBMENU_BTN_W = Math.floor((MAP_W - SIDE_MARGIN * 2 - ACTION_GAP) / 2)  //
 const SUBMENU_BTN_H = 40
 const SUBMENU_NOTE_H = 20
 
-// One-line battle log — fixed at bottom of the submenu area.
-export const LOG_Y = SUBMENU_Y + SUBMENU_NOTE_H + SUBMENU_BTN_H + 12
+// Enemy action display — shown during awaiting-roll in the cat-button slot.
+const ENEMY_ACTION_BOX_H = 72
+const ENEMY_RED_COLOR = '#b03030'
+const GUARD_STEEL_COLOR = '#5a6b82'
 
 // ── Pip dot patterns for d6 ───────────────────────────────────────────────────
 
@@ -377,7 +379,9 @@ export interface CombatPanelDrawState {
   combat: CombatState
   openCategory: CatId | null
   fleePending: boolean
-  log: string
+  lastEnemyHeadline: string
+  lastEnemyDetail: string
+  lastEnemyKind: 'attack' | 'guard' | null
   hoveredElement: string | null
   flashingElement: string | null
   flashEndTime: number | null
@@ -387,7 +391,7 @@ export interface CombatPanelDrawState {
 }
 
 export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDrawState): void {
-  const { pool, combat, openCategory, log, inventory, timestamp } = s
+  const { pool, combat, openCategory, lastEnemyHeadline, lastEnemyDetail, lastEnemyKind, inventory, timestamp } = s
   const inPlayerTurn = combat.phase === 'player-turn'
   const panelH = LOGICAL_H - PANEL_TOP
 
@@ -445,6 +449,32 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
   ctx.textBaseline = 'middle'
   ctx.fillText(rollLabel, MAP_X + MAP_W / 2, ROLL_BTN_Y + ROLL_BTN_H / 2)
   ctx.globalAlpha = 1
+
+  // ── Enemy action display (awaiting-roll only, after first turn) ──
+  if (!inPlayerTurn && lastEnemyHeadline) {
+    const boxX = MAP_X + SIDE_MARGIN
+    const boxW = MAP_W - SIDE_MARGIN * 2
+    const boxY = CAT_BTN_Y
+    const accentColor = lastEnemyKind === 'guard' ? GUARD_STEEL_COLOR : ENEMY_RED_COLOR
+
+    roundRect(ctx, boxX, boxY, boxW, ENEMY_ACTION_BOX_H, 8)
+    ctx.fillStyle = colors.surface
+    ctx.fill()
+    ctx.strokeStyle = accentColor
+    ctx.lineWidth = 1.5
+    ctx.stroke()
+
+    const cx = MAP_X + MAP_W / 2
+    ctx.font = 'bold 15px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = accentColor
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(lastEnemyHeadline, cx, boxY + 22)
+
+    ctx.font = '14px monospace'
+    ctx.fillStyle = colors.textPrimary
+    ctx.fillText(lastEnemyDetail, cx, boxY + 50)
+  }
 
   // ── Category buttons (visible once dice are rolled) ──
   if (inPlayerTurn) {
@@ -526,14 +556,6 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     }
   }
 
-  // ── One-line battle log ──
-  if (log) {
-    ctx.font = '11px monospace'
-    ctx.fillStyle = colors.textMuted
-    ctx.textAlign = 'left'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(log, MAP_X + SIDE_MARGIN, LOG_Y)
-  }
 }
 
 function drawItemList(

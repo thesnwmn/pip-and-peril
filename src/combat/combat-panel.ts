@@ -49,7 +49,9 @@ export function createCombatEncounterPanel(
     itemUsedThisTurn: false,
   }
 
-  let log = ''
+  let lastEnemyHeadline = ''
+  let lastEnemyDetail = ''
+  let lastEnemyKind: 'attack' | 'guard' | null = null
   let bannerStartTime: number | null = null
   let completed = false
 
@@ -136,18 +138,21 @@ export function createCombatEncounterPanel(
       fleePending = false
 
       if (result.defeat) {
-        log = ''
         bannerStartTime = performance.now()
         return
       }
 
-      // Build log entry for what just fired.
+      // Record what the enemy just did for the awaiting-roll display.
+      lastEnemyKind = firedIntent.kind
       if (firedIntent.kind === 'guard') {
-        log = `${combat.enemy.name} braces — +${firedIntent.value} block`
+        lastEnemyHeadline = `${combat.enemy.name} guards`
+        lastEnemyDetail = `+${firedIntent.value} block`
       } else if (result.damage === 0) {
-        log = `${combat.enemy.name} strikes — dodged! (${prevHp}HP)`
+        lastEnemyHeadline = `${combat.enemy.name} attacks`
+        lastEnemyDetail = 'Dodged!'
       } else {
-        log = `${combat.enemy.name} strikes — −${result.damage}HP! (${prevHp}→${ctx.getPipHp()})`
+        lastEnemyHeadline = `${combat.enemy.name} attacks`
+        lastEnemyDetail = `−${result.damage} HP  (${prevHp} → ${ctx.getPipHp()})`
       }
 
       // Reset dice to idle; player must roll to start their next turn.
@@ -163,16 +168,11 @@ export function createCombatEncounterPanel(
     const prevEnemyHp = combat.enemy.hp
     const result = heavy ? applyHeavyStrike(combat) : applyStrike(combat)
     combat = result.combat
-    const label = heavy ? 'Heavy Strike' : 'Strike'
-    const absorbed = result.absorbed > 0 ? ` (${result.absorbed} blocked)` : ''
-    log = `${label} — ${result.damage} dmg${absorbed}! (${combat.enemy.name}: ${prevEnemyHp}→${combat.enemy.hp})`
-
     if (result.victory) {
       const goldEarned = rollGoldReward(combat.enemy)
       ctx.setInventory({ ...ctx.getInventory(), gold: ctx.getInventory().gold + goldEarned })
       combat = { ...combat, goldAwarded: goldEarned }
       markRoomCleared()
-      log = ''
       bannerStartTime = performance.now()
       openCategory = null
     }
@@ -183,8 +183,6 @@ export function createCombatEncounterPanel(
     const { pool: updated } = spendPips(ctx.getPool(), { green: 1 })
     ctx.setPool(updated)
     combat = { ...combat, reservedGreen: combat.reservedGreen + 1 }
-    const note = reserveNote(combat.reservedGreen)
-    log = `Reserve: ${note}`
   }
 
   function handleClearReserve(): void {
@@ -193,7 +191,6 @@ export function createCombatEncounterPanel(
     const pool = ctx.getPool()
     ctx.setPool({ ...pool, totals: { ...pool.totals, green: pool.totals.green + returned } })
     combat = { ...combat, reservedGreen: 0 }
-    log = 'Reserve cleared.'
   }
 
   function handleFlee(): void {
@@ -208,7 +205,6 @@ export function createCombatEncounterPanel(
     ctx.setPipHp(result.pipHp)
     if (result.defeat) {
       combat = { ...combat, phase: 'defeat' }
-      log = ''
       bannerStartTime = performance.now()
     } else {
       markRoomFled()
@@ -231,22 +227,17 @@ export function createCombatEncounterPanel(
 
     if (result.pipHpAfter !== undefined) {
       ctx.setPipHp(result.pipHpAfter)
-      log = `${item.name}: +${result.pipHpAfter - prevHp}HP (${prevHp}→${result.pipHpAfter})`
     }
     if (result.poolAfter !== undefined) {
       const rolled = rollPool(result.poolAfter)
       ctx.setPool(rolled)
       anim.startTime = performance.now(); anim.lastTick = 0; anim.scramble = []
-      log = `${item.name}: rerolled!`
     }
     if (result.dungeonStateAfter !== undefined) {
       ctx.setDungeonState(result.dungeonStateAfter)
       if (item.effect.type === 'flee-combat') {
         combat = { ...combat, phase: 'fled' }
         bannerStartTime = performance.now()
-        log = `${item.name}: fled!`
-      } else if (item.effect.type === 'reveal-fog') {
-        log = `${item.name}: fog cleared!`
       }
     }
 
@@ -316,7 +307,9 @@ export function createCombatEncounterPanel(
       combat,
       openCategory,
       fleePending,
-      log,
+      lastEnemyHeadline,
+      lastEnemyDetail,
+      lastEnemyKind,
       hoveredElement,
       flashingElement,
       flashEndTime,
@@ -409,10 +402,3 @@ export function createCombatEncounterPanel(
   return { draw, drawMapOverlay, handleClick, handlePointerMove, mapView }
 }
 
-// ── Reserve note helper (also used by panel drawing) ─────────────────────────
-
-function reserveNote(reservedGreen: number): string {
-  if (reservedGreen >= 2) return 'Dodge ready'
-  if (reservedGreen === 1) return '−1 damage'
-  return 'full hit'
-}
