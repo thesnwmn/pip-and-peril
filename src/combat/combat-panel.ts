@@ -220,9 +220,9 @@ export function createCombatEncounterPanel(
   }
 
   function handleExploit(): void {
-    if (!canAfford(ctx.getPool(), { blue: 2 })) { flash('sub-exploit'); return }
-    if (!combat.analysedThisCombat) { flash('sub-exploit'); return }
-    const { pool: updated } = spendPips(ctx.getPool(), { blue: 2 })
+    if (!canAfford(ctx.getPool(), { blue: 4 })) { flash('sub-exploit'); return }
+    if (!combat.analysedThisTurn) { flash('sub-exploit'); return }
+    const { pool: updated } = spendPips(ctx.getPool(), { blue: 4 })
     ctx.setPool(updated)
     const result = applyExploit(combat)
     combat = result.combat
@@ -253,15 +253,15 @@ export function createCombatEncounterPanel(
   }
 
   function handleConvert(): void {
-    if (!canAfford(ctx.getPool(), { yellow: 2 })) { flash('sub-convert'); return }
-    const { pool: updated } = spendPips(ctx.getPool(), { yellow: 2 })
+    if (!canAfford(ctx.getPool(), { yellow: 3 })) { flash('sub-convert'); return }
+    const { pool: updated } = spendPips(ctx.getPool(), { yellow: 3 })
     ctx.setPool(updated)
     combat = applyConvert(combat, 'red')
   }
 
   function handleLuckyShot(): void {
-    if (!canAfford(ctx.getPool(), { yellow: 1 })) { flash('sub-lucky-shot'); return }
-    const { pool: updated } = spendPips(ctx.getPool(), { yellow: 1 })
+    if (!canAfford(ctx.getPool(), { yellow: 4 })) { flash('sub-lucky-shot'); return }
+    const { pool: updated } = spendPips(ctx.getPool(), { yellow: 4 })
     ctx.setPool(updated)
     const result = applyLuckyShot(combat)
     combat = result.combat

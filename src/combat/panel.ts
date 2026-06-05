@@ -560,7 +560,7 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
 
     if (openCategory === 'blue') {
       const analyseAffordable = canAfford(pool, { blue: 2 }) && !combat.analysedThisTurn
-      const exploitAffordable = canAfford(pool, { blue: 2 }) && combat.analysedThisCombat
+      const exploitAffordable = canAfford(pool, { blue: 4 }) && combat.analysedThisTurn
       const resistAffordable = canAfford(pool, { blue: 3 }) && combat.pipPoison !== null
       const identifyAffordable = canAfford(pool, { blue: 1 }) && !combat.identified
       const flashing = s.flashingElement
@@ -573,7 +573,7 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
       flashActive && flashing === 'sub-analyse')
 
       drawSubmenuBtn(ctx, {
-        id: 'exploit', label: 'Exploit', costLabel: '2🔵',
+        id: 'exploit', label: 'Exploit', costLabel: '4🔵',
         affordable: exploitAffordable,
       }, 1, SUBMENU_Y, s.hoveredElement === 'sub-exploit',
       flashActive && flashing === 'sub-exploit')
@@ -593,19 +593,19 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     }
 
     if (openCategory === 'yellow') {
-      const convertAffordable = canAfford(pool, { yellow: 2 })
-      const luckyAffordable = canAfford(pool, { yellow: 1 })
+      const convertAffordable = canAfford(pool, { yellow: 3 })
+      const luckyAffordable = canAfford(pool, { yellow: 4 })
       const flashing = s.flashingElement
       const flashActive = flashing !== null && s.flashEndTime !== null && timestamp < s.flashEndTime
 
       drawSubmenuBtn(ctx, {
-        id: 'convert', label: 'Convert', costLabel: '2🟡',
+        id: 'convert', label: 'Convert', costLabel: '3🟡',
         affordable: convertAffordable,
       }, 0, SUBMENU_Y, s.hoveredElement === 'sub-convert',
       flashActive && flashing === 'sub-convert')
 
       drawSubmenuBtn(ctx, {
-        id: 'lucky-shot', label: 'Lucky Shot', costLabel: '1🟡',
+        id: 'lucky-shot', label: 'Lucky Shot', costLabel: '4🟡',
         affordable: luckyAffordable,
       }, 1, SUBMENU_Y, s.hoveredElement === 'sub-lucky-shot',
       flashActive && flashing === 'sub-lucky-shot')

@@ -74,15 +74,16 @@ export function drawCombatOverlay(
   ctx.textBaseline = 'middle'
   ctx.fillText(`${intentIcon}${combat.intent.value}`, ENEMY_COL_X + HP_BAR_W, INTENT_ROW_Y)
 
-  // Dimmed next-intent icon (40% opacity, offset 8px right, 4px up)
+  // Dimmed next-intent icon (40% opacity, directly above current intent)
   if (combat.nextIntent) {
     const nextIcon = getIntentIcon(combat.nextIntent.kind)
+    const nextColor = combat.nextIntent.kind === 'attack' || combat.nextIntent.kind === 'lunge' ? ENEMY_RED : GUARD_STEEL
     ctx.globalAlpha = 0.4
     ctx.font = 'bold 11px monospace'
-    ctx.fillStyle = intentColor
+    ctx.fillStyle = nextColor
     ctx.textAlign = 'right'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(`${nextIcon}${combat.nextIntent.value}`, ENEMY_COL_X + HP_BAR_W + 8, INTENT_ROW_Y - 4)
+    ctx.textBaseline = 'bottom'
+    ctx.fillText(`${nextIcon}${combat.nextIntent.value}`, ENEMY_COL_X + HP_BAR_W, INTENT_ROW_Y - 18)
     ctx.globalAlpha = 1
   }
 
