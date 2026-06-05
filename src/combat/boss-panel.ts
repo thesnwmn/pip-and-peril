@@ -229,10 +229,37 @@ export function createBossEncounterPanel(
 
   // ── Map view ──────────────────────────────────────────────────────────────
 
-  const mapView: MapViewConfig = {
-    zoom: COMBAT_CONFIG.cameraZoom,
-    pipTargetX: COMBAT_MAP_CENTER_X,
-    pipTargetY: COMBAT_MAP_CENTER_Y,
+  function getMapView(): MapViewConfig {
+    const tightZoom = COMBAT_CONFIG.cameraZoom
+    const wideZoom = 0.75
+
+    if (!introComplete && introStartTime !== null) {
+      const elapsed = performance.now() - introStartTime
+      const TRANSITION_START = 1500
+      const TRANSITION_DURATION = 400
+
+      if (elapsed < TRANSITION_START) {
+        return {
+          zoom: wideZoom,
+          pipTargetX: COMBAT_MAP_CENTER_X,
+          pipTargetY: COMBAT_MAP_CENTER_Y,
+        }
+      } else if (elapsed < TRANSITION_START + TRANSITION_DURATION) {
+        const t = (elapsed - TRANSITION_START) / TRANSITION_DURATION
+        const zoom = wideZoom + (tightZoom - wideZoom) * t
+        return {
+          zoom,
+          pipTargetX: COMBAT_MAP_CENTER_X,
+          pipTargetY: COMBAT_MAP_CENTER_Y,
+        }
+      }
+    }
+
+    return {
+      zoom: tightZoom,
+      pipTargetX: COMBAT_MAP_CENTER_X,
+      pipTargetY: COMBAT_MAP_CENTER_Y,
+    }
   }
 
   // ── Draw intro sequence ───────────────────────────────────────────────────
@@ -784,6 +811,8 @@ export function createBossEncounterPanel(
     drawMapOverlay,
     handleClick,
     handlePointerMove,
-    mapView,
+    get mapView(): MapViewConfig {
+      return getMapView()
+    },
   }
 }
