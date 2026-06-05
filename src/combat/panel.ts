@@ -22,17 +22,18 @@ const PIP_DOT_R = 4.5
 // Colour labels and pip-total badges (now become clickable pip buttons).
 const LABEL_Y = DIE_ROW_Y + DIE_SIZE + 6
 export const PIP_BTN_Y = LABEL_Y + 16
-export const PIP_BTN_H = 26
+export const PIP_BTN_H = 44
 
 // Middle zone (for submenu or enemy action display).
 const MIDDLE_ZONE_Y = PIP_BTN_Y + PIP_BTN_H + 10
-const MIDDLE_ZONE_H = 140
+const MIDDLE_ZONE_H = 120
 export const SUBMENU_Y = MIDDLE_ZONE_Y
 
 // Bottom button row (Flee | ROLL/END TURN | Item).
-const BOTTOM_BTN_Y = MIDDLE_ZONE_Y + MIDDLE_ZONE_H + 10
-export const ROLL_BTN_Y = BOTTOM_BTN_Y
 export const ROLL_BTN_H = 44
+// Pinned to screen bottom with small margin
+const BOTTOM_BTN_Y = LOGICAL_H - ROLL_BTN_H - 10
+export const ROLL_BTN_Y = BOTTOM_BTN_Y
 const ROLL_BTN_X = MAP_X + SIDE_MARGIN
 const ROLL_BTN_W = MAP_W - SIDE_MARGIN * 2
 
@@ -132,11 +133,10 @@ export function dieCentres(diceCount: number): number[] {
 }
 
 export function pipBtnX(idx: number, totalDice: number): number {
-  const centres = dieCentres(totalDice)
-  if (idx < centres.length) {
-    return centres[idx] - PIP_BTN_W / 2
-  }
-  return 0
+  // Align pip buttons with bottom button row left edge, spaced evenly across the panel
+  const totalW = totalDice * PIP_BTN_W + (totalDice - 1) * 8  // 8px gap between buttons
+  const startX = MAP_X + (MAP_W - totalW) / 2
+  return startX + idx * (PIP_BTN_W + 8)
 }
 
 // ── Die face ──────────────────────────────────────────────────────────────────
