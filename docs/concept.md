@@ -27,3 +27,8 @@ owns and maintains them; the **Designer** reads the relevant docs before writing
 - [`concept/enemies-and-bosses.md`](concept/enemies-and-bosses.md) — creature and escalation
   direction: who the enemies are, what they feel like to fight, how they escalate across a run, and
   how the dungeon responds to Pip over multiple runs.
+
+- [`concept/combat-system.md`](concept/combat-system.md) — combat mechanics direction: the
+  attack/defence binary, enemy intents, turn structure, colour roles in combat, die-type risk
+  profiles, item interjection points, emotional states (Rattled/Emboldened), and how combat
+  scales within a run and across the meta.
