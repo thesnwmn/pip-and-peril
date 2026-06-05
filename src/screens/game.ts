@@ -32,6 +32,9 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   let dicePool: DicePool = starterPool()
   let inventory: Inventory = { gold: 0, items: [] }
 
+  // Tile Pip stepped in from — updated on every move, used by Flee to retreat.
+  let combatEntryFrom: { col: number; row: number } = { col: state.pip.col, row: state.pip.row }
+
   const pipMaxHp = 10
   let pipHp = pipMaxHp
 
@@ -106,6 +109,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         const offering = state.offerings[idx]
         const { dc, dr } = DIR_DELTA[state.pendingDir!]
         const targetPos = { col: state.pip.col + dc, row: state.pip.row + dr }
+        combatEntryFrom = { col: state.pip.col, row: state.pip.row }
         state = placeRoom(state, offering, targetPos)
         state = { ...state, roomsEntered: state.roomsEntered + 1 }
         navPanel.clearTeases()
@@ -125,6 +129,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
           }))
           state = { ...state, uiState: 'choosing', pendingDir: dir, offerings }
         } else {
+          combatEntryFrom = { col: state.pip.col, row: state.pip.row }
           state = movePip(state, dir)
           state = { ...state, roomsEntered: state.roomsEntered + 1 }
           const cell = state.grid.cells[state.pip.row][state.pip.col]
@@ -169,17 +174,21 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
   // Adding a new encounter type requires only registering here — no other changes to this file.
   registry.register({
     trigger: (cell) => cell.roomType === 'enemy' && cell.cleared !== true,
-    factory: (onComplete) => createCombatEncounterPanel(onComplete, {
-      getPool: () => dicePool,
-      setPool: (p) => { dicePool = p },
-      getPipHp: () => pipHp,
-      setPipHp: (hp) => { pipHp = hp },
-      getPipMaxHp: () => pipMaxHp,
-      getInventory: () => inventory,
-      setInventory: (inv) => { inventory = inv },
-      getDungeonState: () => state,
-      setDungeonState: (s) => { state = s },
-    }),
+    factory: (onComplete) => createCombatEncounterPanel(
+      onComplete,
+      {
+        getPool: () => dicePool,
+        setPool: (p) => { dicePool = p },
+        getPipHp: () => pipHp,
+        setPipHp: (hp) => { pipHp = hp },
+        getPipMaxHp: () => pipMaxHp,
+        getInventory: () => inventory,
+        setInventory: (inv) => { inventory = inv },
+        getDungeonState: () => state,
+        setDungeonState: (s) => { state = s },
+      },
+      combatEntryFrom,
+    ),
     handlers: {
       victory: () => {
         state = { ...state, enemiesDefeated: state.enemiesDefeated + 1, uiState: 'idle' }
@@ -191,7 +200,9 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         transitionTo('home')
       },
       fled: () => {
-        state = { ...state, uiState: 'idle' }
+        // Retreat Pip to the tile she entered from.
+        const { col, row } = combatEntryFrom
+        state = { ...state, pip: { col, row }, camera: { col, row }, uiState: 'idle' }
         dicePool = resetPool(dicePool)
         navPanel.clearWhisper()
       },

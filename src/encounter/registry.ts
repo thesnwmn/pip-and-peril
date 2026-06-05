@@ -171,8 +171,16 @@ export function createEncounterRegistry(getNow: () => DOMHighResTimeStamp = () =
   // The panel is translated vertically so it starts off-screen (cachedPanelTop = LOGICAL_H)
   // and rises to its natural position (cachedPanelTop = PANEL_TOP). The panel draws at
   // natural coordinates; the registry applies the offset.
+  //
+  // drawMapOverlay (if present) is called first at screen coordinates — no translation —
+  // so the overlay always lands in the map zone. Only called when fully active.
   function draw(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
     if (phase.tag === 'idle') return
+
+    if (phase.tag === 'active' && phase.panel.drawMapOverlay) {
+      phase.panel.drawMapOverlay(ctx, timestamp)
+    }
+
     const offset = cachedPanelTop - PANEL_TOP
     ctx.save()
     ctx.translate(0, offset)
