@@ -58,13 +58,33 @@ export function drawCombatOverlay(
   ctx.fillRect(MAP_X, MAP_BOTTOM - SCRIM_H, MAP_W, SCRIM_H)
 
   // ── Row A: intent telegraph (enemy side, right-aligned) ───────────────────
-  const intentIcon = combat.intent.kind === 'attack' ? '⚔️' : '🛡'
-  const intentColor = combat.intent.kind === 'attack' ? ENEMY_RED : GUARD_STEEL
+  function getIntentIcon(kind: string): string {
+    const icons: Record<string, string> = {
+      'attack': '⚔️', 'guard': '🛡', 'empower': '💢',
+      'recover': '😴', 'status': '🕸️', 'lunge': '☠️',
+    }
+    return icons[kind] || '?'
+  }
+
+  const intentIcon = getIntentIcon(combat.intent.kind)
+  const intentColor = combat.intent.kind === 'attack' || combat.intent.kind === 'lunge' ? ENEMY_RED : GUARD_STEEL
   ctx.font = 'bold 11px monospace'
   ctx.fillStyle = intentColor
   ctx.textAlign = 'right'
   ctx.textBaseline = 'middle'
   ctx.fillText(`${intentIcon}${combat.intent.value}`, ENEMY_COL_X + HP_BAR_W, INTENT_ROW_Y)
+
+  // Dimmed next-intent icon (40% opacity, offset 8px right, 4px up)
+  if (combat.nextIntent) {
+    const nextIcon = getIntentIcon(combat.nextIntent.kind)
+    ctx.globalAlpha = 0.4
+    ctx.font = 'bold 11px monospace'
+    ctx.fillStyle = intentColor
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(`${nextIcon}${combat.nextIntent.value}`, ENEMY_COL_X + HP_BAR_W + 8, INTENT_ROW_Y - 4)
+    ctx.globalAlpha = 1
+  }
 
   // ── Row B: HP bars ────────────────────────────────────────────────────────
   // Pip
@@ -87,7 +107,7 @@ export function drawCombatOverlay(
   ctx.font = 'bold 10px monospace'
   ctx.textBaseline = 'middle'
 
-  // Pip — name left, total right
+  // Pip — name left, total right, poison indicator if poisoned
   ctx.fillStyle = colors.textMuted
   ctx.textAlign = 'left'
   ctx.fillText('PIP', PIP_COL_X, HP_LABEL_Y)
@@ -95,15 +115,25 @@ export function drawCombatOverlay(
   ctx.textAlign = 'right'
   ctx.fillText(`${pipHp}/${pipMaxHp}`, PIP_COL_X + HP_BAR_W, HP_LABEL_Y)
 
+  if (combat.pipPoison && combat.pipPoison.remaining > 0) {
+    ctx.font = 'bold 10px monospace'
+    ctx.fillStyle = '#6b5a9a'  // --status-poison
+    ctx.textAlign = 'right'
+    ctx.fillText(`☠×${combat.pipPoison.remaining}`, PIP_COL_X + HP_BAR_W + 40, HP_LABEL_Y)
+  }
+
   // Enemy — name left (enemy colour), HP total right at fixed position, block badge left of HP
   ctx.fillStyle = ENEMY_RED
   ctx.textAlign = 'left'
   ctx.fillText(combat.enemy.name.toUpperCase(), ENEMY_COL_X, HP_LABEL_Y)
 
-  const hpStr = `${combat.enemy.hp}/${combat.enemy.maxHp}`
-  ctx.fillStyle = colors.textPrimary
-  ctx.textAlign = 'right'
-  ctx.fillText(hpStr, ENEMY_COL_X + HP_BAR_W, HP_LABEL_Y)
+  // Show exact HP only if Identify has been used; otherwise show bar fill only
+  const hpStr = combat.identified ? `${combat.enemy.hp}/${combat.enemy.maxHp}` : ''
+  if (hpStr) {
+    ctx.fillStyle = colors.textPrimary
+    ctx.textAlign = 'right'
+    ctx.fillText(hpStr, ENEMY_COL_X + HP_BAR_W, HP_LABEL_Y)
+  }
 
   if (combat.enemy.block > 0) {
     const hpW = ctx.measureText(hpStr).width

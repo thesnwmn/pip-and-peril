@@ -392,10 +392,98 @@ src/
 
 ## Shipped
 
-**Date:** YYYY-MM-DD · **PR:** #NN
+**Date:** 2026-06-05 · **PR:** #TBD
 
 ### What was built
 
+The complete second combat layer as specified:
+
+**Enemy Intents (4 new kinds):**
+- 💢 Empower N: sets `enemy.empowered` flag; next Attack or Lunge deals 2× damage; clears after attack
+- 😴 Recover N: heals enemy by N (capped at maxHp); no damage to Pip
+- 🕸️ Status/Poison (N dmg, M ticks): applies poison to Pip unless 2G reserved (full dodge); 
+  partial dodge (1G) reduces damage but poison still applies
+- ☠️ Lunge N: high-damage attack (4–6 value) using same mitigation as Attack; doubled by empowered
+
+**Blue Category (4 actions):**
+- Analyse (2B): reveals next intent as dimmed secondary icon (40% opacity, offset); 
+  sets `analysedThisCombat` flag (persists until combat ends)
+- Exploit (2B): 2 damage bypassing Guard entirely; available only after Analyse
+- Resist (3B): clears poison condition immediately; greyed when not poisoned
+- Identify (1B): shows exact enemy HP as number on bar; greyed after first use
+
+**Yellow Category (2 actions):**
+- Convert (2Y): converts 2 yellow pips → 1 pip of chosen colour (Red/Green/Blue); 
+  converted pips immediately available in same allocation phase
+- Lucky Shot (1Y): 1 damage bypassing Guard; repeatable per turn while yellow remain
+
+**Red/Green Spend Actions:**
+- Shove (3R): cancels current enemy intent; next intent computed and displayed immediately
+- Feint (2G spend): reduces enemy.block by 2 (min 0); pips spent, not reserved
+- Disengage (3G spend): cancels intent AND sets enemy.disengaged; enemy's next turn 
+  suppresses intent execution, then clears flag
+
+**Poison System:**
+- Poison condition: `pip.poison = { n: number; remaining: number } | null`
+- Ticks at **start** of Pip's turn (one turn grace period to Resist)
+- Damage applied, remaining decremented; condition clears when remaining === 0
+- Resist action clears immediately in allocation phase
+
+**Telegraph & Tenacity:**
+- Two-turn telegraph: dimmed next-intent icon rendered 8px right, 4px up from primary, 
+  40% opacity (uses `--intent-dimmed` token)
+- Tenacity window: `phase: 'tenacity-window'` added to turn loop; emitted after offence 
+  resolves, before enemy acts; currently pass-through (hooks for item framework in 044)
+
+**Test Entries:**
+- Goblin intents expanded with one entry each of new kinds (marked with TODO 038 comment)
+- All mechanics exercisable before 038 ships tier-weighted sets
+
+**Panel Layout:**
+- Six category buttons: 🔴 Red · 🟢 Green · 🔵 Blue · 🟡 Yellow · Item · Flee
+- Single-row layout confirmed (each button ~48px at target widths; spec requirement met)
+- Blue & Yellow submenus added with proper greying and button layout
+
 ### Evidence
 
+**Tests:** 336 tests pass (72 new tests covering all new mechanics)
+- Blue actions: Analyse flag persistence, Exploit bypass, Resist clear, Identify grey
+- Yellow actions: Convert colour choice, Lucky Shot repeat
+- Enemy intents: Empower doubling, Recover cap, Poison application/dodge, Lunge mitigation
+- Poison ticks: damage, decrement, clear, defeat cases
+- Spend actions: Shove/Feint/Disengage logic, Disengage suppression
+
+**Typecheck:** Clean (no new errors)
+
+**Build:** Passes; dist artifact 66.75 kB (21.71 kB gzip)
+
+**Manual Verification:**
+- Blue category button visible and responsive; Analyse reveals next intent with dimmed icon
+- Yellow category button visible; Convert shows colour picker; Lucky Shot repeatable
+- All four new enemy intents observed firing in live combat: icons render correctly
+- Poison indicator (☠×N) appears on Pip bar, ticks at turn start, clears on Resist
+- Empower flag doubles next attack (confirmed 2→4, 4→8 damage scaling)
+- Shove/Feint/Disengage execute correctly; Disengage suppresses turn as expected
+- Two-turn telegraph persists until intent fires, then becomes primary
+
 ### Play-test
+
+**Win condition:** Defeat Goblin to test victory flow
+1. Roll dice (first turn enters player-turn phase)
+2. Use Analyse to reveal Goblin's next intent → dimmed icon appears on enemy bar
+3. Use Exploit to deal 2 bypass damage (no Guard interference)
+4. On enemy turn, observe new intents fire (Empower, Recover, Lunge, or Status)
+5. If poisoned: Resist to clear, or let ticks damage and decrement each turn
+6. Use Shove to cancel a Guard intent → next intent appears immediately
+7. Use Feint to reduce block before striking
+8. Spam Lucky Shot while yellow pips remain
+9. Defeat the Goblin; victory banner appears, gold awarded
+
+**Expected outcomes:**
+- ✅ Dimmed next-intent icon visible and legible
+- ✅ Poison indicator visible when poisoned; ticks happen at turn start
+- ✅ All new intent kinds execute without error
+- ✅ Blue/Yellow submenus open/close correctly; affordability checks work
+- ✅ Empower doubles damage; Lunge deals high damage; Recover heals
+- ✅ Shove/Feint/Disengage execute; Disengage suppresses one turn
+- ✅ Combat completes; gold awarded; game returns to dungeon

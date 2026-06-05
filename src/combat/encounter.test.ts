@@ -7,6 +7,15 @@ import {
   applyFlee,
   canFlee,
   rollGoldReward,
+  applyAnalyse,
+  applyExploit,
+  applyResist,
+  applyIdentify,
+  applyLuckyShot,
+  applyShove,
+  applyFeint,
+  applyDisengage,
+  applyPoisonTick,
 } from './encounter'
 import { selectIntent, GOBLIN, GOBLIN_INTENTS } from './intents'
 import type { CombatState } from './types'
@@ -20,6 +29,10 @@ function makeCombat(overrides: Partial<CombatState> = {}): CombatState {
     entryFrom: { col: 5, row: 6 },
     goldAwarded: 0,
     itemUsedThisTurn: false,
+    analysedThisCombat: false,
+    analysedThisTurn: false,
+    identified: false,
+    pipPoison: null,
     ...overrides,
   }
 }
@@ -164,7 +177,7 @@ describe('applyEnemyTurn — Attack intent', () => {
 
   it('selects a next intent from the enemy intent set', () => {
     const result = applyEnemyTurn(makeCombat(), 10)
-    expect(['attack', 'guard']).toContain(result.combat.intent.kind)
+    expect(['attack', 'guard', 'empower', 'recover', 'status', 'lunge']).toContain(result.combat.intent.kind)
     expect(typeof result.combat.intent.value).toBe('number')
   })
 })
@@ -230,7 +243,7 @@ describe('selectIntent', () => {
   it('always returns an intent from the set', () => {
     for (let i = 0; i < 100; i++) {
       const intent = selectIntent(GOBLIN_INTENTS)
-      expect(['attack', 'guard']).toContain(intent.kind)
+      expect(['attack', 'guard', 'empower', 'recover', 'status', 'lunge']).toContain(intent.kind)
       expect(typeof intent.value).toBe('number')
     }
   })
@@ -286,5 +299,369 @@ describe('rollGoldReward', () => {
     for (let i = 0; i < 50; i++) {
       expect(rollGoldReward(enemy)).toBe(5)
     }
+  })
+})
+
+// ── Blue category — Analyse ───────────────────────────────────────────────────
+
+describe('applyAnalyse', () => {
+  it('reveals the next intent via nextIntent field', () => {
+    const combat = makeCombat()
+    const result = applyAnalyse(combat)
+    expect(result.nextIntent).toBeDefined()
+    expect(['attack', 'guard', 'empower', 'recover', 'status', 'lunge']).toContain(result.nextIntent?.kind)
+  })
+
+  it('sets analysedThisCombat to true', () => {
+    const combat = makeCombat({ analysedThisCombat: false })
+    const result = applyAnalyse(combat)
+    expect(result.analysedThisCombat).toBe(true)
+  })
+
+  it('sets analysedThisTurn to true (button greying)', () => {
+    const combat = makeCombat({ analysedThisTurn: false })
+    const result = applyAnalyse(combat)
+    expect(result.analysedThisTurn).toBe(true)
+  })
+})
+
+// ── Blue category — Exploit ───────────────────────────────────────────────────
+
+describe('applyExploit', () => {
+  it('deals 2 damage bypassing block entirely', () => {
+    const combat = makeCombat({ enemy: { ...GOBLIN, block: 5 } })
+    const result = applyExploit(combat)
+    expect(result.damage).toBe(2)
+    expect(result.combat.enemy.hp).toBe(4)  // 6 - 2
+    expect(result.combat.enemy.block).toBe(5)  // block not affected by Exploit
+  })
+
+  it('reduces enemy hp even when block is very high', () => {
+    const combat = makeCombat({ enemy: { ...GOBLIN, block: 10 } })
+    const result = applyExploit(combat)
+    expect(result.combat.enemy.hp).toBe(4)  // 6 - 2, block doesn't matter
+    expect(result.combat.enemy.block).toBe(10)  // Exploit doesn't reduce block
+  })
+})
+
+// ── Blue category — Resist ────────────────────────────────────────────────────
+
+describe('applyResist', () => {
+  it('clears poison condition', () => {
+    const combat = makeCombat({ pipPoison: { n: 1, remaining: 3 } })
+    const result = applyResist(combat)
+    expect(result.pipPoison).toBe(null)
+  })
+
+  it('does nothing when Pip is not poisoned', () => {
+    const combat = makeCombat({ pipPoison: null })
+    const result = applyResist(combat)
+    expect(result.pipPoison).toBe(null)
+  })
+})
+
+// ── Blue category — Identify ──────────────────────────────────────────────────
+
+describe('applyIdentify', () => {
+  it('sets identified flag to true', () => {
+    const combat = makeCombat({ identified: false })
+    const result = applyIdentify(combat)
+    expect(result.identified).toBe(true)
+  })
+
+  it('persists even if called again', () => {
+    const combat = makeCombat({ identified: true })
+    const result = applyIdentify(combat)
+    expect(result.identified).toBe(true)
+  })
+})
+
+// ── Yellow category — Lucky Shot ──────────────────────────────────────────────
+
+describe('applyLuckyShot', () => {
+  it('deals 1 damage bypassing block', () => {
+    const combat = makeCombat({ enemy: { ...GOBLIN, block: 3 } })
+    const result = applyLuckyShot(combat)
+    expect(result.damage).toBe(1)
+    expect(result.combat.enemy.hp).toBe(5)  // 6 - 1
+    expect(result.combat.enemy.block).toBe(3)  // block not reduced
+  })
+
+  it('kills the enemy if hp is 1', () => {
+    const combat = makeCombat({ enemy: { ...GOBLIN, hp: 1 } })
+    const result = applyLuckyShot(combat)
+    expect(result.victory).toBe(true)
+    expect(result.combat.phase).toBe('victory')
+  })
+})
+
+// ── Red spend — Shove ─────────────────────────────────────────────────────────
+
+describe('applyShove', () => {
+  it('cancels current intent and reveals next', () => {
+    const combat = makeCombat({ intent: { kind: 'guard', value: 2 } })
+    const result = applyShove(combat)
+    expect(result.intent).not.toEqual(combat.intent)
+    expect(['attack', 'guard', 'empower', 'recover', 'status', 'lunge']).toContain(result.intent.kind)
+  })
+})
+
+// ── Green spend — Feint ───────────────────────────────────────────────────────
+
+describe('applyFeint', () => {
+  it('reduces enemy block by 2', () => {
+    const combat = makeCombat({ enemy: { ...GOBLIN, block: 5 } })
+    const result = applyFeint(combat)
+    expect(result.enemy.block).toBe(3)
+  })
+
+  it('floors block at 0', () => {
+    const combat = makeCombat({ enemy: { ...GOBLIN, block: 1 } })
+    const result = applyFeint(combat)
+    expect(result.enemy.block).toBe(0)
+  })
+
+  it('does nothing when block is already 0', () => {
+    const combat = makeCombat({ enemy: { ...GOBLIN, block: 0 } })
+    const result = applyFeint(combat)
+    expect(result.enemy.block).toBe(0)
+  })
+})
+
+// ── Green spend — Disengage ───────────────────────────────────────────────────
+
+describe('applyDisengage', () => {
+  it('selects new intent and sets disengaged flag', () => {
+    const combat = makeCombat({ intent: { kind: 'attack', value: 2 } })
+    const result = applyDisengage(combat)
+    expect(['attack', 'guard', 'empower', 'recover', 'status', 'lunge']).toContain(result.intent.kind)
+    expect(result.enemy.disengaged).toBe(true)
+  })
+})
+
+// ── Enemy intents — Empower ───────────────────────────────────────────────────
+
+describe('applyEnemyTurn — Empower intent', () => {
+  it('sets enemy.empowered flag, deals no damage', () => {
+    const combat = makeCombat({ intent: { kind: 'empower', value: 2 } })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.damage).toBe(0)
+    expect(result.pipHp).toBe(10)
+    expect(result.combat.enemy.empowered).toBe(true)
+  })
+
+  it('resets reservedGreen', () => {
+    const combat = makeCombat({ intent: { kind: 'empower', value: 2 }, reservedGreen: 2 })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.combat.reservedGreen).toBe(0)
+  })
+})
+
+// ── Enemy intents — Recover ───────────────────────────────────────────────────
+
+describe('applyEnemyTurn — Recover intent', () => {
+  it('heals enemy hp, deals no damage', () => {
+    const combat = makeCombat({
+      intent: { kind: 'recover', value: 3 },
+      enemy: { ...GOBLIN, hp: 2 },
+    })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.damage).toBe(0)
+    expect(result.pipHp).toBe(10)
+    expect(result.combat.enemy.hp).toBe(5)
+  })
+
+  it('caps healing at maxHp', () => {
+    const combat = makeCombat({
+      intent: { kind: 'recover', value: 10 },
+      enemy: { ...GOBLIN, hp: 5, maxHp: 6 },
+    })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.combat.enemy.hp).toBe(6)
+  })
+})
+
+// ── Enemy intents — Status/Poison ─────────────────────────────────────────────
+
+describe('applyEnemyTurn — Status/Poison intent', () => {
+  it('applies poison when reservedGreen < 2', () => {
+    const combat = makeCombat({
+      intent: { kind: 'status', value: 1, statusKind: 'poison' as const, ticks: 3 } as any,
+      reservedGreen: 0,
+    })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.damage).toBe(1)
+    expect(result.pipHp).toBe(9)
+    expect(result.combat.pipPoison).toEqual({ n: 1, remaining: 3 })
+  })
+
+  it('avoids poison and damage when reservedGreen >= 2 (full dodge)', () => {
+    const combat = makeCombat({
+      intent: { kind: 'status', value: 1, statusKind: 'poison' as const, ticks: 3 } as any,
+      reservedGreen: 2,
+    })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.damage).toBe(0)
+    expect(result.pipHp).toBe(10)
+    expect(result.combat.pipPoison).toBe(null)
+  })
+
+  it('partial dodge (1G): reduces damage but applies poison', () => {
+    const combat = makeCombat({
+      intent: { kind: 'status', value: 2, statusKind: 'poison' as const, ticks: 3 } as any,
+      reservedGreen: 1,
+    })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.damage).toBe(1)  // 2 - 1
+    expect(result.pipHp).toBe(9)
+    expect(result.combat.pipPoison).toEqual({ n: 2, remaining: 3 })
+  })
+})
+
+// ── Enemy intents — Lunge ─────────────────────────────────────────────────────
+
+describe('applyEnemyTurn — Lunge intent', () => {
+  it('uses same mitigation as Attack', () => {
+    const combat = makeCombat({ intent: { kind: 'lunge', value: 4 }, reservedGreen: 0 })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.damage).toBe(4)
+    expect(result.pipHp).toBe(6)
+  })
+
+  it('full dodge (2G) avoids lunge', () => {
+    const combat = makeCombat({ intent: { kind: 'lunge', value: 4 }, reservedGreen: 2 })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.damage).toBe(0)
+    expect(result.pipHp).toBe(10)
+  })
+
+  it('is doubled by empowered flag', () => {
+    const combat = makeCombat({
+      intent: { kind: 'lunge', value: 4 },
+      reservedGreen: 0,
+      enemy: { ...GOBLIN, empowered: true },
+    })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.damage).toBe(8)  // 4 × 2
+    expect(result.pipHp).toBe(2)
+  })
+
+  it('clears empowered flag after lunge', () => {
+    const combat = makeCombat({
+      intent: { kind: 'lunge', value: 4 },
+      reservedGreen: 0,
+      enemy: { ...GOBLIN, empowered: true },
+    })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.combat.enemy.empowered).toBe(false)
+  })
+
+  it('kills Pip with lethal Lunge', () => {
+    const combat = makeCombat({
+      intent: { kind: 'lunge', value: 10 },
+      reservedGreen: 0,
+    })
+    const result = applyEnemyTurn(combat, 5)
+    expect(result.defeat).toBe(true)
+    expect(result.combat.phase).toBe('defeat')
+  })
+})
+
+// ── Poison ticking ────────────────────────────────────────────────────────────
+
+describe('applyPoisonTick', () => {
+  it('damages Pip and decrements remaining ticks', () => {
+    const result = applyPoisonTick(10, { n: 2, remaining: 3 })
+    expect(result.pipHp).toBe(8)
+    expect(result.pipPoison).toEqual({ n: 2, remaining: 2 })
+    expect(result.defeat).toBe(false)
+  })
+
+  it('clears poison when remaining hits 0', () => {
+    const result = applyPoisonTick(10, { n: 2, remaining: 1 })
+    expect(result.pipHp).toBe(8)
+    expect(result.pipPoison).toBe(null)
+  })
+
+  it('kills Pip if poison damage is lethal', () => {
+    const result = applyPoisonTick(2, { n: 3, remaining: 2 })
+    expect(result.pipHp).toBe(0)
+    expect(result.defeat).toBe(true)
+  })
+
+  it('returns unchanged state when not poisoned', () => {
+    const result = applyPoisonTick(10, null)
+    expect(result.pipHp).toBe(10)
+    expect(result.pipPoison).toBe(null)
+    expect(result.defeat).toBe(false)
+  })
+})
+
+// ── Empowered attack doubling ─────────────────────────────────────────────────
+
+describe('applyEnemyTurn — Empowered attacks', () => {
+  it('doubles Attack damage when empowered', () => {
+    const combat = makeCombat({
+      intent: { kind: 'attack', value: 2 },
+      reservedGreen: 0,
+      enemy: { ...GOBLIN, empowered: true },
+    })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.damage).toBe(4)  // 2 × 2
+    expect(result.pipHp).toBe(6)
+  })
+
+  it('clears empowered after Attack fires', () => {
+    const combat = makeCombat({
+      intent: { kind: 'attack', value: 2 },
+      reservedGreen: 0,
+      enemy: { ...GOBLIN, empowered: true },
+    })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.combat.enemy.empowered).toBe(false)
+  })
+
+  it('clears empowered even when full dodge prevents damage', () => {
+    const combat = makeCombat({
+      intent: { kind: 'attack', value: 2 },
+      reservedGreen: 2,
+      enemy: { ...GOBLIN, empowered: true },
+    })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.damage).toBe(0)
+    expect(result.combat.enemy.empowered).toBe(false)
+  })
+})
+
+// ── Disengaged intent suppression ──────────────────────────────────────────────
+
+describe('applyEnemyTurn — Disengaged suppression', () => {
+  it('suppresses intent execution when disengaged', () => {
+    const combat = makeCombat({
+      intent: { kind: 'attack', value: 5 },
+      reservedGreen: 0,
+      enemy: { ...GOBLIN, disengaged: true },
+    })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.damage).toBe(0)
+    expect(result.pipHp).toBe(10)
+  })
+
+  it('clears disengaged flag after suppressed turn', () => {
+    const combat = makeCombat({
+      intent: { kind: 'attack', value: 5 },
+      enemy: { ...GOBLIN, disengaged: true },
+    })
+    const result = applyEnemyTurn(combat, 10)
+    expect(result.combat.enemy.disengaged).toBe(false)
+  })
+
+  it('still reveals next intent even when suppressed', () => {
+    const combat = makeCombat({
+      intent: { kind: 'attack', value: 5 },
+      enemy: { ...GOBLIN, disengaged: true },
+    })
+    const result = applyEnemyTurn(combat, 10)
+    expect(['attack', 'guard', 'empower', 'recover', 'status', 'lunge']).toContain(result.combat.intent.kind)
   })
 })

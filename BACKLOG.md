@@ -20,17 +20,12 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-### 046 · Combat Depth: Blue & Yellow, Full Intents & Advanced Actions
+---
 
-The second combat layer, built directly on top of 037. Adds the four remaining **enemy intents**
-(💢 Empower, 😴 Recover, 🕸️ Status/Poison, ☠️ Lunge) and the **two-turn telegraph** revealed via
-Analyse; the **Blue category** (Analyse, Exploit, Resist, Identify) and **Yellow** (Convert 2:1,
-Lucky Shot); the extra spend actions (Shove 3🔴; Feint 2🟢, Disengage 3🟢); and the **Tenacity
-post-spend window** — the hook the item framework (Idea 044) plugs into. 037 was built to accept
-all of this without a refactor. After 046, combat is mechanically complete at the base layer.
-**Depends on:** 037 (combat overhaul). *Pairs with:* 038 (populates new intent sets in enemy
-data), 044 (items that fire in the Tenacity window).
-See `docs/features/046-combat-depth.md` for the full spec.
+### 047 · Combat Panel Layout Redesign
+
+Restructure the combat panel to fix button cramping and align with the "bottom quarter is thumb country" design principle. Move ROLL/END TURN and secondary controls (Flee, Item) to the screen bottom in a single row; repurpose pip-counter badges as clickable buttons that open submenus; create a clear middle zone for submenu or enemy action display. Improves usability without changing any combat mechanics.
+**Depends on:** 046 (combat mechanics). See `docs/features/047-combat-panel-layout.md` for the full spec.
 
 ### 038 · Enemy Roster Expansion
 

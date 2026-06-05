@@ -30,11 +30,13 @@ export const ROLL_BTN_H = 44
 const ROLL_BTN_X = MAP_X + SIDE_MARGIN
 const ROLL_BTN_W = MAP_W - SIDE_MARGIN * 2
 
-// Category buttons (Red / Green / Item / Flee) — always shown in rolled state.
+// Category buttons (Red / Green / Blue / Yellow / Item / Flee) — always shown in rolled state.
 export const CAT_BTN_Y = ROLL_BTN_Y + ROLL_BTN_H + 10
 export const CAT_BTN_H = 40
 const ACTION_GAP = 8
-const CAT_BTN_W = Math.floor((MAP_W - SIDE_MARGIN * 2 - ACTION_GAP * 3) / 4)  // 76
+// Six buttons fit in one row with at least 44px width each
+// (360 - 32) / 6 - (5*8)/6 ≈ 48px per button
+const CAT_BTN_W = Math.floor((MAP_W - SIDE_MARGIN * 2 - ACTION_GAP * 5) / 6)  // 48
 
 // Submenu area — beneath the category row.
 export const SUBMENU_Y = CAT_BTN_Y + CAT_BTN_H + 10
@@ -192,10 +194,11 @@ function drawBadge(ctx: CanvasRenderingContext2D, color: DieColor, total: number
 // ── Category button ───────────────────────────────────────────────────────────
 
 const CAT_LABELS: Record<string, string> = {
-  red: '🔴 Power', green: '🟢 Agility', item: 'Item', flee: 'Flee',
+  red: '🔴 Power', green: '🟢 Agility', blue: '🔵 Focus', yellow: '🟡 Fortune',
+  item: 'Item', flee: 'Flee',
 }
 
-const CAT_ORDER = ['red', 'green', 'item', 'flee'] as const
+const CAT_ORDER = ['red', 'green', 'blue', 'yellow', 'item', 'flee'] as const
 export type CatId = typeof CAT_ORDER[number]
 
 export function catBtnX(idx: number): number {
@@ -380,7 +383,7 @@ export interface CombatPanelDrawState {
   fleePending: boolean
   lastEnemyHeadline: string
   lastEnemyDetail: string
-  lastEnemyKind: 'attack' | 'guard' | null
+  lastEnemyKind: CombatState['intent']['kind'] | null
   hoveredElement: string | null
   flashingElement: string | null
   flashEndTime: number | null
@@ -490,6 +493,8 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     const catAffordable: Record<CatId, boolean> = {
       red: canAfford(pool, { red: 2 }),
       green: canAfford(pool, { green: 1 }),
+      blue: canAfford(pool, { blue: 1 }),
+      yellow: canAfford(pool, { yellow: 1 }),
       item: hasItems && !itemUsed,
       flee: !combat.enemy.isBoss,
     }
@@ -545,6 +550,55 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
         affordable: combat.reservedGreen > 0,
       }, 1, btnY, s.hoveredElement === 'sub-clear',
       false)
+    }
+
+    if (openCategory === 'blue') {
+      const analyseAffordable = canAfford(pool, { blue: 2 }) && !combat.analysedThisTurn
+      const exploitAffordable = canAfford(pool, { blue: 2 }) && combat.analysedThisCombat
+      const resistAffordable = canAfford(pool, { blue: 3 }) && combat.pipPoison !== null
+      const identifyAffordable = canAfford(pool, { blue: 1 }) && !combat.identified
+
+      drawSubmenuBtn(ctx, {
+        id: 'analyse', label: 'Analyse', costLabel: '2🔵',
+        affordable: analyseAffordable,
+      }, 0, SUBMENU_Y, s.hoveredElement === 'sub-analyse',
+      flashActive && flashing === 'sub-analyse')
+
+      drawSubmenuBtn(ctx, {
+        id: 'exploit', label: 'Exploit', costLabel: '2🔵',
+        affordable: exploitAffordable,
+      }, 1, SUBMENU_Y, s.hoveredElement === 'sub-exploit',
+      flashActive && flashing === 'sub-exploit')
+
+      const btnY = SUBMENU_Y + SUBMENU_BTN_H + 8
+      drawSubmenuBtn(ctx, {
+        id: 'resist', label: 'Resist', costLabel: '3🔵',
+        affordable: resistAffordable,
+      }, 0, btnY, s.hoveredElement === 'sub-resist',
+      flashActive && flashing === 'sub-resist')
+
+      drawSubmenuBtn(ctx, {
+        id: 'identify', label: 'Identify', costLabel: '1🔵',
+        affordable: identifyAffordable,
+      }, 1, btnY, s.hoveredElement === 'sub-identify',
+      flashActive && flashing === 'sub-identify')
+    }
+
+    if (openCategory === 'yellow') {
+      const convertAffordable = canAfford(pool, { yellow: 2 })
+      const luckyAffordable = canAfford(pool, { yellow: 1 })
+
+      drawSubmenuBtn(ctx, {
+        id: 'convert', label: 'Convert', costLabel: '2🟡',
+        affordable: convertAffordable,
+      }, 0, SUBMENU_Y, s.hoveredElement === 'sub-convert',
+      flashActive && flashing === 'sub-convert')
+
+      drawSubmenuBtn(ctx, {
+        id: 'lucky-shot', label: 'Lucky Shot', costLabel: '1🟡',
+        affordable: luckyAffordable,
+      }, 1, SUBMENU_Y, s.hoveredElement === 'sub-lucky-shot',
+      flashActive && flashing === 'sub-lucky-shot')
     }
 
     if (openCategory === 'item') {
@@ -639,6 +693,19 @@ export function buildHitRects(
       const btnY = SUBMENU_Y + SUBMENU_NOTE_H + 4
       rects.push({ x: subBtnX(0), y: btnY, w: SUBMENU_BTN_W, h: SUBMENU_BTN_H, id: 'sub-reserve' })
       rects.push({ x: subBtnX(1), y: btnY, w: SUBMENU_BTN_W, h: SUBMENU_BTN_H, id: 'sub-clear' })
+    }
+
+    if (openCategory === 'blue') {
+      rects.push({ x: subBtnX(0), y: SUBMENU_Y, w: SUBMENU_BTN_W, h: SUBMENU_BTN_H, id: 'sub-analyse' })
+      rects.push({ x: subBtnX(1), y: SUBMENU_Y, w: SUBMENU_BTN_W, h: SUBMENU_BTN_H, id: 'sub-exploit' })
+      const btnY = SUBMENU_Y + SUBMENU_BTN_H + 8
+      rects.push({ x: subBtnX(0), y: btnY, w: SUBMENU_BTN_W, h: SUBMENU_BTN_H, id: 'sub-resist' })
+      rects.push({ x: subBtnX(1), y: btnY, w: SUBMENU_BTN_W, h: SUBMENU_BTN_H, id: 'sub-identify' })
+    }
+
+    if (openCategory === 'yellow') {
+      rects.push({ x: subBtnX(0), y: SUBMENU_Y, w: SUBMENU_BTN_W, h: SUBMENU_BTN_H, id: 'sub-convert' })
+      rects.push({ x: subBtnX(1), y: SUBMENU_Y, w: SUBMENU_BTN_W, h: SUBMENU_BTN_H, id: 'sub-lucky-shot' })
     }
 
     if (openCategory === 'item') {
