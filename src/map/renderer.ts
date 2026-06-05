@@ -329,6 +329,11 @@ export function drawSingleTile(
   if (exits & E) drawCorridorFlags(ctx, x + s - wt, y + co, wt, cw, 1, fs, biome, false, true)
   if (exits & W) drawCorridorFlags(ctx, x, y + co, wt, cw, 0, fs, biome)
 
+  // Special room graphics (stairwell spiral)
+  if (cell.roomType === 'stairwell') {
+    drawStairwellSpiral(ctx, x, y, s, colors.roomStairwell)
+  }
+
   const markerColor = ROOM_ACCENTS[cell.roomType]
   if (markerColor) {
     ctx.strokeStyle = markerColor

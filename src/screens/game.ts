@@ -243,13 +243,13 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     // Advance transition state machine and get animated map render params
     const { zoom, pipTargetX, pipTargetY } = registry.computeMapState(timestamp, pipNatX, pipNatY)
 
-    // Compute floor transition fade (out 0–150ms, stay hidden 150–200ms, fade in 200–350ms)
+    // Compute floor transition fade (out 500ms, stay hidden 200ms, fade in 500ms = 1200ms total)
     let floorTransitionAlpha = 1.0
     if (floorTransitionStartTime !== null) {
       const elapsed = timestamp - floorTransitionStartTime
-      const FADE_OUT_MS = 150
-      const FADE_HOLD_MS = 50
-      const FADE_IN_MS = 150
+      const FADE_OUT_MS = 500
+      const FADE_HOLD_MS = 200
+      const FADE_IN_MS = 500
       const TOTAL_MS = FADE_OUT_MS + FADE_HOLD_MS + FADE_IN_MS
 
       if (elapsed < FADE_OUT_MS) {
