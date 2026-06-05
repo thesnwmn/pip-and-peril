@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 046 · Combat Depth: Blue & Yellow, Full Intents & Advanced Actions
+
+**Shipped:** 2026-06-05 · **PR:** #TBD · **Spec:** [docs/features/history/046-combat-depth.md](docs/features/history/046-combat-depth.md)
+
+The second combat layer. Adds the four remaining enemy intents (💢 Empower, 😴 Recover, 🕸️ Status/Poison, ☠️ Lunge) and the two-turn telegraph revealed via Analyse; the Blue category (Analyse, Exploit, Resist, Identify) and Yellow (Convert 2:1, Lucky Shot); extra spend actions (Shove 3🔴; Feint 2🟢, Disengage 3🟢); and the Tenacity post-spend window. After 046, combat is mechanically complete at the base layer.
+
+---
+
 ### 022 · Dungeon Structure: Multi-Floor, Pacing & Boss Gate
 
 **Shipped:** 2026-06-05 · **PR:** (link to be added after merge) · **Spec:** [docs/features/history/022-dungeon-structure.md](docs/features/history/022-dungeon-structure.md)
