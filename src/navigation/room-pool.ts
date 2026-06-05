@@ -44,10 +44,8 @@ export function getRoomWeights(context: RoomWeightContext): Record<RoomType, num
     weights.shop = DUNGEON_TUNING.SHOP_DEBT_WEIGHT
   }
 
-  // Boss override: only on floor 3, with distance-based weighting
-  if (context.floor === 3) {
-    weights.boss = computeBossWeight(context)
-  }
+  // Boss override: all floors for testing
+  weights.boss = computeBossWeight(context)
 
   return weights
 }
