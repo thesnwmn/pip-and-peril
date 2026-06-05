@@ -125,6 +125,28 @@ function roundRect(
   }
 }
 
+// ── Text wrapping helper ──────────────────────────────────────────────────────
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const words = text.split(' ')
+  const lines: string[] = []
+  let currentLine = ''
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word
+    const metrics = ctx.measureText(testLine)
+    if (metrics.width > maxWidth && currentLine) {
+      lines.push(currentLine)
+      currentLine = word
+    } else {
+      currentLine = testLine
+    }
+  }
+
+  if (currentLine) lines.push(currentLine)
+  return lines
+}
+
 // ── Die layout helpers ────────────────────────────────────────────────────────
 
 export function dieCentres(diceCount: number): number[] {
@@ -632,16 +654,25 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     const centerY = (diceBottomY + topOfBottomBtn) / 2
 
     const cx = MAP_X + MAP_W / 2
+    const maxTextWidth = ROLL_BTN_W
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
 
     ctx.font = 'bold 15px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = lastEnemyKind === 'guard' ? GUARD_STEEL_COLOR : ENEMY_RED_COLOR
-    ctx.fillText(lastEnemyHeadline, cx, centerY - 16)
+    const headlineLines = wrapText(ctx, lastEnemyHeadline, maxTextWidth)
+    const headlineY = centerY - 16 - (headlineLines.length - 1) * 10
+    for (let i = 0; i < headlineLines.length; i++) {
+      ctx.fillText(headlineLines[i], cx, headlineY + i * 20)
+    }
 
     ctx.font = '14px monospace'
     ctx.fillStyle = colors.textPrimary
-    ctx.fillText(lastEnemyDetail, cx, centerY + 16)
+    const detailLines = wrapText(ctx, lastEnemyDetail, maxTextWidth)
+    const detailY = centerY + 16 + (headlineLines.length - 1) * 10
+    for (let i = 0; i < detailLines.length; i++) {
+      ctx.fillText(detailLines[i], cx, detailY + i * 20)
+    }
   }
 
   // ── Bottom button row (Flee | ROLL/END TURN | Item) ──
