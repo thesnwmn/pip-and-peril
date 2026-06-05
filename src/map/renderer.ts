@@ -49,15 +49,18 @@ function drawStairwellSpiral(
 ): void {
   const cx = px + s / 2
   const cy = py + s / 2
-  const maxRadius = s / 2.5
+  const maxRadius = s / 4.5  // Reduced from s/2.5 to keep it smaller
 
+  // Draw spiral with high contrast
   ctx.strokeStyle = color
-  ctx.lineWidth = 2.5
+  ctx.lineWidth = 3.5  // Thicker line for better visibility
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
   ctx.beginPath()
 
-  // Draw spiral from center outward
-  const spiralSteps = 5
-  for (let i = 0; i <= spiralSteps * Math.PI * 2; i += 0.15) {
+  // Draw spiral from center outward with more steps for smoother appearance
+  const spiralSteps = 4
+  for (let i = 0; i <= spiralSteps * Math.PI * 2; i += 0.12) {
     const r = (i / (spiralSteps * Math.PI * 2)) * maxRadius
     const x = cx + Math.cos(i) * r
     const y = cy + Math.sin(i) * r
@@ -66,19 +69,22 @@ function drawStairwellSpiral(
   }
   ctx.stroke()
 
-  // Draw arrow pointing downward to indicate descent
-  const arrowSize = s * 0.08
-  const arrowY = cy + maxRadius * 0.7
+  // Draw arrow pointing downward with increased visibility
+  const arrowSize = s * 0.1
+  const arrowY = cy + maxRadius * 0.6
   ctx.strokeStyle = color
-  ctx.lineWidth = 2
+  ctx.lineWidth = 3
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
   ctx.beginPath()
   ctx.moveTo(cx, arrowY - arrowSize)
   ctx.lineTo(cx, arrowY + arrowSize)
-  ctx.moveTo(cx - arrowSize * 0.6, arrowY + arrowSize * 0.6)
+  ctx.moveTo(cx - arrowSize * 0.7, arrowY + arrowSize * 0.5)
   ctx.lineTo(cx, arrowY + arrowSize)
-  ctx.lineTo(cx + arrowSize * 0.6, arrowY + arrowSize * 0.6)
+  ctx.lineTo(cx + arrowSize * 0.7, arrowY + arrowSize * 0.5)
   ctx.stroke()
 }
+
 
 function drawCell(
   ctx: CanvasRenderingContext2D,
