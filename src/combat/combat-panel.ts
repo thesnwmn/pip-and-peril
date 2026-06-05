@@ -174,9 +174,8 @@ export function createCombatEncounterPanel(
       markRoomCleared()
       log = ''
       bannerStartTime = performance.now()
+      openCategory = null
     }
-
-    openCategory = null
   }
 
   function handleReserve(): void {
@@ -296,9 +295,10 @@ export function createCombatEncounterPanel(
     }
 
     if (combat.phase === 'victory' || combat.phase === 'defeat') {
-      if (bannerStartTime !== null && !completed) {
-        const timeout = combat.phase === 'victory' ? 1500 : 2000
-        if (timestamp - bannerStartTime >= timeout) signalComplete(combat.phase)
+      // Victory waits for a tap (handleClick signals completion).
+      // Defeat auto-advances after 2 s so the player isn't stuck.
+      if (bannerStartTime !== null && !completed && combat.phase === 'defeat') {
+        if (timestamp - bannerStartTime >= 2000) signalComplete('defeat')
       }
       if (bannerStartTime !== null) drawCombatBanner(renderCtx, timestamp, combat, bannerStartTime)
       return

@@ -87,7 +87,7 @@ const BADGE_BORDER: Record<DieColor, string> = {
 }
 
 const COLOR_LABEL: Record<DieColor, string> = {
-  red: 'RED', blue: 'BLUE', green: 'GREEN', yellow: 'YELLOW',
+  red: 'Power', blue: 'Focus', green: 'Agility', yellow: 'Fortune',
 }
 
 const COLOR_EMOJI: Record<DieColor, string> = {
@@ -191,7 +191,7 @@ function drawBadge(ctx: CanvasRenderingContext2D, color: DieColor, total: number
 // ── Category button ───────────────────────────────────────────────────────────
 
 const CAT_LABELS: Record<string, string> = {
-  red: '🔴 Red', green: '🟢 Green', item: 'Item', flee: 'Flee',
+  red: '🔴 Power', green: '🟢 Agility', item: 'Item', flee: 'Flee',
 }
 
 const CAT_ORDER = ['red', 'green', 'item', 'flee'] as const
