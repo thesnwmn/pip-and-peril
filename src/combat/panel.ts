@@ -696,20 +696,22 @@ function drawItemList(
   if (items.length === 0) {
     ctx.font = '11px monospace'
     ctx.fillStyle = colors.textMuted
-    ctx.textAlign = 'left'
+    ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('No items', MAP_X + SIDE_MARGIN, startY + SUBMENU_NOTE_H / 2)
+    ctx.fillText('No items', MAP_X + MAP_W / 2, startY + SUBMENU_BTN_H / 2)
     return
   }
 
-  const perRow = 4
-  const btnW = CAT_BTN_W
-  const btnH = 40
+  // Two-column layout (max 4 items = 2 rows × 2 columns)
   for (let i = 0; i < Math.min(items.length, 4); i++) {
     const item = items[i]
-    const x = MAP_X + SIDE_MARGIN + i * (btnW + ACTION_GAP)
+    const col = i % 2
+    const row = Math.floor(i / 2)
+    const x = subBtnX(col)
+    const y = startY + row * (SUBMENU_BTN_H + 8)
     const isHov = hovered === `item-${i}`
-    roundRect(ctx, x, startY, btnW, btnH, 8)
+
+    roundRect(ctx, x, y, SUBMENU_BTN_W, SUBMENU_BTN_H, 8)
     ctx.fillStyle = isHov ? colors.surfaceRaised : colors.surface
     ctx.fill()
     ctx.strokeStyle = colors.gold
@@ -720,12 +722,11 @@ function drawItemList(
     ctx.fillStyle = colors.textPrimary
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(item.name.slice(0, 8), x + btnW / 2, startY + btnH / 2 - 6)
-    ctx.font = '8px monospace'
+    ctx.fillText(item.name, x + SUBMENU_BTN_W / 2, y + SUBMENU_BTN_H / 2 - 8)
+    ctx.font = '9px monospace'
     ctx.fillStyle = colors.gold
-    ctx.fillText(`×${item.quantity}`, x + btnW / 2, startY + btnH / 2 + 8)
+    ctx.fillText(`×${item.quantity}`, x + SUBMENU_BTN_W / 2, y + SUBMENU_BTN_H / 2 + 8)
   }
-  void perRow
 }
 
 // ── Hit testing ───────────────────────────────────────────────────────────────
@@ -781,9 +782,12 @@ export function buildHitRects(
     if (openCategory === 'item') {
       const items = inventory.items.filter((i: Item) => i.usableInCombat)
       for (let i = 0; i < Math.min(items.length, 4); i++) {
+        const col = i % 2
+        const row = Math.floor(i / 2)
+        const x = subBtnX(col)
+        const y = SUBMENU_Y + row * (SUBMENU_BTN_H + 8)
         rects.push({
-          x: MAP_X + SIDE_MARGIN + i * (CAT_BTN_W + ACTION_GAP),
-          y: SUBMENU_Y, w: CAT_BTN_W, h: 40, id: `item-${i}`,
+          x, y, w: SUBMENU_BTN_W, h: SUBMENU_BTN_H, id: `item-${i}`,
         })
       }
     }
