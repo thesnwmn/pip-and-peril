@@ -1,6 +1,6 @@
 # 037 · Combat Overhaul: Intents, Active Defence & Panel Redesign
 
-**Status:** READY *(ships in two phases — Phase 1 below is the buildable contract; Phase 2 is documented direction)*
+**Status:** READY
 **Source idea:** Idea 039 (Enemy Intent System) + Idea 040 (Active Defence), consolidated; folds backlog item 036 (Raw Flee). Manager request to make the overhaul + panel one unblocker.
 **Depends on:** 006 (combat encounter — the loop this replaces), 030 (elastic canvas — the panel this redesigns), 005 (dice pool), 020 (fled tile state, item action button)
 
@@ -23,18 +23,15 @@ on.
 
 ## Acceptance criteria
 
-*Phase 1 is the contract the Engineer builds and the Reviewer checks. Phase 2 (see Design detail)
-is direction, not yet a build.*
-
 ### Intent
 
 1. On combat entry and at the start of every Pip turn, the enemy's **current intent** is computed
-   and shown **on the map as an overlay above the enemy**, **before** Pip rolls. Phase-1 intent
-   set: ⚔️ **Attack N** (will deal `N` damage) and 🛡️ **Guard N** (will raise `N` block on its
-   turn instead of attacking).
+   and shown **on the map as an overlay above the enemy**, **before** Pip rolls. Intent set for
+   this feature: ⚔️ **Attack N** (will deal `N` damage) and 🛡️ **Guard N** (will raise `N` block
+   on its turn instead of attacking). Richer intent kinds are added by **046 · Combat Depth**.
 2. The intent overlay is visible during the whole of Pip's turn (persists through roll and
    allocation) so the player allocates pips with full information.
-3. The Goblin's Phase-1 intent pattern is defined in data (not hard-coded in the renderer): an
+3. The Goblin's intent pattern is defined in data (not hard-coded in the renderer): an
    ordered/weighted set the encounter draws from each turn. Default Goblin: mostly Attack 2, with
    an occasional Guard 2 — simple enough to teach the system on Floor 1.
 
@@ -50,11 +47,11 @@ is direction, not yet a build.*
    - `reservedGreen == 1` → damage reduced by 1 (`max(0, N − 1)`).
    - `reservedGreen == 0` → Pip takes the full `N`.
    Reserved Green resets to 0 after the enemy's turn resolves.
-7. Spending Green on an action (Phase 1 has none that spend Green — see Flee/Phase 2) or simply not
-   reserving it means **no defence that turn** — taking the full telegraphed hit is a valid, often
-   correct, choice when `N` is small. The system must not auto-mitigate.
+7. Not reserving Green (this feature has no Green *spend* action — those arrive in 046) means
+   **no defence that turn** — taking the full telegraphed hit is a valid, often correct, choice
+   when `N` is small. The system must not auto-mitigate.
 
-### Actions (Phase 1)
+### Actions
 
 8. **Strike** — cost **2 🔴** — deal the weapon's attack value in damage (default **2**) to the
    enemy. Resolves immediately; victory checked on the spot.
@@ -65,8 +62,8 @@ is direction, not yet a build.*
     against the telegraphed hit ("hold 2 → Dodge ready", "hold 1 → −1", "0 → full hit"). Reserving
     more Green than needed is allowed but wasted against a single hit.
 11. **Enemy Guard** absorbs Pip's offence: while the enemy holds `block`, Strike/Heavy Strike
-    damage depletes `block` before HP; block does not regenerate and carries until depleted. (In
-    Phase 1 nothing bypasses Guard — Lucky Shot/Exploit arrive in Phase 2.)
+    damage depletes `block` before HP; block does not regenerate and carries until depleted.
+    (Nothing bypasses Guard in this feature — Lucky Shot/Exploit arrive in 046.)
 12. Action buttons (inside the category submenus) follow the existing pip-deduction/enable logic
     (005). A button whose cost exceeds the pips currently available renders in an **insufficient-
     pips greyed state** (visibly disabled, cost still legible) — never hidden. A whole **category
@@ -128,17 +125,20 @@ is direction, not yet a build.*
 
 ## Scope / non-goals
 
-**Phase 1 deliberately excludes** (these are Phase 2, documented in Design detail — not built yet):
+**Deferred to `046 · Combat Depth`** (the follow-up that enriches this same combat — kept out here
+so this feature stays a shippable, self-contained unblocker; the category/intent structures below
+are built to accept them without a refactor):
 
-- Intents beyond Attack/Guard: 💢 Empower, 😴 Recover, 🕸️ Status, ☠️ Lunge.
-- **Blue** actions (Analyse → two-turn telegraph, Exploit, Resist, Identify) and **Yellow**
-  (2:1 convert, Lucky Shot). Phase 1 is a Red/Green fight.
+- Intents beyond Attack/Guard: 💢 Empower, 😴 Recover, 🕸️ Status, ☠️ Lunge (and two-turn telegraph).
+- **Blue** actions (Analyse, Exploit, Resist, Identify) and **Yellow** (2:1 convert, Lucky Shot) —
+  this feature is a Red/Green fight.
 - *Spend* actions beyond Strike/Heavy: Shove (3R, Red), Feint (2G) and Disengage (3G, Green).
-- The **Tenacity** post-spend window and the item interjection framework generally (Idea 044).
-- In-combat healing. 006's Blue **Focus** heal is **removed** — healing becomes an item concern
-  (post-damage window, Phase 2 / Idea 044). See Open questions on whether a stopgap is needed.
+- The **Tenacity** post-spend window (the in-combat hook for Idea 044's item framework).
 
 **Out of scope entirely (separate features):**
+
+- In-combat healing. 006's Blue **Focus** heal is **removed** — healing becomes an item concern
+  (post-damage window, via Idea 044). See Open questions on whether a stopgap is needed.
 
 - **Rattled / Emboldened** emotional states (Idea 041 — a post-overhaul follow-up).
 - **Boss intent cycles** and the boss fight itself (item 023, to be re-specced against this).
@@ -154,7 +154,7 @@ checks; this feature must not redefine Green in a way that breaks them.
 
 ## Design detail
 
-### State machine (Phase 1)
+### State machine
 
 ```
 [NAVIGATION]
@@ -197,10 +197,10 @@ Enemy (added):
   attack:    number              ← weapon/strike damage value (existing)
   block:     number              ← current Guard block (default 0)
   isBoss:    boolean             ← gates Flee
-  intents:   IntentSet           ← weighted Phase-1 set (Goblin: mostly Attack 2, some Guard 2)
+  intents:   IntentSet           ← weighted set (Goblin: mostly Attack 2, some Guard 2)
 
 Intent:
-  kind:  'attack' | 'guard'      ← Phase 1; widened in Phase 2
+  kind:  'attack' | 'guard'      ← Attack/Guard here; more kinds added by 046
   value: number                  ← N (damage for attack, block for guard)
 ```
 
@@ -221,8 +221,8 @@ damageToPip(intentValue, reservedGreen):
 A **Guard N** intent, when it fires on the enemy's turn, sets `enemy.block += N` (the enemy does
 not attack that turn). On subsequent Pip turns, Strike/Heavy Strike damage depletes `block` before
 `hp` (`absorbed = min(damage, block); block -= absorbed; hp -= (damage - absorbed)`). Block does
-not regenerate. Per the concept's resolved open question, in later phases only Lucky Shot/Exploit
-bypass Guard; Phase 1 has neither, so Guard simply demands more Red to break through.
+not regenerate. Per the concept's resolved open question, only Lucky Shot/Exploit bypass Guard;
+this feature has neither (they arrive in 046), so Guard simply demands more Red to break through.
 
 ### Flee resolution
 
@@ -231,22 +231,13 @@ Flee sits in the allocate phase (concept doc, "Where does Flee fit?"). On Flee: 
 otherwise mark the room fled (feature 020 state) and move Pip to `combat.entryFrom`, clear
 `combat`, resume navigation. Disabled when `enemy.isBoss`.
 
-### Phase 2 — planned extensions (documented direction, not this build)
+### Built to extend
 
-Same document, next build once Phase 1 ships and the roster (038) needs richer telegraphs:
-
-- **Full intent set:** Empower (next attack doubled, shown a turn early), Recover (enemy heals),
-  Status (debuff on hit), Lunge (damage exceeding a full reserve). Per-tier intent pools and the
-  floor-depth / run-depth gating are **038**'s job to populate; this spec owns the *mechanism*.
-- **Blue actions:** Analyse (reveal next intent → two-turn telegraph), Exploit (bypass Guard,
-  needs prior Analyse), Resist (clear a status), Identify (exact enemy HP). Blue dice are typically
-  absent early — surfacing Blue mid-run is the discovery beat.
-- **Yellow:** 2:1 convert to any colour; Lucky Shot (1Y → 1 damage bypassing Guard).
-- **Red spend action:** Shove (3R, skip the enemy's current intent) — joins Strike/Heavy in the
-  Red submenu.
-- **Green spend actions:** Feint (2G, −2 enemy Guard), Disengage (3G, enemy skips next attack) —
-  join Reserve in the Green submenu.
-- **Tenacity window** (post-spend) — a hook for Idea 044's Tenacity items.
+The structures here are deliberately open so **046 · Combat Depth** can add to them without a
+refactor: `Intent.kind` is a string union ready for more kinds; the category/submenu panel takes
+new categories (Blue, Yellow) and new submenu actions (Shove, Feint, Disengage) as data; the
+intent overlay leaves room above the enemy for a second (telegraph) icon; and the turn loop has a
+clear post-spend point where the Tenacity window will slot in.
 
 ## Visual design
 
@@ -291,7 +282,7 @@ Dungeon-dark panel (`--surface`), elastic-canvas register from 030.
 
 - **Intent overlay** floats above the enemy: intent icon + value (⚔️2, 🛡2). It is the information
   the whole turn pivots on; on a Guard turn the icon reads 🛡 and the value is the block it will
-  raise. Two-turn telegraphs (Phase 2, via Analyse) add a second, dimmer icon behind it.
+  raise. (Two-turn telegraphs — a second, dimmer icon behind it — arrive with 046, via Analyse.)
 - **Health bars** are drawn on the map under each combatant (not in the panel). Reuse the 006 bar
   styling (gold fill for Pip, `--room-enemy` for the enemy, `--room-corridor` empty). The enemy's
   current **block** shows as a small 🛡 + number in `--guard-steel` next to its bar.
@@ -361,14 +352,14 @@ src/
 
 ## Open questions
 
-- **Stopgap heal for Phase-1 playtest?** Removing Focus leaves no in-combat heal until items
-  (Phase 2 / Idea 044). Phase 1's "race or dodge" loop is intended to work without it, but if
-  Floor-1 playtests feel unfair we may want a temporary heal item before 044 lands. Does not block
-  the build — flag for the first play-test.
+- **Stopgap heal for play-test?** Removing Focus leaves no in-combat heal until items (Idea 044).
+  The "race or dodge" loop is intended to work without it, but if Floor-1 play-tests feel unfair we
+  may want a temporary heal item before 044 lands. Does not block the build — flag for the first
+  play-test.
 - **Reserve granularity.** The Green submenu offers `+Reserve` / `Clear` so the player can hold
-  some Green and (in Phase 2) spend the rest on Feint. For Phase 1, is incremental worth it or
-  should `+Reserve` just hold *all* Green in one tap? Recommend incremental (it teaches the trade
-  and is forward-compatible), but a one-tap "hold all" is acceptable for the MVP — confirm.
+  some Green and (once 046 adds Feint) spend the rest. Is incremental worth it now, or should
+  `+Reserve` just hold *all* Green in one tap? Recommend incremental (it teaches the trade and is
+  forward-compatible), but a one-tap "hold all" is acceptable for the MVP — confirm.
 - **Overlay vs small screens.** HP bars + intent over the map must not crowd the facing-off art on
   the narrowest target width. If it gets tight, the fallback is a thin status ribbon just below the
   camera (still above `PANEL_TOP`), not back into the control panel — confirm the threshold in

@@ -33,8 +33,9 @@ each, intent icon above the enemy), freeing the panel to be the **dice pool plus
 (Red / Green / Item / Flee) that open submenus — clean room for the actions and item slots still to
 come. Folds in **Raw Flee** (escape a non-boss fight for one free enemy hit; Pip retreats to
 the entry tile and the room is left in the fled state — the seed for future roaming enemies).
-Ships in two phases (Phase 1 = Attack/Guard intents + reserve defence + Strike/Heavy/Reserve/Flee
-+ the new panel; Phase 2 = Blue/Yellow, the full intent set, Tenacity hook).
+Scoped as a self-contained unblocker: Attack/Guard intents, reserve defence, Strike/Heavy/Reserve/
+Flee, and the new panel. The richer combat layer (Blue/Yellow, the full intent set, advanced
+actions, Tenacity) is **046**, built on top.
 **Depends on:** 006 (combat loop), 030 (elastic canvas panel), 005 (dice), 020 (fled state).
 See `docs/features/037-combat-overhaul.md` for the full spec.
 
@@ -93,12 +94,13 @@ See `docs/features/026-chest-encounter.md` for the full spec.
 ## NEEDS SPEC
 
 > **The combat overhaul (037) comes first.** 037 replaces the combat flow itself, so every item
-> that touches a fight sits behind it — **023** (boss), **038** (enemy roster, which now needs
-> per-tier *intent sets*), and the whole item layer. The non-combat encounters (**025** trap,
-> **026** chest, **027** shop) and the dungeon structure (**022**) are independent of the combat
-> loop and proceed in parallel — they are in READY above. The order below is **recommended build
-> order** (dependency-respecting; the Planner sets final priority): **037 → 038 → 023 → 028 → 029**.
-> Each item's *Depends on* notes carry the real ordering constraints.
+> that touches a fight sits behind it — **046** (the combat depth layer), **023** (boss), **038**
+> (enemy roster, which now needs per-tier *intent sets*), and the whole item layer. The non-combat
+> encounters (**025** trap, **026** chest, **027** shop) and the dungeon structure (**022**) are
+> independent of the combat loop and proceed in parallel — they are in READY above. The order below
+> is **recommended build order** (dependency-respecting; the Planner sets final priority):
+> **037 → 038 → 046 → 023 → 028 → 029**. Each item's *Depends on* notes carry the real ordering
+> constraints.
 >
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) and **020 · Item System** — both already shipped. *(Item 036 · Raw Flee has been folded
@@ -117,6 +119,19 @@ gate to deeper floors. Enemy room placement in 022 pulls from this roster once i
 **Depends on:** 037 (combat overhaul — intents, the action model enemies plug into), 022 (tier
 references and weighting system), 006 (combat loop).
 *(Absorbs Idea 012 · Creature Personality Traits.)*
+
+### 046 · Combat Depth: Blue & Yellow, Full Intents & Advanced Actions
+
+The richer combat layer that builds on the 037 overhaul, once the basic fight is in. Adds the
+remaining **enemy intents** (💢 Empower, 😴 Recover, 🕸️ Status, ☠️ Lunge) and the two-turn
+telegraph; the **Blue** category (Analyse, Exploit, Resist, Identify) and **Yellow** (2:1 convert,
+Lucky Shot); the extra colour-spend actions (Shove 3🔴; Feint 2🟢, Disengage 3🟢); and the
+**Tenacity** post-spend window — the in-combat hook the item framework (Idea 044) plugs into. 037
+is built to take all of this as data without a refactor (string-union intents, data-driven category
+submenus, headroom in the intent overlay). The per-tier intent *pools* and floor/run-depth gating
+are 038's to populate; 046 owns the *mechanisms*.
+**Depends on:** 037 (combat overhaul — the structures this extends). Pairs with 038 (roster intent
+sets) and 044 (item framework, for the Tenacity window).
 
 ### 023 · Boss Encounter & Run Completion
 
