@@ -57,15 +57,15 @@ const MOCK_MAP_VIEW: MapViewConfig = { zoom: 1.8, pipTargetX: 195, pipTargetY: 2
 const ROLL_CX = ROLL_BTN_X + ROLL_BTN_W / 2
 const ROLL_CY = ROLL_BTN_Y + ROLL_BTN_H / 2
 
-// Simulate click Roll → first draw (sets rollStartTime) → draw past 500ms → draw past 1.5s
+// Simulate click Roll → first draw (sets rollStartTime) → draw past 500ms → tap to continue
 function simulateFullRoll(
   panel: ReturnType<typeof createTrapEncounterPanel>,
   ctx: CanvasRenderingContext2D,
 ): void {
   panel.handleClick(ROLL_CX, ROLL_CY)
   panel.draw(ctx, 0)    // sets rollStartTime = 0
-  panel.draw(ctx, 600)  // elapsed 600ms >= 500ms → rollComplete; outcomeStartTime = 600
-  panel.draw(ctx, 2200) // elapsed 1600ms >= 1500ms → onComplete
+  panel.draw(ctx, 600)  // elapsed 600ms >= 500ms → rollComplete; panelState = 'outcome'
+  panel.handleClick(ROLL_CX, ROLL_CY) // tap to continue → onComplete
 }
 
 // ── computeTrapDamage ─────────────────────────────────────────────────────────
@@ -148,7 +148,7 @@ describe('createTrapEncounterPanel', () => {
       expect(onComplete).toHaveBeenCalledWith('resolved')
     })
 
-    it('calls onComplete("resolved") on pass after 1.5s', () => {
+    it('calls onComplete("resolved") on tap after pass', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0.999)
       const onComplete = vi.fn()
       const { context } = makeContext(10)
@@ -158,7 +158,7 @@ describe('createTrapEncounterPanel', () => {
       expect(onComplete).toHaveBeenCalledWith('resolved')
     })
 
-    it('does not call onComplete before 1.5s has elapsed', () => {
+    it('does not call onComplete before tap in outcome state', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0.999)
       const onComplete = vi.fn()
       const { context } = makeContext(10)
@@ -166,8 +166,8 @@ describe('createTrapEncounterPanel', () => {
       const panel = createTrapEncounterPanel(onComplete, makeTrapCell(2), MOCK_MAP_VIEW, context)
       panel.handleClick(ROLL_CX, ROLL_CY)
       panel.draw(ctx, 0)
-      panel.draw(ctx, 600)   // rollComplete; outcomeStartTime = 600
-      panel.draw(ctx, 1900)  // 1900 - 600 = 1300ms < 1500ms → not yet
+      panel.draw(ctx, 600)   // rollComplete; panelState = 'outcome'
+      panel.draw(ctx, 5000)  // many draws, no tap
       expect(onComplete).not.toHaveBeenCalled()
     })
   })
@@ -278,15 +278,15 @@ describe('createTrapEncounterPanel', () => {
   })
 
   describe('onComplete called only once', () => {
-    it('does not call onComplete twice even with multiple draw calls past 1.5s', () => {
+    it('does not call onComplete twice even with multiple taps in outcome state', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0.999)
       const onComplete = vi.fn()
       const { context } = makeContext(10)
       const ctx = makeCtx()
       const panel = createTrapEncounterPanel(onComplete, makeTrapCell(2), MOCK_MAP_VIEW, context)
       simulateFullRoll(panel, ctx)
-      panel.draw(ctx, 3000) // extra draw, should not fire again
-      panel.draw(ctx, 4000)
+      panel.handleClick(ROLL_CX, ROLL_CY) // second tap — should not fire again
+      panel.handleClick(ROLL_CX, ROLL_CY)
       expect(onComplete).toHaveBeenCalledTimes(1)
     })
   })

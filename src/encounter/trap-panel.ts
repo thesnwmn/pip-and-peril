@@ -120,7 +120,6 @@ export function createTrapEncounterPanel(
   let rollStartTime: DOMHighResTimeStamp | null = null
   let lastScrambleTick: DOMHighResTimeStamp = 0
   let scramble: number[] = []
-  let outcomeStartTime: DOMHighResTimeStamp | null = null
   let outcomeResult: 'resolved' | 'defeat' = 'resolved'
   let resultText = ''
   let outcomeText = ''
@@ -159,7 +158,6 @@ export function createTrapEncounterPanel(
 
     markTrapFired()
     panelState = 'outcome'
-    outcomeStartTime = timestamp
   }
 
   function dieCentresX(diceCount: number): number[] {
@@ -179,13 +177,6 @@ export function createTrapEncounterPanel(
         lastScrambleTick = timestamp
         const pool = context.getPool()
         scramble = pool.dice.map(d => Math.floor(Math.random() * d.sides) + 1)
-      }
-    }
-
-    if (panelState === 'outcome' && !completed && outcomeStartTime !== null) {
-      if (timestamp - outcomeStartTime >= 1500) {
-        completed = true
-        onComplete(outcomeResult)
       }
     }
 
@@ -244,7 +235,7 @@ export function createTrapEncounterPanel(
       ctx.fillText('Roll', PANEL_W / 2, ROLL_BTN_Y + ROLL_BTN_H / 2)
     }
 
-    // Outcome phase: result + flavour lines
+    // Outcome phase: result + flavour lines + tap prompt
     if (panelState === 'outcome') {
       ctx.font = '14px monospace'
       ctx.fillStyle = colors.textMuted
@@ -257,12 +248,26 @@ export function createTrapEncounterPanel(
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(outcomeText, PANEL_W / 2, OUTCOME_LINE_Y)
+
+      ctx.font = '12px monospace'
+      ctx.fillStyle = colors.textMuted
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('tap to continue', PANEL_W / 2, OUTCOME_LINE_Y + 36)
     }
 
     ctx.restore()
   }
 
   function handleClick(x: number, y: number): void {
+    if (panelState === 'outcome') {
+      if (!completed) {
+        completed = true
+        onComplete(outcomeResult)
+      }
+      return
+    }
+
     if (inputLocked) return
     if (panelState !== 'roll') return
 
