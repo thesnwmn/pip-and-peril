@@ -235,71 +235,79 @@ export function createShopEncounterPanel(
     ctx.fill()
     ctx.stroke()
 
-    // Icon
+    // Icon (vertically centered)
     ctx.font = `${CARD_ICON_SIZE_COMPACT}px monospace`
     ctx.fillStyle = colors.textPrimary
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
+    const centerY = top + height / 2
     ctx.fillText(
       iconGlyph(item.iconType),
       left + 12 + CARD_ICON_SIZE_COMPACT / 2,
-      top + height / 2
+      centerY
     )
 
-    // Name and description on the right (aligned with icon top/bottom)
-    const nameTop = top + CARD_PADDING
+    // Name and description (vertically centered in card)
     const textLeft = left + 52
     const textRight = left + width - 12
+    const nameDescHeight = 13 + 10 + 2  // name height + desc height + gap
+    const nameStartY = centerY - nameDescHeight / 2
 
     ctx.font = 'bold 13px monospace'
     ctx.fillStyle = colors.textPrimary
     ctx.textAlign = 'left'
     ctx.textBaseline = 'top'
-    ctx.fillText(item.name, textLeft, nameTop)
+    ctx.fillText(item.name, textLeft, nameStartY)
 
     // Description line (small italic text)
     ctx.font = 'italic 10px monospace'
     ctx.fillStyle = colors.textMuted
     ctx.textBaseline = 'top'
-    const descY = nameTop + 14
+    const descY = nameStartY + 13 + 2
     ctx.fillText(item.description, textLeft, descY)
 
-    // Price badge or Buy button
+    // Price badge or Buy button (on the right side)
     if (isSelected) {
-      // Show Buy button on the left side, encompassing the price position
-      const priceText = `${item.shopPrice}◈`
-      const priceWidth = 40
+      // Show Buy button on the right with curved borders
+      const btnWidth = 55
       const btnHeight = 20
-      const btnTop = nameTop + 2
-      const btnLeft = textLeft
-      const btnRight = btnLeft + 60
+      const btnLeft = textRight - btnWidth
+      const btnTop = centerY - btnHeight / 2
 
       const buyHovered = hoveredElement === `buy-${cardIndex}`
       ctx.fillStyle = buyHovered ? 'rgba(122, 90, 26, 0.35)' : 'rgba(122, 90, 26, 0.2)'
       ctx.strokeStyle = colors.roomShop
       ctx.lineWidth = 1
+
+      // Draw rounded rectangle for button
+      const radius = 4
       ctx.beginPath()
-      ctx.rect(btnLeft, btnTop, btnRight - btnLeft, btnHeight)
+      ctx.moveTo(btnLeft + radius, btnTop)
+      ctx.lineTo(btnLeft + btnWidth - radius, btnTop)
+      ctx.arcTo(btnLeft + btnWidth, btnTop, btnLeft + btnWidth, btnTop + radius, radius)
+      ctx.lineTo(btnLeft + btnWidth, btnTop + btnHeight - radius)
+      ctx.arcTo(btnLeft + btnWidth, btnTop + btnHeight, btnLeft + btnWidth - radius, btnTop + btnHeight, radius)
+      ctx.lineTo(btnLeft + radius, btnTop + btnHeight)
+      ctx.arcTo(btnLeft, btnTop + btnHeight, btnLeft, btnTop + btnHeight - radius, radius)
+      ctx.lineTo(btnLeft, btnTop + radius)
+      ctx.arcTo(btnLeft, btnTop, btnLeft + radius, btnTop, radius)
       ctx.fill()
       ctx.stroke()
 
-      // "Buy" text on left
+      // "Buy" text and price inside button
       ctx.font = 'bold 11px monospace'
       ctx.fillStyle = colors.gold
-      ctx.textAlign = 'left'
+      ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText('Buy', btnLeft + 4, btnTop + btnHeight / 2)
-
-      // Price on right
-      ctx.textAlign = 'right'
-      ctx.fillText(priceText, btnRight - 4, btnTop + btnHeight / 2)
+      const priceText = `${item.shopPrice}◈`
+      ctx.fillText(`Buy ${priceText}`, btnLeft + btnWidth / 2, btnTop + btnHeight / 2)
     } else {
-      // Show price badge on the right
+      // Show price badge on the right (vertically centered)
       ctx.font = 'bold 12px monospace'
       ctx.fillStyle = affordable ? colors.gold : colors.shopUnaffordable
       ctx.textAlign = 'right'
-      ctx.textBaseline = 'top'
-      ctx.fillText(`${item.shopPrice}◈`, textRight, nameTop)
+      ctx.textBaseline = 'middle'
+      ctx.fillText(`${item.shopPrice}◈`, textRight, centerY)
     }
   }
 
@@ -324,13 +332,15 @@ export function createShopEncounterPanel(
         const cardHeight = CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2
         const cardLeft = CONTENT_LEFT
         const cardWidth = CONTENT_W
-        const textLeft = cardLeft + 52
+        const textRight = cardLeft + cardWidth - 12
+        const btnWidth = 55
         const btnHeight = 20
-        const btnTop = ITEM_AREA_TOP + cardIdx * (cardHeight + CARD_GAP) + CARD_PADDING + 2
-        const btnLeft = textLeft
-        const btnRight = btnLeft + 60
+        const cardTop = ITEM_AREA_TOP + cardIdx * (cardHeight + CARD_GAP)
+        const centerY = cardTop + cardHeight / 2
+        const btnLeft = textRight - btnWidth
+        const btnTop = centerY - btnHeight / 2
 
-        if (x >= btnLeft && x <= btnRight && y >= btnTop && y <= btnTop + btnHeight) {
+        if (x >= btnLeft && x <= textRight && y >= btnTop && y <= btnTop + btnHeight) {
           if (canAfford(item)) {
             // Purchase
             const inv = context.getInventory()
@@ -405,13 +415,15 @@ export function createShopEncounterPanel(
           const cardHeight = CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2
           const cardLeft = CONTENT_LEFT
           const cardWidth = CONTENT_W
-          const textLeft = cardLeft + 52
+          const textRight = cardLeft + cardWidth - 12
+          const btnWidth = 55
           const btnHeight = 20
-          const btnTop = ITEM_AREA_TOP + cardIdx * (cardHeight + CARD_GAP) + CARD_PADDING + 2
-          const btnLeft = textLeft
-          const btnRight = btnLeft + 60
+          const cardTop = ITEM_AREA_TOP + cardIdx * (cardHeight + CARD_GAP)
+          const centerY = cardTop + cardHeight / 2
+          const btnLeft = textRight - btnWidth
+          const btnTop = centerY - btnHeight / 2
 
-          if (x >= btnLeft && x <= btnRight && y >= btnTop && y <= btnTop + btnHeight) {
+          if (x >= btnLeft && x <= textRight && y >= btnTop && y <= btnTop + btnHeight) {
             hoveredElement = `buy-${cardIdx}`
           }
         }
