@@ -41,7 +41,7 @@ const LEAVE_Y = GOLD_DISPLAY_Y
 
 interface CardState {
   itemId: string
-  expanded: boolean
+  selected: boolean
 }
 
 interface PurchaseConfirmation {
@@ -73,7 +73,7 @@ export function createShopEncounterPanel(
   const merchantName = cell.shopMerchant ?? 'Unknown Merchant'
   const merchantEntry = getMerchantFlavor(merchantName)
 
-  let cardStates: CardState[] = stock.map(itemId => ({ itemId, expanded: false }))
+  let cardStates: CardState[] = stock.map(itemId => ({ itemId, selected: false }))
   let hoveredElement: string | null = null
   let completed = false
   let lastPurchaseConfirmation: PurchaseConfirmation | null = null
@@ -97,20 +97,13 @@ export function createShopEncounterPanel(
   function findCardAt(x: number, y: number): number {
     if (y < ITEM_AREA_TOP || cardStates.length === 0) return -1
 
-    const itemAreaHeight = LOGICAL_H - ITEM_AREA_TOP - (GOLD_DISPLAY_Y - LOGICAL_H + LEAVE_HIT_H) - 12
-    const availableHeight = itemAreaHeight
-    const itemHeight = CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2
+    const cardHeight = CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2
 
     let currentY = ITEM_AREA_TOP
     for (let i = 0; i < cardStates.length; i++) {
       const card = cardStates[i]
       const item = getItemById(card.itemId)
       if (!item) continue
-
-      let cardHeight = itemHeight
-      if (card.expanded) {
-        cardHeight = CARD_ICON_SIZE_EXPANDED + CARD_PADDING * 2 + 60
-      }
 
       if (y >= currentY && y < currentY + cardHeight && x >= CONTENT_LEFT && x < CONTENT_RIGHT) {
         return i
@@ -176,14 +169,9 @@ export function createShopEncounterPanel(
         const cardRight = CONTENT_RIGHT
         const cardWidth = CONTENT_W
 
-        if (card.expanded) {
-          drawExpandedCard(ctx, item, i, cardLeft, currentY, cardWidth, timestamp)
-          currentY += CARD_ICON_SIZE_EXPANDED + CARD_PADDING * 2 + 60 + CARD_GAP
-        } else {
-          const isFlashing = lastUnaffordableClick && lastUnaffordableClick.itemId === card.itemId && (timestamp - lastUnaffordableClick.timestamp) < 400
-          drawCompactCard(ctx, item, cardLeft, currentY, cardWidth, isFlashing || false)
-          currentY += CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2 + CARD_GAP
-        }
+        const isFlashing = lastUnaffordableClick && lastUnaffordableClick.itemId === card.itemId && (timestamp - lastUnaffordableClick.timestamp) < 400
+        drawCompactCard(ctx, item, i, cardLeft, currentY, cardWidth, card.selected, isFlashing || false)
+        currentY += CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2 + CARD_GAP
       }
 
       // Clear unaffordable flash after timeout
@@ -239,9 +227,11 @@ export function createShopEncounterPanel(
   function drawCompactCard(
     ctx: CanvasRenderingContext2D,
     item: any,
+    cardIndex: number,
     left: number,
     top: number,
     width: number,
+    isSelected: boolean,
     isFlashing: boolean = false
   ): void {
     const height = CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2
@@ -277,141 +267,54 @@ export function createShopEncounterPanel(
       top + height / 2
     )
 
-    // Name and price on the right (vertically centered)
-    const centerY = top + height / 2
-    ctx.font = 'bold 14px monospace'
-    ctx.fillStyle = colors.textPrimary
-    ctx.textAlign = 'left'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(item.name, left + 52, centerY)
+    // Name and description on the right (aligned with icon top/bottom)
+    const nameTop = top + CARD_PADDING
+    const textLeft = left + 52
+    const textRight = left + width - 12
 
-    // Price badge (vertically centered)
-    ctx.font = 'bold 12px monospace'
-    ctx.fillStyle = affordable ? colors.gold : colors.shopUnaffordable
-    ctx.textAlign = 'right'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(
-      `${item.shopPrice}◈`,
-      left + width - 12,
-      centerY
-    )
-  }
-
-  function drawExpandedCard(
-    ctx: CanvasRenderingContext2D,
-    item: any,
-    cardIndex: number,
-    left: number,
-    top: number,
-    width: number,
-    timestamp: DOMHighResTimeStamp
-  ): void {
-    const height = CARD_ICON_SIZE_EXPANDED + CARD_PADDING * 2 + 60
-    const inv = context.getInventory()
-    const affordable = canAfford(item)
-
-    // Card background with rounded corners
-    const radius = 4
-    ctx.fillStyle = colors.shopCardBg
-    ctx.strokeStyle = colors.shopBorder
-    ctx.lineWidth = 1
-    ctx.beginPath()
-    ctx.moveTo(left + 1 + radius, top + 1)
-    ctx.lineTo(left + width - 1 - radius, top + 1)
-    ctx.arcTo(left + width - 1, top + 1, left + width - 1, top + 1 + radius, radius)
-    ctx.lineTo(left + width - 1, top + height - 1 - radius)
-    ctx.arcTo(left + width - 1, top + height - 1, left + width - 1 - radius, top + height - 1, radius)
-    ctx.lineTo(left + 1 + radius, top + height - 1)
-    ctx.arcTo(left + 1, top + height - 1, left + 1, top + height - 1 - radius, radius)
-    ctx.lineTo(left + 1, top + 1 + radius)
-    ctx.arcTo(left + 1, top + 1, left + 1 + radius, top + 1, radius)
-    ctx.fill()
-    ctx.stroke()
-
-    const contentLeft = left + 12
-    const contentRight = left + width - 12
-
-    // Icon
-    ctx.font = `${CARD_ICON_SIZE_EXPANDED}px monospace`
-    ctx.fillStyle = colors.textPrimary
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(
-      iconGlyph(item.iconType),
-      left + width / 2,
-      top + CARD_PADDING + CARD_ICON_SIZE_EXPANDED / 2
-    )
-
-    // Name
-    ctx.font = 'bold 14px monospace'
+    ctx.font = 'bold 13px monospace'
     ctx.fillStyle = colors.textPrimary
     ctx.textAlign = 'left'
     ctx.textBaseline = 'top'
-    ctx.fillText(item.name, contentLeft, top + CARD_ICON_SIZE_EXPANDED + 16)
+    ctx.fillText(item.name, textLeft, nameTop)
 
-    // Price
-    ctx.font = 'bold 12px monospace'
-    ctx.fillStyle = affordable ? colors.gold : colors.shopUnaffordable
-    ctx.textAlign = 'right'
-    ctx.fillText(
-      `${item.shopPrice}◈`,
-      contentRight,
-      top + CARD_ICON_SIZE_EXPANDED + 16
-    )
-
-    // Description
-    ctx.font = 'italic 11px monospace'
+    // Description line (small italic text)
+    ctx.font = 'italic 10px monospace'
     ctx.fillStyle = colors.textMuted
-    ctx.textAlign = 'left'
-    ctx.fillText(item.description, contentLeft, top + CARD_ICON_SIZE_EXPANDED + 32)
+    ctx.textBaseline = 'top'
+    const descY = nameTop + 14
+    ctx.fillText(item.description, textLeft, descY)
 
-    // Buy button
-    const buyBtnTop = top + CARD_ICON_SIZE_EXPANDED + 48
-    const buyBtnLeft = contentLeft
-    const buyBtnWidth = (contentRight - contentLeft - 8) / 2
-    const buyBtnHeight = 32
+    // Price badge or Buy button (right side)
+    if (isSelected) {
+      // Show Buy button
+      const btnWidth = width - textLeft - 12
+      const btnHeight = 20
+      const btnTop = nameTop + 2
+      const btnLeft = textRight - btnWidth
 
-    const buyHovered = hoveredElement === `buy-${cardIndex}`
-    ctx.fillStyle = buyHovered ? 'rgba(122, 90, 26, 0.35)' : 'rgba(122, 90, 26, 0.2)'
-    ctx.strokeStyle = colors.roomShop
-    ctx.lineWidth = 1
-    const btnRadius = 3
-    ctx.beginPath()
-    ctx.moveTo(buyBtnLeft + btnRadius, buyBtnTop)
-    ctx.lineTo(buyBtnLeft + buyBtnWidth - btnRadius, buyBtnTop)
-    ctx.arcTo(buyBtnLeft + buyBtnWidth, buyBtnTop, buyBtnLeft + buyBtnWidth, buyBtnTop + btnRadius, btnRadius)
-    ctx.lineTo(buyBtnLeft + buyBtnWidth, buyBtnTop + buyBtnHeight - btnRadius)
-    ctx.arcTo(buyBtnLeft + buyBtnWidth, buyBtnTop + buyBtnHeight, buyBtnLeft + buyBtnWidth - btnRadius, buyBtnTop + buyBtnHeight, btnRadius)
-    ctx.lineTo(buyBtnLeft + btnRadius, buyBtnTop + buyBtnHeight)
-    ctx.arcTo(buyBtnLeft, buyBtnTop + buyBtnHeight, buyBtnLeft, buyBtnTop + buyBtnHeight - btnRadius, btnRadius)
-    ctx.lineTo(buyBtnLeft, buyBtnTop + btnRadius)
-    ctx.arcTo(buyBtnLeft, buyBtnTop, buyBtnLeft + btnRadius, buyBtnTop, btnRadius)
-    ctx.fill()
-    ctx.stroke()
+      const buyHovered = hoveredElement === `buy-${cardIndex}`
+      ctx.fillStyle = buyHovered ? 'rgba(122, 90, 26, 0.35)' : 'rgba(122, 90, 26, 0.2)'
+      ctx.strokeStyle = colors.roomShop
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.rect(btnLeft, btnTop, btnWidth, btnHeight)
+      ctx.fill()
+      ctx.stroke()
 
-    ctx.font = 'bold 13px monospace'
-    ctx.fillStyle = colors.gold
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(
-      `Buy (${item.shopPrice}◈)`,
-      buyBtnLeft + buyBtnWidth / 2,
-      buyBtnTop + buyBtnHeight / 2
-    )
-
-    // Close button (×)
-    const closeBtnLeft = buyBtnLeft + buyBtnWidth + 8
-    const closeBtnWidth = buyBtnWidth
-
-    const closeHovered = hoveredElement === `close-${cardIndex}`
-    ctx.fillStyle = closeHovered ? 'rgba(139, 107, 85, 0.15)' : 'transparent'
-    ctx.fillRect(closeBtnLeft, buyBtnTop, closeBtnWidth, buyBtnHeight)
-
-    ctx.font = '12px monospace'
-    ctx.fillStyle = colors.textMuted
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText('×', closeBtnLeft + closeBtnWidth / 2, buyBtnTop + buyBtnHeight / 2)
+      ctx.font = 'bold 11px monospace'
+      ctx.fillStyle = colors.gold
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(`Buy ${item.shopPrice}◈`, btnLeft + btnWidth / 2, btnTop + btnHeight / 2)
+    } else {
+      // Show price badge
+      ctx.font = 'bold 12px monospace'
+      ctx.fillStyle = affordable ? colors.gold : colors.shopUnaffordable
+      ctx.textAlign = 'right'
+      ctx.textBaseline = 'top'
+      ctx.fillText(`${item.shopPrice}◈`, textRight, nameTop)
+    }
   }
 
   function handleClick(x: number, y: number): void {
@@ -430,24 +333,18 @@ export function createShopEncounterPanel(
       const item = getItemById(card.itemId)
       if (!item) return
 
-      if (card.expanded) {
-        // Check for Buy or Close buttons
-        const cardTop = getCardTop(cardIdx)
+      if (card.selected) {
+        // Card is selected - check if Buy button clicked
+        const cardHeight = CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2
         const cardLeft = CONTENT_LEFT
         const cardWidth = CONTENT_W
-        const contentLeft = cardLeft + 12
-        const contentRight = cardLeft + cardWidth - 12
+        const textRight = cardLeft + cardWidth - 12
+        const btnWidth = cardWidth - (textRight - cardLeft) + 12
+        const btnHeight = 20
+        const btnTop = ITEM_AREA_TOP + cardIdx * (cardHeight + CARD_GAP) + CARD_PADDING + 2
+        const btnLeft = textRight - btnWidth
 
-        const buyBtnTop = cardTop + CARD_ICON_SIZE_EXPANDED + 48
-        const buyBtnLeft = contentLeft
-        const buyBtnWidth = (contentRight - contentLeft - 8) / 2
-        const buyBtnHeight = 32
-
-        // Buy button
-        if (
-          x >= buyBtnLeft && x <= buyBtnLeft + buyBtnWidth &&
-          y >= buyBtnTop && y <= buyBtnTop + buyBtnHeight
-        ) {
+        if (x >= btnLeft && x <= textRight && y >= btnTop && y <= btnTop + btnHeight) {
           if (canAfford(item)) {
             // Purchase
             const inv = context.getInventory()
@@ -481,35 +378,28 @@ export function createShopEncounterPanel(
           }
           return
         }
-
-        // Close button
-        const closeBtnLeft = buyBtnLeft + buyBtnWidth + 8
-        if (
-          x >= closeBtnLeft && x <= closeBtnLeft + buyBtnWidth &&
-          y >= buyBtnTop && y <= buyBtnTop + buyBtnHeight
-        ) {
-          cardStates[cardIdx] = { ...card, expanded: false }
-          return
-        }
       } else {
-        // Try to expand
-        if (canAfford(item)) {
-          // Collapse others
-          cardStates = cardStates.map((cs, i) => ({
-            ...cs,
-            expanded: i === cardIdx,
-          }))
-        } else {
-          lastUnaffordableClick = { itemId: item.id, timestamp: performance.now() }
-        }
+        // Card is not selected - select it
+        // Deselect all others
+        cardStates = cardStates.map((cs, i) => ({
+          ...cs,
+          selected: i === cardIdx,
+        }))
+        return
+      }
+    } else {
+      // Clicked off all cards - deselect any selected card
+      if (cardStates.some(cs => cs.selected)) {
+        cardStates = cardStates.map(cs => ({
+          ...cs,
+          selected: false,
+        }))
         return
       }
     }
   }
 
   function handlePointerMove(x: number, y: number): void {
-    const prevHovered = hoveredElement
-
     if (isInLeaveButton(y)) {
       hoveredElement = 'leave'
     } else {
@@ -518,50 +408,22 @@ export function createShopEncounterPanel(
       const cardIdx = findCardAt(x, y)
       if (cardIdx >= 0) {
         const card = cardStates[cardIdx]
-        if (card.expanded) {
-          const cardTop = getCardTop(cardIdx)
+        if (card.selected) {
+          const cardHeight = CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2
           const cardLeft = CONTENT_LEFT
           const cardWidth = CONTENT_W
-          const contentLeft = cardLeft + 12
-          const contentRight = cardLeft + cardWidth - 12
+          const textRight = cardLeft + cardWidth - 12
+          const btnWidth = cardWidth - (textRight - cardLeft) + 12
+          const btnHeight = 20
+          const btnTop = ITEM_AREA_TOP + cardIdx * (cardHeight + CARD_GAP) + CARD_PADDING + 2
+          const btnLeft = textRight - btnWidth
 
-          const buyBtnTop = cardTop + CARD_ICON_SIZE_EXPANDED + 48
-          const buyBtnLeft = contentLeft
-          const buyBtnWidth = (contentRight - contentLeft - 8) / 2
-          const buyBtnHeight = 32
-
-          if (
-            x >= buyBtnLeft && x <= buyBtnLeft + buyBtnWidth &&
-            y >= buyBtnTop && y <= buyBtnTop + buyBtnHeight
-          ) {
+          if (x >= btnLeft && x <= textRight && y >= btnTop && y <= btnTop + btnHeight) {
             hoveredElement = `buy-${cardIdx}`
-          } else {
-            const closeBtnLeft = buyBtnLeft + buyBtnWidth + 8
-            if (
-              x >= closeBtnLeft && x <= closeBtnLeft + buyBtnWidth &&
-              y >= buyBtnTop && y <= buyBtnTop + buyBtnHeight
-            ) {
-              hoveredElement = `close-${cardIdx}`
-            }
           }
         }
       }
     }
-  }
-
-  function getCardTop(cardIdx: number): number {
-    let currentY = ITEM_AREA_TOP
-    for (let i = 0; i < cardIdx; i++) {
-      const card = cardStates[i]
-      const item = getItemById(card.itemId)
-      if (!item) continue
-
-      const cardHeight = card.expanded
-        ? CARD_ICON_SIZE_EXPANDED + CARD_PADDING * 2 + 60
-        : CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2
-      currentY += cardHeight + CARD_GAP
-    }
-    return currentY
   }
 
   return {
