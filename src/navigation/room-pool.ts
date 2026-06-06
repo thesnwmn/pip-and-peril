@@ -51,8 +51,41 @@ export function getRoomWeights(context: RoomWeightContext): Record<RoomType, num
 }
 
 function computeBossWeight(context: RoomWeightContext): number {
-  // TEMPORARY: Always show boss room as an option on all floors for testing
-  return 1000
+  // Boss only appears on floor 3 after sufficient exploration
+  if (context.floor !== 3) return 0
+
+  const exploredTiles = context.floorTilesPlaced
+  const minExploration = DUNGEON_TUNING.BOSS_MIN_EXPLORATION
+
+  // Not enough exploration yet
+  if (exploredTiles < minExploration) return 0
+
+  // Calculate distance from entry to candidate
+  const dx = context.candidatePos.col - context.floorEntryPosition.col
+  const dy = context.candidatePos.row - context.floorEntryPosition.row
+  const distance = Math.sqrt(dx * dx + dy * dy)
+
+  // Distance-based weight bonus: farther is better (encourages exploration)
+  const minDist = DUNGEON_TUNING.BOSS_DIST_MIN
+  const midDist = DUNGEON_TUNING.BOSS_DIST_MID
+  const outerDist = DUNGEON_TUNING.BOSS_DIST_OUTER
+
+  let distanceBonus = 0
+  if (distance >= outerDist) {
+    distanceBonus = 1.5  // Outer zone: highest bonus
+  } else if (distance >= midDist) {
+    distanceBonus = 1.0  // Mid zone: medium bonus
+  } else if (distance >= minDist) {
+    distanceBonus = 0.5  // Inner zone: low bonus
+  } else {
+    return 0  // Too close to entry
+  }
+
+  // Scale weight by exploration progress beyond min threshold
+  const explorationProgress = (exploredTiles - minExploration) / DUNGEON_TUNING.BOSS_EXPLORATION_SCALE
+  const explorationScale = Math.min(1.0, explorationProgress)
+
+  return DUNGEON_TUNING.BASE_BOSS_WEIGHT * explorationScale * distanceBonus
 }
 
 export const LOG_MESSAGES: Partial<Record<RoomType, string[]>> = {

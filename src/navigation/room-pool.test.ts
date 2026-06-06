@@ -88,27 +88,38 @@ describe('getRoomWeights', () => {
     expect(weights.shop).toBeGreaterThan(50)
   })
 
-  it('has boss weight of 1000 on all floors (temporary for testing)', () => {
+  it('has zero boss weight on floors 1 and 2', () => {
     const weights1 = getRoomWeights({
       floor: 1,
       floorTilesPlaced: 20,
       floorEntryPosition: { col: 6, row: 6 },
-      candidatePos: { col: 7, row: 6 },
+      candidatePos: { col: 13, row: 13 },
       shopPlacedThisFloor: false,
     })
-    expect(weights1.boss).toBe(1000)
+    expect(weights1.boss).toBe(0)
 
     const weights2 = getRoomWeights({
       floor: 2,
       floorTilesPlaced: 20,
       floorEntryPosition: { col: 6, row: 6 },
-      candidatePos: { col: 7, row: 6 },
+      candidatePos: { col: 13, row: 13 },
       shopPlacedThisFloor: false,
     })
-    expect(weights2.boss).toBe(1000)
+    expect(weights2.boss).toBe(0)
   })
 
-  it('has positive boss weight on floor 3 after exploration threshold', () => {
+  it('has zero boss weight on floor 3 before exploration threshold', () => {
+    const weights = getRoomWeights({
+      floor: 3,
+      floorTilesPlaced: 10,
+      floorEntryPosition: { col: 6, row: 6 },
+      candidatePos: { col: 13, row: 13 },
+      shopPlacedThisFloor: false,
+    })
+    expect(weights.boss).toBe(0)
+  })
+
+  it('has positive boss weight on floor 3 after exploration threshold and sufficient distance', () => {
     const weights = getRoomWeights({
       floor: 3,
       floorTilesPlaced: 15,
