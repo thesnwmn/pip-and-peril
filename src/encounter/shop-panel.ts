@@ -302,12 +302,13 @@ export function createShopEncounterPanel(
       const priceText = `${item.shopPrice}◈`
       ctx.fillText(`Buy ${priceText}`, btnLeft + btnWidth / 2, btnTop + btnHeight / 2)
     } else {
-      // Show price badge on the right (vertically centered)
+      // Show price badge on the right (vertically centered), aligned with button position
+      // Position it where it will appear inside the Buy button to avoid apparent movement
       ctx.font = 'bold 12px monospace'
       ctx.fillStyle = affordable ? colors.gold : colors.shopUnaffordable
       ctx.textAlign = 'right'
       ctx.textBaseline = 'middle'
-      ctx.fillText(`${item.shopPrice}◈`, textRight, centerY)
+      ctx.fillText(`${item.shopPrice}◈`, textRight - 8, centerY)
     }
   }
 
