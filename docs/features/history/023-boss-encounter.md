@@ -458,10 +458,65 @@ detail is a scope deferral, not a blocker on this feature.
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-06 · **PR:** (merged to main as part of feature/boss-encounter)
 
 ### What was built
 
+The boss encounter is no longer a separate `boss-panel.ts` module. Instead, bosses are encoded as
+enemy specs with extended fields (`intentCycle`, `enrageThreshold`, `enragedCycle`, `bossTitleCard`)
+living in `src/combat/roster.ts` alongside regular enemies. The `RAT_KING_SPEC` defines the Rat King's
+4-intent Phase 1 cycle, 3-intent Phase 2 enraged cycle, enrage trigger at 50% HP, and title card text.
+
+The combat system (`encounter.ts`, `intents.ts`) was extended to support deterministic cycling:
+- `pickNextIntent()` advances a fixed cycle or falls back to weighted random selection.
+- `peekNextIntent()` reads the next intent without advancing (for Analyse).
+- `applyEnrageCheck()` triggers inside `resolveStrike()`, `applyExploit()`, and `applyLuckyShot()`
+  to detect when HP crosses the enrage threshold and switch to Phase 2.
+
+`createCombatEncounterPanel()` gained optional `CombatOptions`: `victoryOutcome` (default `'victory'`,
+set to `'run-complete'` for the boss) and `intro` (title card + wide-zoom config, only for bosses).
+The panel's intro sequence is rendered in `drawMapOverlay()` — drawn over the map zone at screen
+coordinates — so the panel slides up from the bottom via the registry RISING animation during the
+title card display, then combat controls appear once intro ends.
+
+Boss rooms are placed on Floor 3 only, weighted by exploration distance and progress. When stepped on,
+the registry triggers the regular combat panel with boss-specific routing: victory emits `'run-complete'`
+(routes to Home; will route to Run Summary when feature 024 ships), defeat emits `'defeat'` (routes to
+Home).
+
+All tests pass. The feature is complete and ready for play-testing on device.
+
 ### Evidence
 
+- All 372 tests pass: `npm run test`
+- Type-checking clean: `npm run typecheck`
+- Build succeeds: `npm run build` (77 KB gzipped, 6.5 KB smaller than the separate-panel version)
+- Git history: feature branch `claude/boss-encounter-run-completion-LgT1i` contains:
+  - Initial attempt with separate `boss-panel.ts` (abandoned)
+  - Refactor to encode boss as enemy spec (landed)
+  - Dynamic mapView zoom transitions during intro (landed)
+  - Panel slide-in animation fixed (title card moved to overlay) (landed)
+  - Boss weight calculation restored to proper thresholds (landed)
+
 ### Play-test
+
+1. **Entry to boss room:** Start a run. Advance to Floor 3 and explore at least 12 tiles away from entry.
+   A "boss" card appears in the room offering. Step on it.
+2. **Intro sequence:** Camera pulls wide, title card "THE RAT KING" fades in over the dungeon,
+   stays for ~1 s, fades out. Camera tightens. Panel slides up from bottom during this sequence.
+3. **Phase 1 combat:** Roll dice. Rat King's intent shows Attack 4. Roll, spend pips, take damage or
+   dodge. Roll again. Intent advances to Guard 3 — Rat King gains block. Strike twice, Heavy Strike,
+   or Feint + exploit the block. Next: Empower (free turn, intent shows ×2 warning). Next: Attack 4
+   (fires as 8 damage while empowered). Block carries forward from Guard; reserved green mitigates damage.
+4. **Enrage trigger:** Reduce Rat King to 10 HP or below (half of 20). Log line shows enrage. HP bar
+   changes color to bright red. Intent resets to Phase 2 position 0.
+5. **Phase 2 combat:** Attack 5, Lunge 8 (devastating), Attack 5. Lunge repeats every 3 turns. Cycle
+   is tighter, no Guard or Empower. Test reserved green: 2G fully dodges Lunge, 1G takes 7 damage.
+6. **Victory:** Reduce Rat King to 0 HP. Gold is awarded. "VICTORY" banner appears with gold reward.
+   Tap or wait 3s → routes to Home screen (will be Run Summary when 024 ships).
+7. **Defeat during any phase:** Let Pip drop to 0 HP. "DEFEAT" banner (same as regular enemy combat).
+   Tap or wait 3s → routes to Home screen.
+
+Expected behavior: the boss feels learnable (fixed cycle repeats), dangerous (Empower/Lunge are
+clear threats telegraphed in advance), and climactic (wider panel HP bar, warm Run Complete banner,
+color shift on enrage).
