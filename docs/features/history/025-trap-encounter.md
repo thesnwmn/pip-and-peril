@@ -236,4 +236,42 @@ None. This item is **READY**.
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-06 · **PR:** (pending)
+
+### What was built
+
+- **`src/encounter/trap-panel.ts`** — new encounter panel implementing the forced agility check:
+  - 4-flavour random variant table (Pressure plate, Tripwire, Snap trap, Falling stones) persisted to `TileCell.trapFlavour` at trigger time
+  - Roll phase → 500 ms animation → outcome phase → 1.5 s auto-descend; no Leave button
+  - `snapCamera: true` on the panel — registry snaps camera to 1.8× zoom instantly on rising, smooth lerp back on falling
+  - `trapDamage = Math.ceil(trapDifficulty / 2)`, minimum 1; HP clamped to 0; `'defeat'` outcome when HP → 0
+  - `trapFired: true` written to tile cell at roll completion; spent tiles never re-trigger
+  - Non-green dice shown at 0.28 alpha in pre-roll state (reinforcing "only green counts"); all dice full-alpha once rolling and at outcome
+- **`src/encounter/panel.ts`** — `snapCamera?: boolean` added to `EncounterPanel` interface
+- **`src/encounter/registry.ts`** — `computeMapState` rising path: if `panel.snapCamera`, returns target zoom/pip directly (no interpolation) so camera lands before panel finishes rising
+- **`src/map/types.ts`** — `trapFired?: boolean`, `trapFlavour?: number` added to `TileCell`
+- **`src/map/renderer.ts`** — spent trap overlay drawn after fog: `#1a1a2a` at 0.5 alpha over the floor zone
+- **`src/colors.ts`** — `trapSpent: '#1a1a2a'` token added
+- **`src/dice/pip-slots.ts`** — shared `PIP_SLOTS` constant extracted from `dice/panel.ts`; both panels import from it
+- **`src/screens/game.ts`** — trap encounter registered; `trapFlavour` written to state at factory time; `LOG_MESSAGES.trap` removed (camera snap is the signal)
+- **`src/navigation/room-pool.ts`** — `trap` entry removed from `LOG_MESSAGES` (data-driven suppression)
+
+### Test evidence
+
+20 new tests in `src/encounter/trap-panel.test.ts`. All 410 tests pass (`npm run test`). Typecheck clean. Production build clean. `bash init.sh` passes end-to-end.
+
+Key test cases: `computeTrapDamage` formula; pass/fail/defeat outcomes; HP clamped to 0; trapDifficulty=0 always passes; `trapFired: true` written to tile; double-tap Roll locked; `onComplete` called exactly once.
+
+### Play-test instructions
+
+1. `npm run dev` → open <http://localhost:5173>, start a new run.
+2. Navigate until you reach a **Trap** tile (orange floor-edge marker). Traps appear more often in mid/late rooms per floor.
+3. On entering: camera **snaps** instantly to a 1.8× close-up; the panel **rises** ~100 ms later. No Leave button.
+4. Panel shows trap label (gold), your dice (green bright, others dimmed), and a full-width **Roll** button.
+5. Tap **Roll**: dice scramble ~500 ms, then settle. Panel shows `🟢 N vs. M — Pass/Fail` + flavour line.
+   - **Pass** (green ≥ difficulty): e.g. "Slipped clear." — no HP loss.
+   - **Fail** (green < difficulty): e.g. "Spikes. −N HP." — HP decreases.
+6. After ~1.5 s panel auto-descends; camera eases back to navigation.
+7. **Re-enter the same tile**: no encounter fires; floor zone shows a dark tint overlay (spent trap visual).
+8. **Defeat path**: if HP hits 0, panel descends then game returns to home screen.
+9. Verify dice pool resets: Roll available in next combat.

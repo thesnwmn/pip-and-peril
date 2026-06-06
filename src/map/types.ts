@@ -20,6 +20,8 @@ export interface TileCell {
   fled?: boolean
   itemId?: string
   trapDifficulty?: number
+  trapFired?: boolean
+  trapFlavour?: number
   enemyId?: string
   shopStock?: string[]
   shopMerchant?: string

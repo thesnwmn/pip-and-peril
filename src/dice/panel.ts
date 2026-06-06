@@ -2,6 +2,7 @@ import { colors } from '../colors'
 import type { DicePool, DieColor, PipCost } from './pool'
 import { canAfford, rollPool, spendPips } from './pool'
 import { iconGlyph } from '../satchel/icon'
+import { PIP_SLOTS } from './pip-slots'
 
 // ── Layout constants ─────────────────────────────────────────────────────────
 
@@ -66,18 +67,6 @@ const LOG_LINE1_Y = LOG_RULE_Y + 5
 // Item row — inline item selector that appears below action buttons
 const ITEM_ROW_Y = ACTION_Y + ACTION_BTN_H + 8  // = 702
 const ITEM_ROW_H = ACTION_BTN_H                   // = 46, same grid height
-
-// ── Pip dot patterns for d6 ───────────────────────────────────────────────────
-
-// 3×3 grid: indices 0–8, left→right top→bottom
-const PIP_SLOTS: Record<number, number[]> = {
-  1: [4],
-  2: [2, 6],
-  3: [2, 4, 6],
-  4: [0, 2, 6, 8],
-  5: [0, 2, 4, 6, 8],
-  6: [0, 2, 3, 5, 6, 8],
-}
 
 // ── Die colour palette helpers ────────────────────────────────────────────────
 
