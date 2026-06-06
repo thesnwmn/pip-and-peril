@@ -24,6 +24,9 @@ code; the Designer writes those.
 > **038** (Enemy Roster); 042 → item **029** (Meta-Progression); 044 → feature **048** (Item
 > Interjection Framework). The in-run item cluster (019, 020, 021, 022, 024, 025, 026, 027, 028)
 > has been consolidated into the seed below (Idea 045), which is now parked behind feature 048.
+> **049** → backlog **049** (Notice Board); **051** → backlog **051** (Visitor System);
+> **052** → backlog **052** (Marks of Descent). *(046 and 047 are pre-existing shipped features —
+> the visitor/marks ideas originally mislabelled 046–047 were corrected to 051–052.)*
 
 ---
 
@@ -126,59 +129,6 @@ from the consolidated seeds:
 
 Risk: this is a lot of surface — spec it in batches by window once 044 fixes the hooks, rather than
 all at once.
-
----
-
-## Idea 046 — The Visitor System
-
-**Area:** Meta / Flow
-**Inspiration:** Between-runs concept session; manager's reference to Hades' story interactions.
-
-Procedurally generated visitors arrive at Pip's camp between runs (0–2 per run, occasionally
-3). Each visitor is assembled from a **type** (Tinker, Scout, Scholar, Trader, Wounded
-Traveller, Trickster — each with a distinct offer pool), a **condition** (randomly selected
-situational flavour line), and an **offer** (drawn from type pool). Interaction is one panel,
-one tap-and-confirm — no back-and-forth. After enough visits, some visitors become named
-regulars with incremental relationship tiers, producing the feeling of Hades-style story bonds
-through pure procedural generation rather than authored dialogue. Risk: visitor interactions
-must stay fast (~10 seconds max) or the between-runs phase bloats beyond its purpose.
-See `docs/concept/meta-progression.md` for full visitor type definitions.
-
----
-
-## Idea 047 — Marks of Descent
-
-**Area:** Meta / Flow
-**Inspiration:** Thinker's own; the observation that scraps-only progression turns upgrades
-into a mathematical transaction without narrative shape.
-
-Milestone tokens earned from specific firsts and achievements (first boss kill, first time
-reaching floor 3, first full run without healing, first time surviving a Lunge at 1 HP).
-Marks unlock *content* rather than *power*: new weapons appear on the rack, new skill scrolls
-arrive, new visitor types become possible. The unlock gate is achievement-based, not currency-
-based, so players cannot bypass it with grinding — they must *do something*. Locked slots
-on the rack are visible but unrevealing (you see a pegged space, not what weapon is coming),
-preserving discovery. Risk: players who feel stuck will want to know what they're working
-toward; a light "see unlock condition" affordance on locked slots addresses this without
-spoiling the discovery. See `docs/concept/meta-progression.md`.
-
----
-
-## Idea 049 — Dungeon Notice Board
-
-**Area:** Meta / Flow / World
-**Inspiration:** Thinker's own; the gap between identical runs and runs that feel pre-seeded
-with character.
-
-A small notice board in the camp showing 2 generated notices before each run. Assembled from
-templates weighted by game state: enemy activity reports, merchant sightings, atmospheric
-warnings, past-run echoes, self-imposed challenge seeds. Notices are information, not choices —
-they prime the run's feel and give the player something to think about before descending.
-Mechanical hooks (notices wired to actual run parameters) are secondary; the priming effect
-works even as pure flavour text. Should be implemented first as flavour, then wired up
-incrementally. Risk: notices that are too specific feel like broken promises if the seeded
-event doesn't appear; keep templates vague ("heavy activity reported") rather than precise
-("a Dung Beetle guards the second junction"). See `docs/concept/meta-progression.md`.
 
 ---
 

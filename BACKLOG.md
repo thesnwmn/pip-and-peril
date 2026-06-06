@@ -78,7 +78,39 @@ complete without it; include when the manager wants the outer loop closed.
 **Depends on:** 024 (scraps awarded at run end), 019/016 (currency model + persistence).
 *(Absorbs Idea 042 · Die Type Risk Profiles.)*
 **Related:** `docs/concept/overview.md` (Meta Progression), `docs/concept/screen-layout-and-transitions.md`
-(Meta-Progression Hub direction sketch).
+(Meta-Progression Hub direction sketch), `docs/concept/meta-progression.md` (full direction).
+
+### 052 · Marks of Descent
+
+Milestone tokens earned from specific firsts and achievements — first boss kill, first floor 3 reach,
+first full run without healing, and similar. Marks unlock **content rather than power**: new weapons
+appear on the rack, skill scrolls arrive, new visitor types become possible. The achievement gate
+means players cannot bypass meaningful unlocks by grinding scraps. Locked slots are visible but
+unrevealing; a light "show unlock condition" affordance addresses frustration without spoiling
+discovery.
+**Depends on:** 029 (camp hub), 024 (run summary — marks awarded at run end).
+**Related:** `docs/concept/meta-progression.md`.
+
+### 051 · Visitor System
+
+Procedurally generated visitors arrive at Pip's camp between runs (0–2, rarely 3). Each visitor is
+assembled from a **type** (Tinker, Scout, Scholar, Trader, Wounded Traveller, Trickster — each with
+a distinct offer pool) × **condition** (situational flavour line) × **offer**. Interaction is one
+panel, one tap-and-confirm. Relationship counters on recurring visitors produce named regulars over
+time, delivering Hades-style story texture without authored dialogue. Interaction must stay under
+~10 seconds or the camp bloats beyond its purpose.
+**Depends on:** 029 (camp hub).
+**Related:** `docs/concept/meta-progression.md`.
+
+### 049 · Dungeon Notice Board
+
+Two generated notices shown in the camp before each run, assembled from weighted templates (enemy
+activity reports, merchant sightings, atmospheric warnings, past-run echoes). Primes each run's feel
+and makes successive descents feel distinct before the first tile is placed. **Ships first as pure
+flavour text**; individual notices can be wired to actual run parameters (enemy weighting, shop
+guarantee, boss state) incrementally after.
+**Depends on:** 029 (camp hub).
+**Related:** `docs/concept/meta-progression.md`.
 
 ---
 
