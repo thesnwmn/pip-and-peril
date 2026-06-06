@@ -22,8 +22,10 @@ code; the Designer writes those.
 > **Recently promoted / consolidated** (kept here only as a pointer so numbers aren't reused):
 > Ideas 039 + 040 → feature **037** (Combat Overhaul); 043 → item **023** (Boss); 012 → item
 > **038** (Enemy Roster); 042 → item **029** (Meta-Progression); 044 → feature **048** (Item
-> Interjection Framework). The in-run item cluster (019, 020, 021, 022, 024, 025, 026, 027, 028)
-> has been consolidated into the seed below (Idea 045), which is now parked behind feature 048.
+> Interjection Framework); 045 → feature **049** (Item Catalogue — Wave 1). The in-run item
+> cluster (019, 020, 021, 022, 024, 025, 026, 027, 028) was consolidated into Idea 045 and
+> promoted as Wave 1; higher-complexity item categories (coatings, dice manipulation, knowledge
+> items, cursed items) remain future work.
 
 ---
 
@@ -94,35 +96,3 @@ Transient per-fight modifiers that track how the fight is going, without permane
 
 ---
 
-## Idea 045 — Item Catalogue
-
-**Area:** System / Items
-**Inspiration:** the manager's item directions + genre survey; the concrete payload for Idea 044.
-**Parked behind:** feature **048** (Item Interjection Framework) — each item is tagged to a window/class.
-
-The concrete items, each slotted into one window from Idea 044, preserving the creative content
-from the consolidated seeds:
-
-- **Coatings (on-strike):** Viper Oil (poison 1/turn ×3), Fire Resin (next strike +2), Blinding
-  Dust (−1 to enemy's next attack), Numbing Sap. One coating slot — a new one forces a swap choice.
-- **Passive armour (on-enemy-hit, run-long, one slot):** Iron Thimble (−1), Leather Jerkin (−1),
-  Padded Coat (−2 but reduces combat Green) — chest/boss-room loot, not ordinary item rooms.
-- **Tenacity (post-spend):** Grit Stone, Second Wind Vial, Bitter Root Brew — a second turn; in a
-  trap context, restore 1–2 HP instead.
-- **Luck (on-roll / trap-interrupt):** Lucky Acorn, Rabbit's Foot, Fortune Pebble — full reroll in
-  combat (pre-spend); a "Use [item]?" prompt on a *failed* non-combat check.
-- **Dice-face manipulation (during-allocation):** Lock Pin (lock a face across rolls), Pip Splitter
-  (split a face into two), Colour Shift Vial (recolour a die this turn), Mirror Shard (duplicate a
-  face). Highest skill-expression class; prototype Lock Pin early — it changes the rhythm.
-- **Knowledge / info (pre-roll / navigation):** room preview, trap detection, enemy scouting (HP +
-  attack at combat entry), floor map. Cunning as a value axis; doesn't touch the dice.
-- **Charged / multi-use:** a `charges` field counting down to removal — Healing Bandage Roll (3),
-  Whetstone (2 combats), Smoke Canister (2). Distinct from quantity; Satchel shows charges.
-- **Cursed / burden:** real downside alongside benefit — Tainted Mushroom (+3 pips, 2 self-damage),
-  Stolen Idol (+2 gold/room, enemies +1 damage), Berserker Draught (double damage but no dodging
-  for three turns). Faint red border signals the cost before taking it.
-- **Death-prevention (death-resolution hook):** Saint's Acorn, Nine Lives Token — fires once at
-  Pip's death, survives at 1 HP. Must be very rare; rarity is the entire balance lever.
-
-Risk: this is a lot of surface — spec it in batches by window once 044 fixes the hooks, rather than
-all at once.

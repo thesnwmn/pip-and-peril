@@ -45,6 +45,12 @@ that make chests feel like a genuine reward tier above item rooms.
 **Depends on:** 019 (gold), 020 (items), 025 (trapped variant), 030 (encounter panel), 034 (encounter registry), 048 (item interjection framework — locked variant).
 See `docs/features/026-chest-encounter.md` for the full spec.
 
+### 049 · Item Catalogue — Wave 1
+
+Five new items that fill the hooks 048 stubs but ships without: two **Tenacity** consumables (Grit Stone, Second Wind Vial) grant a second roll-and-spend in combat; one **passive armour** piece (Leather Jerkin) auto-reduces incoming damage by 1 for the whole run; one **death-prevention** talisman (Saint's Acorn) keeps Pip alive at 1 HP on a lethal blow; and one **charged** multi-use healing item (Healing Bandage Roll, 3 charges, +3 HP each). Also specifies the charges badge in the Satchel Pouch and the passive-item "WORN" treatment.
+**Depends on:** 048 (passiveArmour / deathPrevention / charges hooks, window/luckyClass fields), 020 (acquireItem, item registry), 026 (chest pool), 027 (shop pool).
+See `docs/features/049-item-catalogue-wave-1.md` for the full spec.
+
 ---
 
 ## NEEDS SPEC
