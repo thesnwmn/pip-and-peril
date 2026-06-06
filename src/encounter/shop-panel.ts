@@ -120,10 +120,6 @@ export function createShopEncounterPanel(
     return y >= LEAVE_Y - LEAVE_HIT_H / 2 && y <= LEAVE_Y + LEAVE_HIT_H / 2
   }
 
-  function updateStock(): void {
-    cardStates = cardStates.filter(cs => cardStates.some(s => stock.includes(s.itemId)))
-  }
-
   function draw(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
     ctx.save()
     ctx.globalAlpha = 1
