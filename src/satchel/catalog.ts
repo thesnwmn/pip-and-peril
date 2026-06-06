@@ -10,6 +10,7 @@ export const CHEESE_CRUMB: Item = {
   usableInNav: true,
   usableInCombat: true,
   effect: { type: 'heal', amount: 2 },
+  shopPrice: 2,
 }
 
 export const GOUDA_WEDGE: Item = {
@@ -22,6 +23,7 @@ export const GOUDA_WEDGE: Item = {
   usableInNav: true,
   usableInCombat: true,
   effect: { type: 'heal', amount: 5 },
+  shopPrice: 5,
 }
 
 export const LUCKY_ACORN: Item = {
@@ -34,6 +36,7 @@ export const LUCKY_ACORN: Item = {
   usableInNav: false,
   usableInCombat: true,
   effect: { type: 'reroll-dice' },
+  shopPrice: 4,
 }
 
 export const SMOKE_PELLET: Item = {
@@ -46,6 +49,7 @@ export const SMOKE_PELLET: Item = {
   usableInNav: false,
   usableInCombat: true,
   effect: { type: 'flee-combat' },
+  shopPrice: 6,
 }
 
 export const GLOWSTONE_DUST: Item = {
@@ -58,6 +62,7 @@ export const GLOWSTONE_DUST: Item = {
   usableInNav: true,
   usableInCombat: false,
   effect: { type: 'reveal-fog', radius: 2 },
+  shopPrice: 3,
 }
 
 export const CATALOG_ITEMS: Item[] = [

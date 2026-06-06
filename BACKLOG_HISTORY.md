@@ -16,6 +16,17 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 027 · Shop Encounter
+
+**Shipped:** 2026-06-06 · **PR:** (pending) · **Spec:** [docs/features/history/027-shop-encounter.md](docs/features/history/027-shop-encounter.md)
+
+The gold **Shop**: a warm merchant panel where Pip spends earned gold on items — the *sink* that
+gives currency a purpose. Optional encounter (a "Leave" exit), browse-and-buy. Up to 3 items
+stocked at placement; purchased items removed permanently. Merchant names, item prices, and
+parchment-warm panel styling all specced.
+
+---
+
 ### 023 · Boss Encounter & Run Completion
 
 **Shipped:** 2026-06-06 · **PR:** #TBD · **Spec:** [docs/features/history/023-boss-encounter.md](docs/features/history/023-boss-encounter.md)

@@ -424,3 +424,80 @@ describe('Enemy tier selection and placement', () => {
     expect(t3Pct).toBe(0)
   })
 })
+
+describe('shop room placement', () => {
+  const CATALOG_IDS = ['cheese-crumb', 'gouda-wedge', 'lucky-acorn', 'smoke-pellet', 'glowstone-dust']
+
+  it('assigns shopStock with exactly 3 items for shop rooms', () => {
+    const base = initDungeon()
+    const offering = { roomType: 'shop' as const, exits: S }
+    const next = placeRoom(base, offering, { col: 6, row: 5 })
+    const cell = next.grid.cells[5][6]
+    expect(cell?.shopStock).toBeDefined()
+    expect(cell?.shopStock).toHaveLength(3)
+  })
+
+  it('assigns shopMerchant name for shop rooms', () => {
+    const base = initDungeon()
+    const offering = { roomType: 'shop' as const, exits: S }
+    const next = placeRoom(base, offering, { col: 6, row: 5 })
+    const cell = next.grid.cells[5][6]
+    expect(cell?.shopMerchant).toBeDefined()
+    expect(typeof cell?.shopMerchant).toBe('string')
+    expect(cell?.shopMerchant?.length).toBeGreaterThan(0)
+  })
+
+  it('selects valid catalog items in shopStock', () => {
+    const base = initDungeon()
+    const offering = { roomType: 'shop' as const, exits: S }
+    for (let i = 0; i < 20; i++) {
+      const next = placeRoom(base, offering, { col: 6 + i % 3, row: 5 + Math.floor(i / 3) })
+      const cell = next.grid.cells[5 + Math.floor(i / 3)][6 + i % 3]
+      cell?.shopStock?.forEach(id => {
+        expect(CATALOG_IDS).toContain(id)
+      })
+    }
+  })
+
+  it('does not select duplicate items in the same shop', () => {
+    const base = initDungeon()
+    const offering = { roomType: 'shop' as const, exits: S }
+    for (let i = 0; i < 20; i++) {
+      const next = placeRoom(base, offering, { col: 6 + i % 3, row: 5 + Math.floor(i / 3) })
+      const cell = next.grid.cells[5 + Math.floor(i / 3)][6 + i % 3]
+      const stock = cell?.shopStock ?? []
+      const unique = new Set(stock)
+      expect(unique.size).toBe(stock.length)
+    }
+  })
+
+  it('selects merchant name from valid set', () => {
+    const validNames = ['Morwhistle the Vole', 'Old Nutkin', 'Bramble Sewn']
+    const base = initDungeon()
+    for (let i = 0; i < 20; i++) {
+      const offering = { roomType: 'shop' as const, exits: S }
+      const next = placeRoom(base, offering, { col: 6 + i % 3, row: 5 + Math.floor(i / 3) })
+      const cell = next.grid.cells[5 + Math.floor(i / 3)][6 + i % 3]
+      expect(validNames).toContain(cell?.shopMerchant)
+    }
+  })
+
+  it('tracks shop placement on the floor', () => {
+    const base = initDungeon()
+    expect(base.shopPlacedThisFloor).toBe(false)
+    const offering = { roomType: 'shop' as const, exits: S }
+    const next = placeRoom(base, offering, { col: 6, row: 5 })
+    expect(next.shopPlacedThisFloor).toBe(true)
+  })
+
+  it('does not assign shopStock for non-shop room types', () => {
+    const base = initDungeon()
+    for (const roomType of ['enemy', 'corridor', 'item', 'npc', 'chest', 'boss', 'trap', 'stairwell'] as const) {
+      const offering = { roomType, exits: S }
+      const next = placeRoom(base, offering, { col: 6, row: 5 })
+      const cell = next.grid.cells[5][6]
+      expect(cell?.shopStock).toBeUndefined()
+      expect(cell?.shopMerchant).toBeUndefined()
+    }
+  })
+})
