@@ -19,6 +19,7 @@ import { createCombatEncounterPanel } from '../combat/combat-panel'
 import { getEnemySpec } from '../combat/roster'
 import { createItemEncounterPanel } from '../encounter/item-panel'
 import { createShopEncounterPanel } from '../encounter/shop-panel'
+import { createTrapEncounterPanel, TRAP_FLAVOURS } from '../encounter/trap-panel'
 import { ITEM_CONFIG } from '../encounter/config'
 import {
   LOGICAL_W,
@@ -154,6 +155,50 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       onWhisperEnd: () => {},
     },
   )
+
+  // Register trap encounter — forced, no-Leave, snap-camera agility check.
+  registry.register({
+    trigger: (cell) => cell.roomType === 'trap' && cell.trapFired !== true,
+    factory: (onComplete) => {
+      const vpCol = state.pip.col - (state.camera.col - Math.floor(VIEWPORT_COLS / 2))
+      const vpRow = state.pip.row - (state.camera.row - Math.floor(VIEWPORT_ROWS / 2))
+      const pipNatX = MAP_X + vpCol * TILE_SIZE + TILE_SIZE / 2
+      const pipNatY = MAP_Y + vpRow * TILE_SIZE + TILE_SIZE / 2
+
+      // Persist trapFlavour to the tile at trigger time (not deferred to roll completion),
+      // so it survives even if a future mechanic can abort the encounter before rolling.
+      const { row, col } = state.pip
+      let cell = state.grid.cells[row][col]!
+      if (cell.trapFlavour === undefined) {
+        const flavourIdx = Math.floor(Math.random() * TRAP_FLAVOURS.length)
+        const newCells = state.grid.cells.map(r => [...r])
+        newCells[row][col] = { ...cell, trapFlavour: flavourIdx }
+        state = { ...state, grid: { ...state.grid, cells: newCells } }
+        cell = newCells[row][col]!
+      }
+
+      return createTrapEncounterPanel(onComplete, cell,
+        { zoom: 1.8, pipTargetX: pipNatX, pipTargetY: pipNatY },
+        {
+          getPool: () => dicePool,
+          getPipHp: () => pipHp,
+          setPipHp: (hp) => { pipHp = hp },
+          getDungeonState: () => state,
+          setDungeonState: (s) => { state = s },
+        },
+      )
+    },
+    handlers: {
+      resolved: () => {
+        dicePool = resetPool(dicePool)
+        navPanel.clearWhisper()
+      },
+      defeat: () => {
+        resetRunState()
+        transitionTo('home')
+      },
+    },
+  })
 
   // Register item room encounter.
   registry.register({

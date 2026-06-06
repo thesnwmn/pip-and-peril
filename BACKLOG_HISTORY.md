@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 025 · Trap Encounter
+
+**Shipped:** 2026-06-06 · **PR:** (pending) · **Spec:** [docs/features/history/025-trap-encounter.md](docs/features/history/025-trap-encounter.md)
+
+A **forced** encounter: stepping onto a trapped tile fires a single agility check (snap-camera, no-Leave panel). Enough Green pips — Pip slips clear; too few — HP loss scaled to the tile's `trapDifficulty`. Tile is spent after one trigger; never fires again on re-entry.
+
+---
+
 ### 027 · Shop Encounter
 
 **Shipped:** 2026-06-06 · **PR:** (pending) · **Spec:** [docs/features/history/027-shop-encounter.md](docs/features/history/027-shop-encounter.md)

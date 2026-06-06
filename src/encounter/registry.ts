@@ -145,6 +145,10 @@ export function createEncounterRegistry(getNow: () => DOMHighResTimeStamp = () =
       const easedT = easeOut(t)
       const panelTop = Math.round(lerp(LOGICAL_H, COMBAT_PANEL_TOP, easedT))
       cachedPanelTop = panelTop
+      // snapCamera: use target values immediately (no zoom/position interpolation)
+      if (phase.panel.snapCamera) {
+        return { panelTop, zoom: targetZoom, pipTargetX: targetPipX, pipTargetY: targetPipY }
+      }
       return {
         panelTop,
         zoom: lerp(1.0, targetZoom, easedT),

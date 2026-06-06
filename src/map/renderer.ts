@@ -216,6 +216,15 @@ function drawCell(
     ctx.fillRect(px, py, s, s)
   }
 
+  // Step 7.5 — spent trap overlay (drawn after fog so it's visible even on seen tiles)
+  if (cell.roomType === 'trap' && cell.trapFired) {
+    ctx.save()
+    ctx.globalAlpha = 0.5
+    ctx.fillStyle = colors.trapSpent
+    ctx.fillRect(px + wt, py + wt, fi, fi)
+    ctx.restore()
+  }
+
   // Step 8 — fled marker for enemy rooms
   if (cell.roomType === 'enemy' && cell.fled) {
     const markerSize = Math.round(s / 6)

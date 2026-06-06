@@ -23,4 +23,7 @@ export interface EncounterPanel {
   handlePointerMove(x: number, y: number): void
   // Optional map-view override. Absent = default navigation view.
   readonly mapView?: MapViewConfig
+  // When true, the registry applies the target mapView zoom/pip instantly (no interpolation)
+  // during the rising phase — camera snaps to position before the panel finishes rising.
+  readonly snapCamera?: boolean
 }

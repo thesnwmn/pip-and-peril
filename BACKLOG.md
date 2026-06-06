@@ -30,14 +30,6 @@ defeat what felled Pip. Same screen serves both outcomes with different header t
 **Depends on:** 023 (run-complete trigger and banner), 006 (defeat signal routing), 034 (encounter registry).
 See `docs/features/024-run-summary-screen.md` for the full spec.
 
-### 025 · Trap Encounter
-
-A **forced** encounter: stepping onto a trapped tile fires a single agility check (snap-camera,
-no-Leave panel). Enough Green pips — Pip slips clear; too few — HP loss scaled to the tile's
-`trapDifficulty`. Tile is spent after one trigger; never fires again on re-entry.
-**Depends on:** 004 (room entry trigger), 005 (dice pool), 022 (sets `trapDifficulty`), 030 (encounter panel + snap camera mode).
-See `docs/features/025-trap-encounter.md` for the full spec.
-
 ### 026 · Chest Encounter
 
 The amber **Chest**: the concept's two-beat reveal (anticipation → loot), paying out gold and/or

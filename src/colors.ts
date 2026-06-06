@@ -90,6 +90,9 @@ export const colors = {
   satchelStitch: '#6b4f2a',
   satchelInk: '#1a0f08',
 
+  // Spent trap tile overlay
+  trapSpent: '#1a1a2a',
+
   // Nav panel direction buttons & map-zone fog marker
   navDirNone: '#3a3a50',
   navDirFog:  '#c8941e',

@@ -115,11 +115,7 @@ export const LOG_MESSAGES: Partial<Record<RoomType, string[]>> = {
     'Gold light under the lid.',
     'Heavy iron lock. Weak hinges.',
   ],
-  trap: [
-    'Tiles click ominously beneath your feet.',
-    'Something sharp glints in the darkness.',
-    'You sense danger.',
-  ],
+  // trap: no whisper — the camera snap is the signal for live traps; spent traps are silent.
 }
 
 export const CARD_TEASES: Partial<Record<RoomType, string[]>> = {
