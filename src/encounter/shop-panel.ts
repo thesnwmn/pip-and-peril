@@ -31,8 +31,9 @@ const CARD_ICON_SIZE_COMPACT = 32
 const CARD_ICON_SIZE_EXPANDED = 48
 
 const ITEM_AREA_TOP = RULE_Y + 12
-const CARD_PADDING = 6
+const CARD_PADDING = 9
 const CARD_GAP = 6
+const BUY_BUTTON_HEIGHT = 26
 const MAX_ITEMS = 3
 
 const GOLD_DISPLAY_Y = LOGICAL_H - 24
@@ -220,8 +221,14 @@ export function createShopEncounterPanel(
     // Card background with rounded corners
     const radius = 4
     ctx.fillStyle = isFlashing ? '#4a2a2a' : colors.shopCardBg
-    ctx.strokeStyle = isFlashing ? colors.shopUnaffordable : colors.shopBorder
-    ctx.lineWidth = isFlashing ? 2 : 1
+    if (isFlashing) {
+      ctx.strokeStyle = colors.shopUnaffordable
+      ctx.lineWidth = 2
+    } else {
+      ctx.strokeStyle = colors.shopBorder
+      ctx.globalAlpha = 0.4  // Reduce border contrast
+      ctx.lineWidth = 1
+    }
     ctx.beginPath()
     ctx.moveTo(left + 1 + radius, top + 1)
     ctx.lineTo(left + width - 1 - radius, top + 1)
@@ -234,6 +241,9 @@ export function createShopEncounterPanel(
     ctx.arcTo(left + 1, top + 1, left + 1 + radius, top + 1, radius)
     ctx.fill()
     ctx.stroke()
+    if (!isFlashing) {
+      ctx.globalAlpha = 1  // Restore full opacity
+    }
 
     // Icon (vertically centered)
     ctx.font = `${CARD_ICON_SIZE_COMPACT}px monospace`
@@ -270,7 +280,7 @@ export function createShopEncounterPanel(
     if (isSelected) {
       // Show Buy button on the right with curved borders
       const btnWidth = 55
-      const btnHeight = 20
+      const btnHeight = BUY_BUTTON_HEIGHT
       const btnLeft = textRight - btnWidth
       const btnTop = centerY - btnHeight / 2
 
@@ -335,7 +345,7 @@ export function createShopEncounterPanel(
         const cardWidth = CONTENT_W
         const textRight = cardLeft + cardWidth - 12
         const btnWidth = 55
-        const btnHeight = 20
+        const btnHeight = BUY_BUTTON_HEIGHT
         const cardTop = ITEM_AREA_TOP + cardIdx * (cardHeight + CARD_GAP)
         const centerY = cardTop + cardHeight / 2
         const btnLeft = textRight - btnWidth
@@ -418,7 +428,7 @@ export function createShopEncounterPanel(
           const cardWidth = CONTENT_W
           const textRight = cardLeft + cardWidth - 12
           const btnWidth = 55
-          const btnHeight = 20
+          const btnHeight = BUY_BUTTON_HEIGHT
           const cardTop = ITEM_AREA_TOP + cardIdx * (cardHeight + CARD_GAP)
           const centerY = cardTop + cardHeight / 2
           const btnLeft = textRight - btnWidth
