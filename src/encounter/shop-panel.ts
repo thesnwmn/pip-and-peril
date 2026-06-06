@@ -200,7 +200,9 @@ export function createShopEncounterPanel(
     // Leave button
     const leaveBgAlpha = hoveredElement === 'leave' ? 0.15 : 0
     ctx.fillStyle = `rgba(139, 107, 85, ${leaveBgAlpha})`
-    ctx.fillRect(0, LEAVE_Y - LEAVE_HIT_H / 2, PANEL_W, LEAVE_HIT_H)
+    // Only highlight the button area (right side), not the entire row
+    const leaveButtonLeft = CONTENT_RIGHT - 50
+    ctx.fillRect(leaveButtonLeft, LEAVE_Y - LEAVE_HIT_H / 2, 50, LEAVE_HIT_H)
 
     ctx.font = '12px monospace'
     ctx.fillStyle = hoveredElement === 'leave' ? colors.textPrimary : colors.textMuted
