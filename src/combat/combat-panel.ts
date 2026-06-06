@@ -392,54 +392,11 @@ export function createCombatEncounterPanel(
     pipTargetY: COMBAT_MAP_CENTER_Y,
   }
 
-  // ── Intro drawing ─────────────────────────────────────────────────────────
-
-  function drawIntroSequence(renderCtx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
-    if (!intro || introComplete) return
-    if (introStartTime === null) { introStartTime = timestamp }
-
-    const elapsed = timestamp - introStartTime
-    const INTRO_DURATION = 2500
-
-    if (elapsed >= 500 && elapsed < 1800) {
-      const cardAge = elapsed - 500
-      let alpha = 1.0
-      if (cardAge < 300) alpha = cardAge / 300
-      else if (cardAge > 1300) alpha = Math.max(0, 1.0 - (cardAge - 1300) / 300)
-
-      const cx = 192
-      const cy = 200
-      const cardW = 360
-      const cardH = 120
-      const grad = renderCtx.createLinearGradient(cx - cardW / 2, 0, cx + cardW / 2, 0)
-      grad.addColorStop(0, 'rgba(0,0,0,0)')
-      grad.addColorStop(0.5, 'rgba(0,0,0,0.45)')
-      grad.addColorStop(1, 'rgba(0,0,0,0)')
-      renderCtx.globalAlpha = alpha
-      renderCtx.fillStyle = grad
-      renderCtx.fillRect(cx - cardW / 2, cy - cardH / 2, cardW, cardH)
-      renderCtx.font = 'bold 24px monospace'
-      renderCtx.fillStyle = '#c8941e'
-      renderCtx.textAlign = 'center'
-      renderCtx.textBaseline = 'middle'
-      renderCtx.fillText(intro.titleCard.name, cx, cy - 20)
-      renderCtx.font = 'italic 13px system-ui'
-      renderCtx.fillStyle = '#8b7355'
-      renderCtx.fillText(intro.titleCard.flavour, cx, cy + 20)
-      renderCtx.globalAlpha = 1.0
-    }
-
-    if (elapsed >= INTRO_DURATION) introComplete = true
-  }
-
   // ── draw ──────────────────────────────────────────────────────────────────
 
   function draw(renderCtx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
-    // Draw intro sequence if active; skip combat panel until complete.
-    if (!introComplete) {
-      drawIntroSequence(renderCtx, timestamp)
-      return
-    }
+    // Track intro timing from the first frame so the title card can reference it.
+    if (intro && introStartTime === null) introStartTime = timestamp
 
     // Advance roll animation.
     let pool = ctx.getPool()
@@ -497,8 +454,42 @@ export function createCombatEncounterPanel(
 
   // ── drawMapOverlay ────────────────────────────────────────────────────────
 
-  function drawMapOverlay(renderCtx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
-    if (!introComplete) return
+  function drawMapOverlay(renderCtx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
+    // Title card: drawn over the map area during the intro window.
+    if (intro && !introComplete && introStartTime !== null) {
+      const elapsed = timestamp - introStartTime
+      if (elapsed >= 2500) {
+        introComplete = true
+      } else if (elapsed >= 500 && elapsed < 1800) {
+        const cardAge = elapsed - 500
+        let alpha = 1.0
+        if (cardAge < 300) alpha = cardAge / 300
+        else if (cardAge > 1300) alpha = Math.max(0, 1.0 - (cardAge - 1300) / 300)
+
+        const cx = 192
+        const cy = 200
+        const cardW = 360
+        const cardH = 120
+        const grad = renderCtx.createLinearGradient(cx - cardW / 2, 0, cx + cardW / 2, 0)
+        grad.addColorStop(0, 'rgba(0,0,0,0)')
+        grad.addColorStop(0.5, 'rgba(0,0,0,0.45)')
+        grad.addColorStop(1, 'rgba(0,0,0,0)')
+        renderCtx.globalAlpha = alpha
+        renderCtx.fillStyle = grad
+        renderCtx.fillRect(cx - cardW / 2, cy - cardH / 2, cardW, cardH)
+        renderCtx.font = 'bold 24px monospace'
+        renderCtx.fillStyle = '#c8941e'
+        renderCtx.textAlign = 'center'
+        renderCtx.textBaseline = 'middle'
+        renderCtx.fillText(intro.titleCard.name, cx, cy - 20)
+        renderCtx.font = 'italic 13px system-ui'
+        renderCtx.fillStyle = '#8b7355'
+        renderCtx.fillText(intro.titleCard.flavour, cx, cy + 20)
+        renderCtx.globalAlpha = 1.0
+      }
+      return  // don't draw combat overlay during intro
+    }
+
     if (combat.phase === 'victory' || combat.phase === 'defeat' || combat.phase === 'fled') return
     drawCombatOverlay(renderCtx, combat, ctx.getPipHp(), ctx.getPipMaxHp())
   }
