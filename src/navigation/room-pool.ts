@@ -100,9 +100,7 @@ export const LOG_MESSAGES: Partial<Record<RoomType, string[]>> = {
     'A terrible presence fills this place.',
   ],
   shop: [
-    'A merchant grins at your coin pouch.',
-    'Strange wares in the torchlight.',
-    'Coins clink.',
+    'A merchant\'s lantern glows ahead.',
   ],
   npc: [
     'A stranger whispers a warning.',

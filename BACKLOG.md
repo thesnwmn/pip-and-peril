@@ -20,16 +20,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-### 027 · Shop Encounter
-
-The gold **Shop**: a warm merchant panel where Pip spends earned gold on items — the *sink* that
-gives currency a purpose. Optional encounter (a "Leave" exit), browse-and-buy. Up to 3 items
-stocked at placement; purchased items removed permanently. Merchant names, item prices, and
-parchment-warm panel styling all specced.
-**Depends on:** 019 (gold), 020 (items, `acquireItem`), 034 (encounter registry).
-See `docs/features/027-shop-encounter.md` for the full spec.
-
-
 ### 024 · Run Summary Screen
 
 A full-screen parchment retrospective at the end of every run — reached by boss victory (after

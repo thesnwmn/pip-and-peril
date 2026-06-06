@@ -21,6 +21,8 @@ export interface TileCell {
   itemId?: string
   trapDifficulty?: number
   enemyId?: string
+  shopStock?: string[]
+  shopMerchant?: string
 }
 
 export interface GameMap {

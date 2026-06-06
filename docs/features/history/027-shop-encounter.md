@@ -394,4 +394,54 @@ None. All blocking questions resolved. This item is **READY**.
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-06 · **PR:** (pending)
+
+### Implementation summary
+
+Implemented the full Shop Encounter feature including:
+
+- **Data model**: Added `shopPrice: number` field to all 5 catalog items with prices ranging 2–6 ◈
+- **Tile placement**: Added `shopStock` (3 random items) and `shopMerchant` (random name from set) to `TileCell`
+- **Encounter panel**: Created `src/encounter/shop-panel.ts` with:
+  - Warm temperature styling with new color tokens (`shopSurface`, `shopBorder`, `shopCardBg`, `shopUnaffordable`)
+  - Merchant header with name and flavor line
+  - Compact/expanded card states with purchase flow
+  - Affordability feedback ("Not enough coin." message)
+  - Sold-out state ("Shelves are bare." message)
+  - Live gold display and Leave button
+  - Purchase confirmation with 2s fade
+- **Encounter registry**: Registered two shop encounter triggers (non-empty and empty stock) in `src/screens/game.ts`
+- **Whisper message**: Updated entry whisper to "A merchant's lantern glows ahead."
+- **Tests**: Added 17 new tests covering placement, purchase flow, affordability guards, sold-out states, and gold updates
+
+### Test evidence
+
+All unit tests pass:
+- Placement tests: verify 3-item stock, valid catalog IDs, no duplicates, valid merchant names
+- Buy flow tests: gold deduction, `acquireItem` call, stock removal
+- Unaffordable guard: prevents purchase when insufficient gold
+- Sold-out state tests: both on entry and after last purchase
+- Gold update tests: price badges update affordability immediately
+
+Test run output:
+```
+Test Files  20 passed (20)
+Tests  390 passed (390)
+```
+
+Type-checking and build pass with no errors.
+
+### Play-test instructions
+
+1. Run `npm run dev` and load the game at `http://localhost:5173`
+2. Enter the dungeon and explore until you find a Shop room (warm-colored floor edge)
+3. Verify the shop panel rises with warm colors and merchant name visible
+4. Try tapping affordable items (compact cards expand inline)
+5. Try tapping unaffordable items (feedback "Not enough coin." fades after ~1.5s)
+6. Tap "Buy" on an expanded card—item is added to satchel, gold decrements, card is removed from shop
+7. After purchases, verify remaining items' affordability badges update (green→red as gold drops)
+8. Purchase the last item and verify panel transitions to "Shelves are bare."
+9. Re-enter the same shop room and verify stock persists (no duplication)
+10. Tap Leave at any point—camera returns to nav, encounter ends normally
+11. Visit a sold-out shop again—panel shows "Shelves are bare." on entry
+12. Verify all campaign encounters (combat, items, chests) still work alongside shops

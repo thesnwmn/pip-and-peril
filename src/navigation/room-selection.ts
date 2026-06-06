@@ -130,6 +130,21 @@ function selectEnemyOfTier(tier: 1 | 2 | 3): string {
   return candidates[Math.floor(Math.random() * candidates.length)].id
 }
 
+const MERCHANT_NAMES = [
+  { name: 'Morwhistle the Vole', flavor: "What'll it be?" },
+  { name: 'Old Nutkin', flavor: 'Coins only, mind you.' },
+  { name: 'Bramble Sewn', flavor: 'Fine goods, fair prices.' },
+]
+
+function selectShopMerchant(): { name: string; flavor: string } {
+  return MERCHANT_NAMES[Math.floor(Math.random() * MERCHANT_NAMES.length)]
+}
+
+function selectShopStock(): string[] {
+  const shuffled = [...CATALOG_ITEMS].sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, 3).map(item => item.id)
+}
+
 export function placeRoom(
   state: DungeonState,
   offering: RoomOffering,
@@ -153,6 +168,12 @@ export function placeRoom(
 
   if (offering.roomType === 'boss') {
     cell.enemyId = 'rat-king'
+  }
+
+  if (offering.roomType === 'shop') {
+    const merchant = selectShopMerchant()
+    cell.shopMerchant = merchant.name
+    cell.shopStock = selectShopStock()
   }
 
   newCells[targetPos.row][targetPos.col] = cell

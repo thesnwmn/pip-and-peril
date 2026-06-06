@@ -14,6 +14,7 @@ export interface Item {
   usableInNav: boolean
   usableInCombat: boolean
   effect: ItemEffect
+  shopPrice?: number
 }
 
 export interface Inventory {

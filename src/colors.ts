@@ -95,4 +95,10 @@ export const colors = {
   navDirFog:  '#c8941e',
   navDirBack: '#7a5010',
   navFogMark: '#1e2b54',
+
+  // Shop panel (warm temperature)
+  shopSurface: '#1e1508',
+  shopBorder: '#7a5c1a',
+  shopCardBg: '#261c0b',
+  shopUnaffordable: '#8b3a3a',
 } as const

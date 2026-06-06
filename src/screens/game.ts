@@ -18,6 +18,7 @@ import { createEncounterRegistry } from '../encounter/registry'
 import { createCombatEncounterPanel } from '../combat/combat-panel'
 import { getEnemySpec } from '../combat/roster'
 import { createItemEncounterPanel } from '../encounter/item-panel'
+import { createShopEncounterPanel } from '../encounter/shop-panel'
 import { ITEM_CONFIG } from '../encounter/config'
 import {
   LOGICAL_W,
@@ -177,6 +178,58 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       taken: () => {
         navPanel.clearWhisper()
       },
+      left: () => {
+        navPanel.clearWhisper()
+      },
+    },
+  })
+
+  // Register shop encounter.
+  registry.register({
+    trigger: (cell) => cell.roomType === 'shop' && (cell.shopStock?.length ?? 0) > 0,
+    factory: (onComplete) => {
+      const vpCol = state.pip.col - (state.camera.col - Math.floor(VIEWPORT_COLS / 2))
+      const vpRow = state.pip.row - (state.camera.row - Math.floor(VIEWPORT_ROWS / 2))
+      const pipNatX = MAP_X + vpCol * TILE_SIZE + TILE_SIZE / 2
+      const pipNatY = MAP_Y + vpRow * TILE_SIZE + TILE_SIZE / 2
+      const cell = state.grid.cells[state.pip.row][state.pip.col]!
+      return createShopEncounterPanel(onComplete, cell,
+        { zoom: 1.2, pipTargetX: pipNatX, pipTargetY: pipNatY },
+        {
+          getInventory: () => inventory,
+          setInventory: (inv) => { inventory = inv },
+          getDungeonState: () => state,
+          setDungeonState: (s) => { state = s },
+        },
+      )
+    },
+    handlers: {
+      left: () => {
+        navPanel.clearWhisper()
+      },
+    },
+  })
+
+  // Register shop encounter (sold-out state).
+  registry.register({
+    trigger: (cell) => cell.roomType === 'shop' && (!cell.shopStock || cell.shopStock.length === 0),
+    factory: (onComplete) => {
+      const vpCol = state.pip.col - (state.camera.col - Math.floor(VIEWPORT_COLS / 2))
+      const vpRow = state.pip.row - (state.camera.row - Math.floor(VIEWPORT_ROWS / 2))
+      const pipNatX = MAP_X + vpCol * TILE_SIZE + TILE_SIZE / 2
+      const pipNatY = MAP_Y + vpRow * TILE_SIZE + TILE_SIZE / 2
+      const cell = state.grid.cells[state.pip.row][state.pip.col]!
+      return createShopEncounterPanel(onComplete, cell,
+        { zoom: 1.2, pipTargetX: pipNatX, pipTargetY: pipNatY },
+        {
+          getInventory: () => inventory,
+          setInventory: (inv) => { inventory = inv },
+          getDungeonState: () => state,
+          setDungeonState: (s) => { state = s },
+        },
+      )
+    },
+    handlers: {
       left: () => {
         navPanel.clearWhisper()
       },
