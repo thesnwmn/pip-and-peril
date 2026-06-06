@@ -179,27 +179,6 @@ export function createShopEncounterPanel(
         lastUnaffordableClick = null
       }
 
-      // Purchase confirmation feedback
-      if (lastPurchaseConfirmation) {
-        const elapsed = timestamp - lastPurchaseConfirmation.timestamp
-        if (elapsed < 2000) {
-          const alpha = Math.max(0, 1 - (elapsed - 1800) / 200)
-          ctx.globalAlpha = alpha
-          ctx.font = '11px monospace'
-          ctx.fillStyle = colors.textMuted
-          ctx.textAlign = 'left'
-          ctx.textBaseline = 'top'
-          ctx.fillText(
-            `Bought. ${lastPurchaseConfirmation.itemName} added to satchel.`,
-            16,
-            ITEM_AREA_TOP + 2
-          )
-          ctx.globalAlpha = 1
-        } else {
-          lastPurchaseConfirmation = null
-        }
-      }
-
     }
 
     // Gold display
@@ -285,30 +264,37 @@ export function createShopEncounterPanel(
     const descY = nameTop + 14
     ctx.fillText(item.description, textLeft, descY)
 
-    // Price badge or Buy button (right side)
+    // Price badge or Buy button
     if (isSelected) {
-      // Show Buy button
-      const btnWidth = width - textLeft - 12
+      // Show Buy button on the left side, encompassing the price position
+      const priceText = `${item.shopPrice}◈`
+      const priceWidth = 40
       const btnHeight = 20
       const btnTop = nameTop + 2
-      const btnLeft = textRight - btnWidth
+      const btnLeft = textLeft
+      const btnRight = btnLeft + 60
 
       const buyHovered = hoveredElement === `buy-${cardIndex}`
       ctx.fillStyle = buyHovered ? 'rgba(122, 90, 26, 0.35)' : 'rgba(122, 90, 26, 0.2)'
       ctx.strokeStyle = colors.roomShop
       ctx.lineWidth = 1
       ctx.beginPath()
-      ctx.rect(btnLeft, btnTop, btnWidth, btnHeight)
+      ctx.rect(btnLeft, btnTop, btnRight - btnLeft, btnHeight)
       ctx.fill()
       ctx.stroke()
 
+      // "Buy" text on left
       ctx.font = 'bold 11px monospace'
       ctx.fillStyle = colors.gold
-      ctx.textAlign = 'center'
+      ctx.textAlign = 'left'
       ctx.textBaseline = 'middle'
-      ctx.fillText(`Buy ${item.shopPrice}◈`, btnLeft + btnWidth / 2, btnTop + btnHeight / 2)
+      ctx.fillText('Buy', btnLeft + 4, btnTop + btnHeight / 2)
+
+      // Price on right
+      ctx.textAlign = 'right'
+      ctx.fillText(priceText, btnRight - 4, btnTop + btnHeight / 2)
     } else {
-      // Show price badge
+      // Show price badge on the right
       ctx.font = 'bold 12px monospace'
       ctx.fillStyle = affordable ? colors.gold : colors.shopUnaffordable
       ctx.textAlign = 'right'
@@ -339,13 +325,12 @@ export function createShopEncounterPanel(
         const cardLeft = CONTENT_LEFT
         const cardWidth = CONTENT_W
         const textLeft = cardLeft + 52
-        const textRight = cardLeft + cardWidth - 12
-        const btnWidth = cardWidth - 52 - 12
         const btnHeight = 20
         const btnTop = ITEM_AREA_TOP + cardIdx * (cardHeight + CARD_GAP) + CARD_PADDING + 2
-        const btnLeft = textRight - btnWidth
+        const btnLeft = textLeft
+        const btnRight = btnLeft + 60
 
-        if (x >= btnLeft && x <= textRight && y >= btnTop && y <= btnTop + btnHeight) {
+        if (x >= btnLeft && x <= btnRight && y >= btnTop && y <= btnTop + btnHeight) {
           if (canAfford(item)) {
             // Purchase
             const inv = context.getInventory()
@@ -421,13 +406,12 @@ export function createShopEncounterPanel(
           const cardLeft = CONTENT_LEFT
           const cardWidth = CONTENT_W
           const textLeft = cardLeft + 52
-          const textRight = cardLeft + cardWidth - 12
-          const btnWidth = cardWidth - 52 - 12
           const btnHeight = 20
           const btnTop = ITEM_AREA_TOP + cardIdx * (cardHeight + CARD_GAP) + CARD_PADDING + 2
-          const btnLeft = textRight - btnWidth
+          const btnLeft = textLeft
+          const btnRight = btnLeft + 60
 
-          if (x >= btnLeft && x <= textRight && y >= btnTop && y <= btnTop + btnHeight) {
+          if (x >= btnLeft && x <= btnRight && y >= btnTop && y <= btnTop + btnHeight) {
             hoveredElement = `buy-${cardIdx}`
           }
         }
