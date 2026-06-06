@@ -38,11 +38,25 @@ export interface CombatContext {
   setDungeonState: (state: DungeonState) => void
 }
 
+export interface CombatOptions {
+  // Outcome string emitted on victory (default: 'victory').
+  victoryOutcome?: string
+  // If set, an intro sequence (title card + zoom-out/in) is shown before combat.
+  intro?: {
+    titleCard: { name: string; flavour: string }
+    wideZoom: number
+  }
+}
+
 export function createCombatEncounterPanel(
   onComplete: (outcome: string) => void,
   ctx: CombatContext,
   entryFrom: { col: number; row: number },
+  options: CombatOptions = {},
 ): EncounterPanel {
+  const victoryOutcome = options.victoryOutcome ?? 'victory'
+  const intro = options.intro ?? null
+
   // ── Combat state ─────────────────────────────────────────────────────────
 
   const dungeonState = ctx.getDungeonState()
@@ -51,10 +65,13 @@ export function createCombatEncounterPanel(
   const spec = getEnemySpec(enemyId)
   const enemy = spawnEnemy(spec)
 
+  // Initial intent: use cycle position 0 for cycled enemies, else random.
+  const initialIntent = enemy.intentCycle ? enemy.intentCycle[0]! : selectIntent(enemy.intents)
+
   let combat: CombatState = {
     enemy,
     phase: 'awaiting-roll',
-    intent: selectIntent(enemy.intents),  // telegraph before first roll
+    intent: initialIntent,
     reservedGreen: 0,
     entryFrom,
     goldAwarded: 0,
@@ -71,6 +88,11 @@ export function createCombatEncounterPanel(
   const personality = spec.personality
   let bannerStartTime: number | null = null
   let completed = false
+
+  // ── Intro state ───────────────────────────────────────────────────────────
+
+  let introStartTime: number | null = null
+  let introComplete = intro === null  // no intro = skip straight to combat
 
   // ── Panel UI state ────────────────────────────────────────────────────────
 
@@ -364,7 +386,7 @@ export function createCombatEncounterPanel(
 
   // ── Map view ──────────────────────────────────────────────────────────────
 
-  const mapView: MapViewConfig = {
+  const tightMapView: MapViewConfig = {
     zoom: COMBAT_CONFIG.cameraZoom,
     pipTargetX: COMBAT_MAP_CENTER_X,
     pipTargetY: COMBAT_MAP_CENTER_Y,
@@ -373,6 +395,9 @@ export function createCombatEncounterPanel(
   // ── draw ──────────────────────────────────────────────────────────────────
 
   function draw(renderCtx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
+    // Track intro timing from the first frame so the title card can reference it.
+    if (intro && introStartTime === null) introStartTime = timestamp
+
     // Advance roll animation.
     let pool = ctx.getPool()
     if (pool.state === 'rolling' && anim.startTime !== null) {
@@ -429,7 +454,42 @@ export function createCombatEncounterPanel(
 
   // ── drawMapOverlay ────────────────────────────────────────────────────────
 
-  function drawMapOverlay(renderCtx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
+  function drawMapOverlay(renderCtx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
+    // Title card: drawn over the map area during the intro window.
+    if (intro && !introComplete && introStartTime !== null) {
+      const elapsed = timestamp - introStartTime
+      if (elapsed >= 2500) {
+        introComplete = true
+      } else if (elapsed >= 500 && elapsed < 1800) {
+        const cardAge = elapsed - 500
+        let alpha = 1.0
+        if (cardAge < 300) alpha = cardAge / 300
+        else if (cardAge > 1300) alpha = Math.max(0, 1.0 - (cardAge - 1300) / 300)
+
+        const cx = 192
+        const cy = 200
+        const cardW = 360
+        const cardH = 120
+        const grad = renderCtx.createLinearGradient(cx - cardW / 2, 0, cx + cardW / 2, 0)
+        grad.addColorStop(0, 'rgba(0,0,0,0)')
+        grad.addColorStop(0.5, 'rgba(0,0,0,0.45)')
+        grad.addColorStop(1, 'rgba(0,0,0,0)')
+        renderCtx.globalAlpha = alpha
+        renderCtx.fillStyle = grad
+        renderCtx.fillRect(cx - cardW / 2, cy - cardH / 2, cardW, cardH)
+        renderCtx.font = 'bold 24px monospace'
+        renderCtx.fillStyle = '#c8941e'
+        renderCtx.textAlign = 'center'
+        renderCtx.textBaseline = 'middle'
+        renderCtx.fillText(intro.titleCard.name, cx, cy - 20)
+        renderCtx.font = 'italic 13px system-ui'
+        renderCtx.fillStyle = '#8b7355'
+        renderCtx.fillText(intro.titleCard.flavour, cx, cy + 20)
+        renderCtx.globalAlpha = 1.0
+      }
+      return  // don't draw combat overlay during intro
+    }
+
     if (combat.phase === 'victory' || combat.phase === 'defeat' || combat.phase === 'fled') return
     drawCombatOverlay(renderCtx, combat, ctx.getPipHp(), ctx.getPipMaxHp())
   }
@@ -437,8 +497,10 @@ export function createCombatEncounterPanel(
   // ── handleClick ───────────────────────────────────────────────────────────
 
   function handleClick(x: number, y: number): void {
+    if (!introComplete) return  // ignore taps during intro
     if (bannerStartTime !== null) {
-      if (combat.phase === 'victory' || combat.phase === 'defeat' || combat.phase === 'fled') {
+      if (combat.phase === 'victory') { signalComplete(victoryOutcome); return }
+      if (combat.phase === 'defeat' || combat.phase === 'fled') {
         signalComplete(combat.phase)
         return
       }
@@ -525,6 +587,28 @@ export function createCombatEncounterPanel(
     hoveredElement = hitTest(x, y, pool, combat, openCategory, fleePending, ctx.getInventory())
   }
 
-  return { draw, drawMapOverlay, handleClick, handlePointerMove, mapView }
+  return {
+    draw,
+    drawMapOverlay,
+    handleClick,
+    handlePointerMove,
+    get mapView(): MapViewConfig {
+      if (intro && !introComplete && introStartTime !== null) {
+        const elapsed = performance.now() - introStartTime
+        const TRANSITION_START = 1500
+        const TRANSITION_DURATION = 400
+        const tight = COMBAT_CONFIG.cameraZoom
+        const wide = intro.wideZoom
+        if (elapsed < TRANSITION_START) {
+          return { zoom: wide, pipTargetX: COMBAT_MAP_CENTER_X, pipTargetY: COMBAT_MAP_CENTER_Y }
+        }
+        if (elapsed < TRANSITION_START + TRANSITION_DURATION) {
+          const t = (elapsed - TRANSITION_START) / TRANSITION_DURATION
+          return { zoom: wide + (tight - wide) * t, pipTargetX: COMBAT_MAP_CENTER_X, pipTargetY: COMBAT_MAP_CENTER_Y }
+        }
+      }
+      return tightMapView
+    },
+  }
 }
 

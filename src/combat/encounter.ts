@@ -1,5 +1,5 @@
 import type { CombatState, Enemy, Intent, StatusIntent } from './types'
-import { selectIntent } from './intents'
+import { selectIntent, pickNextIntent, peekNextIntent } from './intents'
 
 export function rollGoldReward(enemy: Enemy): number {
   return Math.floor(Math.random() * (enemy.goldMax - enemy.goldMin + 1)) + enemy.goldMin
@@ -18,16 +18,33 @@ export interface StrikeResult {
   victory: boolean
 }
 
+// After taking damage, check if the enemy crosses their enrage threshold.
+function applyEnrageCheck(enemy: Enemy): Enemy {
+  if (!enemy.enraged && enemy.enrageThreshold !== undefined &&
+      enemy.hp <= enemy.enrageThreshold && enemy.enragedCycle) {
+    return {
+      ...enemy,
+      enraged: true,
+      intentCycle: enemy.enragedCycle,
+      // Set to length-1 so pickNextIntent wraps to position 0 on next advance.
+      cyclePosition: enemy.enragedCycle.length - 1,
+    }
+  }
+  return enemy
+}
+
 function resolveStrike(combat: CombatState, rawDamage: number): StrikeResult {
   const absorbed = Math.min(rawDamage, combat.enemy.block)
   const damage = rawDamage - absorbed
   const newBlock = combat.enemy.block - absorbed
   const newHp = Math.max(0, combat.enemy.hp - damage)
   const victory = newHp <= 0
+  let newEnemy = { ...combat.enemy, hp: newHp, block: newBlock }
+  if (!victory) newEnemy = applyEnrageCheck(newEnemy)
   return {
     combat: {
       ...combat,
-      enemy: { ...combat.enemy, hp: newHp, block: newBlock },
+      enemy: newEnemy,
       phase: victory ? 'victory' : combat.phase,
     },
     damage,
@@ -49,7 +66,7 @@ export function applyHeavyStrike(combat: CombatState): StrikeResult {
 // ── Blue category actions ────────────────────────────────────────────────────
 
 export function applyAnalyse(combat: CombatState): CombatState {
-  const nextIntent = selectIntent(combat.enemy.intents)
+  const nextIntent = peekNextIntent(combat.enemy)
   return {
     ...combat,
     nextIntent,
@@ -63,10 +80,12 @@ export function applyExploit(combat: CombatState): StrikeResult {
   const damage = 3
   const newHp = Math.max(0, combat.enemy.hp - damage)
   const victory = newHp <= 0
+  let newEnemy = { ...combat.enemy, hp: newHp }
+  if (!victory) newEnemy = applyEnrageCheck(newEnemy)
   return {
     combat: {
       ...combat,
-      enemy: { ...combat.enemy, hp: newHp },
+      enemy: newEnemy,
       phase: victory ? 'victory' : combat.phase,
     },
     damage,
@@ -101,10 +120,12 @@ export function applyLuckyShot(combat: CombatState): StrikeResult {
   const damage = Math.floor(Math.random() * 3) + 1
   const newHp = Math.max(0, combat.enemy.hp - damage)
   const victory = newHp <= 0
+  let newEnemy = { ...combat.enemy, hp: newHp }
+  if (!victory) newEnemy = applyEnrageCheck(newEnemy)
   return {
     combat: {
       ...combat,
-      enemy: { ...combat.enemy, hp: newHp },
+      enemy: newEnemy,
       phase: victory ? 'victory' : combat.phase,
     },
     damage,
@@ -116,9 +137,10 @@ export function applyLuckyShot(combat: CombatState): StrikeResult {
 // ── Red spend actions ────────────────────────────────────────────────────────
 
 export function applyShove(combat: CombatState): CombatState {
-  const nextIntent = selectIntent(combat.enemy.intents)
+  const { intent: nextIntent, updatedEnemy } = pickNextIntent(combat.enemy)
   return {
     ...combat,
+    enemy: updatedEnemy,
     intent: nextIntent,
   }
 }
@@ -134,11 +156,11 @@ export function applyFeint(combat: CombatState): CombatState {
 }
 
 export function applyDisengage(combat: CombatState): CombatState {
-  const nextIntent = selectIntent(combat.enemy.intents)
+  const { intent: nextIntent, updatedEnemy } = pickNextIntent(combat.enemy)
   return {
     ...combat,
     intent: nextIntent,
-    enemy: { ...combat.enemy, disengaged: true },
+    enemy: { ...updatedEnemy, disengaged: true },
   }
 }
 
@@ -180,13 +202,13 @@ export interface EnemyTurnResult {
   defeat: boolean
 }
 
-// Fires the current intent, resets reservedGreen, selects the next intent.
+// Fires the current intent, resets reservedGreen, advances to the next intent.
 export function applyEnemyTurn(combat: CombatState, pipHp: number): EnemyTurnResult {
-  const nextIntent = selectIntent(combat.enemy.intents)
+  const { intent: nextIntent, updatedEnemy: enemyAdvanced } = pickNextIntent(combat.enemy)
   let damage = 0
   let newHp = pipHp
   let newPipPoison = combat.pipPoison
-  let newEnemy = combat.enemy
+  let newEnemy = enemyAdvanced
   let defeat = false
 
   // Handle intent suppression from Disengage
@@ -194,7 +216,7 @@ export function applyEnemyTurn(combat: CombatState, pipHp: number): EnemyTurnRes
     return {
       combat: {
         ...combat,
-        enemy: { ...combat.enemy, disengaged: false },
+        enemy: { ...enemyAdvanced, disengaged: false },
         reservedGreen: 0,
         intent: nextIntent,
       },
@@ -205,11 +227,11 @@ export function applyEnemyTurn(combat: CombatState, pipHp: number): EnemyTurnRes
   }
 
   if (combat.intent.kind === 'guard') {
-    newEnemy = { ...combat.enemy, block: combat.enemy.block + combat.intent.value }
+    newEnemy = { ...enemyAdvanced, block: enemyAdvanced.block + combat.intent.value }
   } else if (combat.intent.kind === 'empower') {
-    newEnemy = { ...combat.enemy, empowered: true }
+    newEnemy = { ...enemyAdvanced, empowered: true }
   } else if (combat.intent.kind === 'recover') {
-    newEnemy = { ...combat.enemy, hp: Math.min(combat.enemy.hp + combat.intent.value, combat.enemy.maxHp) }
+    newEnemy = { ...enemyAdvanced, hp: Math.min(enemyAdvanced.hp + combat.intent.value, enemyAdvanced.maxHp) }
   } else if (combat.intent.kind === 'status') {
     const statusIntent = combat.intent as StatusIntent
     // If full dodge (2G), avoid both damage and condition
@@ -231,10 +253,10 @@ export function applyEnemyTurn(combat: CombatState, pipHp: number): EnemyTurnRes
     // Lunge uses same mitigation as Attack, just with higher value
     const baseDamage = combat.intent.value
     const actualDamage = damageToPip(baseDamage, combat.reservedGreen)
-    const empoweredDamage = combat.enemy.empowered ? actualDamage * 2 : actualDamage
+    const empoweredDamage = enemyAdvanced.empowered ? actualDamage * 2 : actualDamage
     newHp = Math.max(0, pipHp - empoweredDamage)
     damage = empoweredDamage
-    newEnemy = { ...combat.enemy, empowered: false }
+    newEnemy = { ...enemyAdvanced, empowered: false }
     defeat = newHp <= 0
   }
 

@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { ENEMY_ROSTER, spawnEnemy, getEnemySpec } from './roster'
 
 describe('ENEMY_ROSTER', () => {
-  it('contains exactly 12 enemies', () => {
-    expect(ENEMY_ROSTER).toHaveLength(12)
+  it('contains exactly 13 enemies (12 normal + 1 boss)', () => {
+    expect(ENEMY_ROSTER).toHaveLength(13)
   })
 
   it('has 4 tier-1 enemies', () => {
@@ -16,20 +16,27 @@ describe('ENEMY_ROSTER', () => {
     expect(tier2).toHaveLength(4)
   })
 
-  it('has 4 tier-3 enemies', () => {
+  it('has 5 tier-3 entries (4 normal + 1 boss)', () => {
     const tier3 = ENEMY_ROSTER.filter(e => e.tier === 3)
-    expect(tier3).toHaveLength(4)
+    expect(tier3).toHaveLength(5)
   })
 
   it('all enemies have unique ids', () => {
     const ids = ENEMY_ROSTER.map(e => e.id)
     const uniqueIds = new Set(ids)
-    expect(uniqueIds.size).toBe(12)
+    expect(uniqueIds.size).toBe(13)
   })
 
-  it('all enemies have at least one intent', () => {
-    for (const enemy of ENEMY_ROSTER) {
+  it('all non-boss enemies have at least one intent', () => {
+    for (const enemy of ENEMY_ROSTER.filter(e => !e.isBoss)) {
       expect(enemy.intents.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('boss enemies use intentCycle instead of intents', () => {
+    for (const enemy of ENEMY_ROSTER.filter(e => e.isBoss)) {
+      expect(enemy.intentCycle).toBeDefined()
+      expect(enemy.intentCycle!.length).toBeGreaterThan(0)
     }
   })
 })
