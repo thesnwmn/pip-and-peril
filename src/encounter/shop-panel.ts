@@ -77,7 +77,7 @@ export function createShopEncounterPanel(
   let hoveredElement: string | null = null
   let completed = false
   let lastPurchaseConfirmation: PurchaseConfirmation | null = null
-  let lastAffordanceError: AffordanceError | null = null
+  let lastUnaffordableClick: { itemId: string; timestamp: number } | null = null
 
   function signalComplete(outcome: string): void {
     if (completed) return
@@ -180,9 +180,15 @@ export function createShopEncounterPanel(
           drawExpandedCard(ctx, item, i, cardLeft, currentY, cardWidth, timestamp)
           currentY += CARD_ICON_SIZE_EXPANDED + CARD_PADDING * 2 + 60 + CARD_GAP
         } else {
-          drawCompactCard(ctx, item, cardLeft, currentY, cardWidth)
+          const isFlashing = lastUnaffordableClick && lastUnaffordableClick.itemId === card.itemId && (timestamp - lastUnaffordableClick.timestamp) < 400
+          drawCompactCard(ctx, item, cardLeft, currentY, cardWidth, isFlashing || false)
           currentY += CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2 + CARD_GAP
         }
+      }
+
+      // Clear unaffordable flash after timeout
+      if (lastUnaffordableClick && (timestamp - lastUnaffordableClick.timestamp) >= 400) {
+        lastUnaffordableClick = null
       }
 
       // Purchase confirmation feedback
@@ -206,44 +212,6 @@ export function createShopEncounterPanel(
         }
       }
 
-      // Affordance error feedback
-      if (lastAffordanceError) {
-        const elapsed = timestamp - lastAffordanceError.timestamp
-        if (elapsed < 1500) {
-          const alpha = Math.max(0, 1 - (elapsed - 1200) / 300)
-          ctx.globalAlpha = alpha
-          ctx.font = '11px monospace'
-          ctx.fillStyle = colors.shopUnaffordable
-          ctx.textAlign = 'center'
-          ctx.textBaseline = 'top'
-
-          let currentY = ITEM_AREA_TOP
-          for (let i = 0; i < cardStates.length; i++) {
-            const cs = cardStates[i]
-            if (cs.itemId === lastAffordanceError.itemId) {
-              const item = getItemById(cs.itemId)
-              if (item) {
-                ctx.fillText(
-                  'Not enough coin.',
-                  PANEL_W / 2,
-                  currentY - 8
-                )
-              }
-              break
-            }
-            const item = getItemById(cs.itemId)
-            if (item) {
-              const cardHeight = cs.expanded
-                ? CARD_ICON_SIZE_EXPANDED + CARD_PADDING * 2 + 60
-                : CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2
-              currentY += cardHeight + CARD_GAP
-            }
-          }
-          ctx.globalAlpha = 1
-        } else {
-          lastAffordanceError = null
-        }
-      }
     }
 
     // Gold display
@@ -273,7 +241,8 @@ export function createShopEncounterPanel(
     item: any,
     left: number,
     top: number,
-    width: number
+    width: number,
+    isFlashing: boolean = false
   ): void {
     const height = CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2
     const inv = context.getInventory()
@@ -281,9 +250,9 @@ export function createShopEncounterPanel(
 
     // Card background with rounded corners
     const radius = 4
-    ctx.fillStyle = colors.shopCardBg
-    ctx.strokeStyle = colors.shopBorder
-    ctx.lineWidth = 1
+    ctx.fillStyle = isFlashing ? '#4a2a2a' : colors.shopCardBg
+    ctx.strokeStyle = isFlashing ? colors.shopUnaffordable : colors.shopBorder
+    ctx.lineWidth = isFlashing ? 2 : 1
     ctx.beginPath()
     ctx.moveTo(left + 1 + radius, top + 1)
     ctx.lineTo(left + width - 1 - radius, top + 1)
@@ -531,7 +500,7 @@ export function createShopEncounterPanel(
             expanded: i === cardIdx,
           }))
         } else {
-          lastAffordanceError = { itemId: item.id, timestamp: performance.now() }
+          lastUnaffordableClick = { itemId: item.id, timestamp: performance.now() }
         }
         return
       }
