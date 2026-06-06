@@ -2,7 +2,7 @@
 
 **Status:** READY
 **Source idea:** Manager request; `docs/concept/overview.md` (Room Types — Chest); `docs/concept/screen-layout-and-transitions.md` (Opening a Chest); Idea 001 (empty chest surprise, archived)
-**Depends on:** 019 (gold/pouch model), 020 (item system, `acquireItem`, item registry), 025 (trap mechanic — trapped variant only), 030 (encounter panel framework), 034 (encounter registry)
+**Depends on:** 019 (gold/pouch model), 020 (item system, `acquireItem`, item registry), 025 (trap mechanic — trapped variant only), 030 (encounter panel framework), 034 (encounter registry), 048 (item interjection framework — Luck interrupt for failed lock checks)
 
 ---
 
@@ -44,7 +44,7 @@ The amber **Chest** room is the richest single-room reward moment in the game: a
 
 11. **Pass (Blue pips ≥ lockDifficulty):** outcome line "Lock clicks open." holds for ~1 s, then the panel transitions directly to the loot reveal (criterion 5). The tile is not yet marked opened until Collect is tapped.
 
-12. **Fail (Blue pips < lockDifficulty):** outcome line "The lock holds." holds for ~1.5 s, panel auto-descends. The tile is **not** marked opened. Re-entering the room presents the identical locked panel; the player may attempt the check again with no additional penalty.
+12. **Fail (Blue pips < lockDifficulty):** If Pip has a Luck-class item in the satchel (see 048), the **Luck interrupt prompt** fires immediately — a warm amber sub-panel overlay showing the item name and a 3-second auto-dismiss timer, with [Use] and [Pass] buttons. Tapping [Use] consumes the item, reruns the Blue dice roll, and evaluates the new result; the lock opens on a pass and the panel transitions to the loot reveal (criterion 5). If the re-roll also fails, no further Luck prompt fires — the failure lands. Tapping [Pass] or letting the timer expire proceeds to: outcome line "The lock holds." holds for ~1.5 s, panel auto-descends. The tile is **not** marked opened. Re-entering the room presents the identical locked panel; the player may attempt the check again with no additional penalty. If no Luck item is in the satchel, the "The lock holds." sequence starts immediately after the dice settle.
 
 ### Trapped variant
 
@@ -72,7 +72,9 @@ The amber **Chest** room is the richest single-room reward moment in the game: a
 
 19. The Stout Flask can be used from the Satchel during navigation (same as existing healing items) or via the ITEM action in combat.
 
-20. The Rabbit's Foot and Iron Thimble can only be used via the ITEM action in combat — they are combat-specific buffs. They appear in the Satchel as normal inventory entries but show a "Use in combat" descriptor.
+20. The **Iron Thimble** can only be used via the ITEM action in combat — it is a combat-specific buff. It appears in the Satchel with a "Use in combat" descriptor.
+
+    The **Rabbit's Foot** is a Luck-class item (see 048) usable in two contexts. In **combat**: usable via the ITEM action at turn start, *before* any pips are spent, to reroll the full dice pool. In **non-combat dice checks** (lock rolls, trap rolls, NPC checks): fires as a Luck interrupt prompt on failure, offering a one-time reroll. Its Satchel descriptor should reflect this: "Reroll dice — combat or on a failed check".
 
 21. A weighted chest loot table is defined in `src/dungeon/tuning.ts` covering all items eligible to appear in a chest (see Design detail).
 
@@ -85,7 +87,6 @@ The amber **Chest** room is the richest single-room reward moment in the game: a
 - **Locked chest with limited attempts** — retrying locked chests has no cost or cap. Attempt counting or key-item unlocks are deferred.
 - **Chest depth/floor variant weighting** — `chestVariant` distribution per floor is noted in the tuning table but not gated on 022; a flat initial distribution is valid until 022 ships.
 - **Stackable Iron Thimble** — using multiple Thimbles does not stack the damage reduction.
-- **Rabbit's Foot in non-combat encounters** — the reroll applies in combat only; using it in a trap or lock check is deferred.
 - **Chest as a floor-guaranteed reward** — the pacing guarantee (one chest minimum per floor) is 022's responsibility, not this feature's.
 - **Situated whisper on chest entry** — optional; if used it fires before the panel rises and fades by the time the panel is visible, same as any other encounter.
 
@@ -96,6 +97,7 @@ The amber **Chest** room is the richest single-room reward moment in the game: a
 - **019** — gold pouch model and `addGold(n)` already shipped.
 - **020** — item registry, `acquireItem`, and consumable use model already shipped.
 - **025** — provides the trap check panel layout and agility-check mechanic reused by the trapped variant. The trapped chest variant should not be built until 025 ships.
+- **048** — item interjection framework: the Luck interrupt prompt UI and `luckyClass` item tagging required by criterion 12 (lock fail). Build 048 before the locked variant.
 - **030 / 034** — encounter panel framework and registry already shipped; this panel plugs in as a new encounter type.
 
 ---
@@ -195,9 +197,10 @@ Pip enters Chest tile (chestState === 'closed')
   │                    │               (025 flow)
   │             Blue ≥ difficulty?          │
   │              YES       NO          Pip alive?
-  │               │   "The lock holds"  YES     NO
-  │               │   auto-descend  ────│─────→ defeat
-  │               │   (can retry)       │
+  │               │   [Luck prompt if satchel]  YES     NO
+  │               │   → reroll or pass          ────│─────→ defeat
+  │               │   "The lock holds"              │
+  │               │   auto-descend (can retry)      │
   └───────────────┴─────────────────────┘
                   │
           LOOT REVEAL
@@ -221,8 +224,8 @@ Pip enters Chest tile (chestState === 'closed')
 **Stout Flask**
 Sets `pip.hp = pip.maxHp`. No pip cost. Used from Satchel (nav) or ITEM action (combat). The existing healing logic for Crumb of Cheese / Wedge of Gouda is the reference — Stout Flask is the same path, full heal.
 
-**Rabbit's Foot**
-Free action (no pip cost) used via ITEM in combat. On use: re-animate the entire dice pool as if rolling again; replace the current rolled values with the new values. The player may only use one Rabbit's Foot per combat turn. The item is consumed immediately on tap — no undo.
+**Rabbit's Foot** *(Luck-class — see 048)*
+Free action (no pip cost). In **combat**: used via ITEM before any pips are spent this turn; re-animates the full dice pool and replaces the current rolled values. In **non-combat dice checks** (lock rolls, trap rolls, NPC checks): fires as the Luck interrupt prompt on failure; accepting reruns the check roll once. Only one Rabbit's Foot may be used per combat turn or per failure event. The item is consumed immediately on use — no undo.
 
 **Iron Thimble**
 Free action (no pip cost) used via ITEM in combat. On use: sets a session flag `thimbleActive: true` on the current combat encounter. While `thimbleActive`, every incoming damage value from an enemy hit is reduced by 1 before application (minimum 0). The flag and buff expire when the combat encounter ends; they do not persist to the next room.
@@ -316,6 +319,25 @@ Free action (no pip cost) used via ITEM in combat. On use: sets a session flag `
 │  [2🔵]  [0🔵]  ···     │  ← dice settled
 │  🔵 2 vs. 3 — Fail      │  ← `--text-muted`, 14px
 │  "The lock holds."      │  ← `--text-primary`, 16px, italic; auto-adv ~1.5s
+└─────────────────────────┘
+```
+
+**Layout wireframe — Locked chest (Luck interrupt)**
+
+```
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│   "A locked chest."     │
+│   Needs 🔵 3            │
+│                         │
+│  [2🔵]  [0🔵]  ···     │  ← dice settled
+│  🔵 2 vs. 3 — Fail      │
+│                         │
+│ ┌─────────────────────┐ │  ← Luck prompt; amber border (--room-chest)
+│ │ 🍀  Lucky Acorn     │ │
+│ │     Reroll?         │ │
+│ │ [Use Lucky Acorn]   │ │
+│ │ [Pass]       ▓▓░░░  │ │  ← timer bar; 3 s
+│ └─────────────────────┘ │
 └─────────────────────────┘
 ```
 
