@@ -115,8 +115,15 @@ export function createShopEncounterPanel(
     return -1
   }
 
-  function isInLeaveButton(y: number): boolean {
-    return y >= LEAVE_Y - LEAVE_HIT_H / 2 && y <= LEAVE_Y + LEAVE_HIT_H / 2
+  function isInLeaveButton(x: number, y: number): boolean {
+    // Check Y coordinate
+    if (!(y >= LEAVE_Y - LEAVE_HIT_H / 2 && y <= LEAVE_Y + LEAVE_HIT_H / 2)) {
+      return false
+    }
+    // Check X coordinate - button is on the right side
+    // "Leave" text is roughly 40px wide, with padding
+    const leaveButtonLeft = CONTENT_RIGHT - 50
+    return x >= leaveButtonLeft && x <= CONTENT_RIGHT
   }
 
   function draw(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
@@ -326,7 +333,7 @@ export function createShopEncounterPanel(
     if (completed) return
 
     // Check Leave button
-    if (isInLeaveButton(y)) {
+    if (isInLeaveButton(x, y)) {
       signalComplete('left')
       return
     }
@@ -414,7 +421,7 @@ export function createShopEncounterPanel(
   }
 
   function handlePointerMove(x: number, y: number): void {
-    if (isInLeaveButton(y)) {
+    if (isInLeaveButton(x, y)) {
       hoveredElement = 'leave'
     } else {
       hoveredElement = null
