@@ -45,6 +45,12 @@ that make chests feel like a genuine reward tier above item rooms.
 **Depends on:** 019 (gold), 020 (items), 025 (trapped variant), 030 (encounter panel), 034 (encounter registry), 048 (item interjection framework — locked variant).
 See `docs/features/026-chest-encounter.md` for the full spec.
 
+### 049 · Item Catalogue
+
+Thirteen new items across six mechanic classes: three **Tenacity** consumables (Grit Stone, Second Wind Vial, Bitter Root Brew) fill the long-empty post-spend window; one **Luck** item (Fortune Pebble) joins the existing two; two **passive armour** pieces (Leather Jerkin −1; Padded Coat −2 but Green −1/roll) introduce the equipment slot and a risk/reward tier; two **death-prevention** talismans (Saint's Acorn, Nine Lives Token) exercise the death hook; two **charged** items (Healing Bandage Roll 3×+3HP, Smoke Canister 2×flee); three **cursed/burden** items (Tainted Mushroom +3 pips/−2 HP; Stolen Idol +2 gold/room but enemies +1 dmg; Berserker Draught 2× Strike for 3 turns but no dodge) introduce a red-border warning visual and two new status mechanics. Brings the total catalog to ~21 items.
+**Depends on:** 048 (passiveArmour / deathPrevention / charges hooks, window/luckyClass fields), 020 (acquireItem, item registry), 026 (chest pool), 027 (shop pool).
+See `docs/features/049-item-catalogue.md` for the full spec.
+
 ---
 
 ## NEEDS SPEC
@@ -102,7 +108,7 @@ time, delivering Hades-style story texture without authored dialogue. Interactio
 **Depends on:** 029 (camp hub).
 **Related:** `docs/concept/meta-progression.md`.
 
-### 049 · Dungeon Notice Board
+### 053 · Dungeon Notice Board
 
 Two generated notices shown in the camp before each run, assembled from weighted templates (enemy
 activity reports, merchant sightings, atmospheric warnings, past-run echoes). Primes each run's feel

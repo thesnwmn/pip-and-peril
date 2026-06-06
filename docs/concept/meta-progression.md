@@ -609,4 +609,4 @@ question (D8) is extended to out-of-dungeon screens.
 - `docs/concept/in-run-items.md` — the two-layer philosophy; the weapon-as-bridge model
 - `docs/concept/screen-layout-and-transitions.md` — UI principles, temperatures, transitions;
   the camp and all its sub-screens should follow the principles established there
-- `IDEAS.md` — Idea 050 (Named Dice) seeded from this document; backlog items 049, 051, 052 also originated here
+- `IDEAS.md` — Idea 050 (Named Dice) seeded from this document; backlog items 051, 052, 053 also originated here
