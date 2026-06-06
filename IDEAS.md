@@ -22,10 +22,10 @@ code; the Designer writes those.
 > **Recently promoted / consolidated** (kept here only as a pointer so numbers aren't reused):
 > Ideas 039 + 040 → feature **037** (Combat Overhaul); 043 → item **023** (Boss); 012 → item
 > **038** (Enemy Roster); 042 → item **029** (Meta-Progression); 044 → feature **048** (Item
-> Interjection Framework); 045 → feature **049** (Item Catalogue — Wave 1). The in-run item
-> cluster (019, 020, 021, 022, 024, 025, 026, 027, 028) was consolidated into Idea 045 and
-> promoted as Wave 1; higher-complexity item categories (coatings, dice manipulation, knowledge
-> items, cursed items) remain future work.
+> Interjection Framework); 045 → feature **049** (Item Catalogue). The in-run item cluster
+> (019, 020, 021, 022, 024, 025, 026, 027, 028) was consolidated into Idea 045 and promoted;
+> weapon coatings → future Spec B; dice-face manipulation → future Spec C; knowledge/info
+> items → future Spec D (blocked on map-drawing approach decision).
 
 ---
 

@@ -45,11 +45,11 @@ that make chests feel like a genuine reward tier above item rooms.
 **Depends on:** 019 (gold), 020 (items), 025 (trapped variant), 030 (encounter panel), 034 (encounter registry), 048 (item interjection framework — locked variant).
 See `docs/features/026-chest-encounter.md` for the full spec.
 
-### 049 · Item Catalogue — Wave 1
+### 049 · Item Catalogue
 
-Five new items that fill the hooks 048 stubs but ships without: two **Tenacity** consumables (Grit Stone, Second Wind Vial) grant a second roll-and-spend in combat; one **passive armour** piece (Leather Jerkin) auto-reduces incoming damage by 1 for the whole run; one **death-prevention** talisman (Saint's Acorn) keeps Pip alive at 1 HP on a lethal blow; and one **charged** multi-use healing item (Healing Bandage Roll, 3 charges, +3 HP each). Also specifies the charges badge in the Satchel Pouch and the passive-item "WORN" treatment.
+Thirteen new items across six mechanic classes: three **Tenacity** consumables (Grit Stone, Second Wind Vial, Bitter Root Brew) fill the long-empty post-spend window; one **Luck** item (Fortune Pebble) joins the existing two; two **passive armour** pieces (Leather Jerkin −1; Padded Coat −2 but Green −1/roll) introduce the equipment slot and a risk/reward tier; two **death-prevention** talismans (Saint's Acorn, Nine Lives Token) exercise the death hook; two **charged** items (Healing Bandage Roll 3×+3HP, Smoke Canister 2×flee); three **cursed/burden** items (Tainted Mushroom +3 pips/−2 HP; Stolen Idol +2 gold/room but enemies +1 dmg; Berserker Draught 2× Strike for 3 turns but no dodge) introduce a red-border warning visual and two new status mechanics. Brings the total catalog to ~21 items.
 **Depends on:** 048 (passiveArmour / deathPrevention / charges hooks, window/luckyClass fields), 020 (acquireItem, item registry), 026 (chest pool), 027 (shop pool).
-See `docs/features/049-item-catalogue-wave-1.md` for the full spec.
+See `docs/features/049-item-catalogue.md` for the full spec.
 
 ---
 
