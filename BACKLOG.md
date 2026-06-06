@@ -20,6 +20,12 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
+### 048 · Item Interjection Framework
+
+The rules layer that gives every item a precise home. Defines eight interjection windows (pre-roll through between-turns), extends the item data model with `window` tags, a `luckyClass` flag, a `charges` field, and stubs for death-prevention and passive-armour hooks. Primary engineering deliverable: the **Luck interrupt prompt** — an amber overlay fired at any failed non-combat dice check when Pip carries a Luck-class item, offering a one-time reroll before the failure lands. Reclassifies existing items (Lucky Acorn, Rabbit's Foot) as Luck-class. Required before the locked chest variant of 026 can be built.
+**Depends on:** 020 (item registry), 037 (combat turn structure), 046 (Tenacity post-spend state).
+See `docs/features/048-item-interjection-framework.md` for the full spec.
+
 ### 024 · Run Summary Screen
 
 A full-screen parchment retrospective at the end of every run — reached by boss victory (after
@@ -36,7 +42,7 @@ The amber **Chest**: the concept's two-beat reveal (anticipation → loot), payi
 an item. Three variants — basic (open freely), locked (Blue dice check), and trapped (agility
 check before loot) — plus three new chest-tier items (Stout Flask, Rabbit's Foot, Iron Thimble)
 that make chests feel like a genuine reward tier above item rooms.
-**Depends on:** 019 (gold), 020 (items), 025 (trapped variant), 030 (encounter panel), 034 (encounter registry).
+**Depends on:** 019 (gold), 020 (items), 025 (trapped variant), 030 (encounter panel), 034 (encounter registry), 048 (item interjection framework — locked variant).
 See `docs/features/026-chest-encounter.md` for the full spec.
 
 ---

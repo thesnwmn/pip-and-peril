@@ -21,9 +21,9 @@ code; the Designer writes those.
 
 > **Recently promoted / consolidated** (kept here only as a pointer so numbers aren't reused):
 > Ideas 039 + 040 → feature **037** (Combat Overhaul); 043 → item **023** (Boss); 012 → item
-> **038** (Enemy Roster); 042 → item **029** (Meta-Progression). The in-run item cluster
-> (019, 020, 021, 022, 024, 025, 026, 027, 028) has been consolidated into the two seeds below
-> (Ideas 044 + 045), both parked behind the combat overhaul.
+> **038** (Enemy Roster); 042 → item **029** (Meta-Progression); 044 → feature **048** (Item
+> Interjection Framework). The in-run item cluster (019, 020, 021, 022, 024, 025, 026, 027, 028)
+> has been consolidated into the seed below (Idea 045), which is now parked behind feature 048.
 
 ---
 
@@ -94,32 +94,11 @@ Transient per-fight modifiers that track how the fight is going, without permane
 
 ---
 
-## Idea 044 — Item Interjection Framework
-
-**Area:** System
-**Inspiration:** `docs/concept/combat-system.md` (the eight interjection windows) + `docs/concept/in-run-items.md`; consolidates the old item-idea cluster (019, 020, 021, 022, 024, 025, 026, 027, 028).
-**Parked behind:** feature 037 (Combat Overhaul) — the windows only exist once the new turn loop does. *(No point speccing items against a combat flow we're replacing.)*
-
-The *rules layer* for how every in-run item plugs into combat: a complete event model where each
-item lands in exactly **one** of eight windows, so two items never compete for the same moment and
-each item class gets a distinct feel. The windows (from the combat doc): **pre-roll/scout** ·
-**on-roll (Luck — full reroll, pre-spend only)** · **during-allocation (dice-face manipulation)** ·
-**on-strike (weapon coatings)** · **post-spend (Tenacity — a second roll-and-spend)** ·
-**on-enemy-hit (passive armour)** · **post-damage (healing; Luck's non-combat trap-interrupt mode)**
-· **between-turns (status ticks, expiry)**. This also names the item *classes* that occupy them —
-Luck vs Tenacity, coatings, passive armour, dice-face manipulation, knowledge/info, charged
-(multi-use), cursed/burden, death-prevention. The Designer's first question for any new item
-becomes: *which window?* Risk: the framework must define the data hook for each window (esp. the
-death-prevention check before `pipHp = 0`, and the charges-vs-quantity distinction) before the
-catalogue (Idea 045) can be built.
-
----
-
 ## Idea 045 — Item Catalogue
 
 **Area:** System / Items
 **Inspiration:** the manager's item directions + genre survey; the concrete payload for Idea 044.
-**Parked behind:** Idea 044 (Item Interjection Framework) — each item is tagged to a window/class.
+**Parked behind:** feature **048** (Item Interjection Framework) — each item is tagged to a window/class.
 
 The concrete items, each slotted into one window from Idea 044, preserving the creative content
 from the consolidated seeds:
