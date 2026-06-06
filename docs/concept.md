@@ -32,3 +32,8 @@ owns and maintains them; the **Designer** reads the relevant docs before writing
   attack/defence binary, enemy intents, turn structure, colour roles in combat, die-type risk
   profiles, item interjection points, emotional states (Rattled/Emboldened), and how combat
   scales within a run and across the meta.
+
+- [`concept/meta-progression.md`](concept/meta-progression.md) — the between-runs layer:
+  currency (shiny scraps and Marks of Descent), what the player upgrades (dice pool, weapons,
+  skills, colour unlocks), scaling restraint, the camp hub, the visitor system, the dungeon
+  notice board, and the full screen flow for the next iteration.
