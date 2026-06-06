@@ -26,6 +26,9 @@ code; the Designer writes those.
 > (019, 020, 021, 022, 024, 025, 026, 027, 028) was consolidated into Idea 045 and promoted;
 > weapon coatings → future Spec B; dice-face manipulation → future Spec C; knowledge/info
 > items → future Spec D (blocked on map-drawing approach decision).
+> **051** → backlog **051** (Visitor System); **052** → backlog **052** (Marks of Descent);
+> **053** → backlog **053** (Notice Board). *(046 and 047 are pre-existing shipped features —
+> the visitor/marks ideas originally mislabelled 046–047 were corrected to 051–052.)*
 
 ---
 
@@ -96,3 +99,18 @@ Transient per-fight modifiers that track how the fight is going, without permane
 
 ---
 
+## Idea 050 — Named Dice
+
+**Area:** Meta / Character / World
+**Inspiration:** Thinker's own; the observation that "swap d6 for d8" is a mathematical
+transaction while "sharpen the old Red die" is a story.
+
+Give Pip's individual dice personal provenance — a brief origin line attached when a die
+enters the pool ("Found near a rusted blade." "Traded from a travelling merchant.").
+The die's name is generated from its origin. Engraving a face becomes a decision made about
+*that specific die*: "lock its worst outcome, the way Pip learned to never take that shortcut
+again." The workbench screen shows each die's line on hover/tap. No gameplay effect — purely
+flavour — but it transforms the upgrade system from number management into something that
+feels like Pip's history. Risk: requires a data model change (provenance string on die objects)
+and a workbench UI pass; worth deferring until after the base workbench is built, then
+retrofitting as a polish pass.
