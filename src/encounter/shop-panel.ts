@@ -17,7 +17,7 @@ export interface ShopPanelContext {
 const PANEL_W = LOGICAL_W
 const PANEL_H = LOGICAL_H - PANEL_TOP
 
-const HEADER_TOP = PANEL_TOP + 16
+const HEADER_TOP = PANEL_TOP + 20
 const MERCHANT_CY = HEADER_TOP
 const FLAVOR_CY = HEADER_TOP + 18
 const RULE_Y = HEADER_TOP + 32
@@ -107,7 +107,7 @@ export function createShopEncounterPanel(
         cardHeight = CARD_ICON_SIZE_EXPANDED + CARD_PADDING * 2 + 60
       }
 
-      if (y >= currentY && y < currentY + cardHeight && x >= 8 && x < PANEL_W - 8) {
+      if (y >= currentY && y < currentY + cardHeight && x >= 12 && x < PANEL_W - 12) {
         return i
       }
 
@@ -128,9 +128,9 @@ export function createShopEncounterPanel(
     ctx.fillStyle = colors.shopSurface
     ctx.fillRect(0, PANEL_TOP, PANEL_W, PANEL_H)
 
-    // Top border accent (4px)
+    // Top border accent (2px)
     ctx.fillStyle = colors.shopBorder
-    ctx.fillRect(0, PANEL_TOP, PANEL_W, 4)
+    ctx.fillRect(0, PANEL_TOP, PANEL_W, 2)
 
     // Merchant header
     ctx.font = 'bold 16px monospace'
@@ -167,8 +167,8 @@ export function createShopEncounterPanel(
         const item = getItemById(card.itemId)
         if (!item) continue
 
-        const cardLeft = 8
-        const cardRight = PANEL_W - 8
+        const cardLeft = 12
+        const cardRight = PANEL_W - 12
         const cardWidth = cardRight - cardLeft
 
         if (card.expanded) {
@@ -218,11 +218,10 @@ export function createShopEncounterPanel(
             if (cs.itemId === lastAffordanceError.itemId) {
               const item = getItemById(cs.itemId)
               if (item) {
-                const cardHeight = CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2
                 ctx.fillText(
                   'Not enough coin.',
                   PANEL_W / 2,
-                  currentY + cardHeight + 4
+                  currentY - 8
                 )
               }
               break
@@ -275,12 +274,21 @@ export function createShopEncounterPanel(
     const inv = context.getInventory()
     const affordable = canAfford(item)
 
-    // Card background
+    // Card background with rounded corners
+    const radius = 4
     ctx.fillStyle = colors.shopCardBg
     ctx.strokeStyle = colors.shopBorder
     ctx.lineWidth = 1
     ctx.beginPath()
-    ctx.rect(left + 1, top + 1, width - 2, height - 2)
+    ctx.moveTo(left + 1 + radius, top + 1)
+    ctx.lineTo(left + width - 1 - radius, top + 1)
+    ctx.arcTo(left + width - 1, top + 1, left + width - 1, top + 1 + radius, radius)
+    ctx.lineTo(left + width - 1, top + height - 1 - radius)
+    ctx.arcTo(left + width - 1, top + height - 1, left + width - 1 - radius, top + height - 1, radius)
+    ctx.lineTo(left + 1 + radius, top + height - 1)
+    ctx.arcTo(left + 1, top + height - 1, left + 1, top + height - 1 - radius, radius)
+    ctx.lineTo(left + 1, top + 1 + radius)
+    ctx.arcTo(left + 1, top + 1, left + 1 + radius, top + 1, radius)
     ctx.fill()
     ctx.stroke()
 
@@ -292,24 +300,26 @@ export function createShopEncounterPanel(
     ctx.fillText(
       iconGlyph(item.iconType),
       left + 12 + CARD_ICON_SIZE_COMPACT / 2,
-      top + CARD_PADDING + CARD_ICON_SIZE_COMPACT / 2
+      top + height / 2
     )
 
-    // Name and price on the right
+    // Name and price on the right (vertically centered)
+    const centerY = top + height / 2
     ctx.font = 'bold 14px monospace'
     ctx.fillStyle = colors.textPrimary
     ctx.textAlign = 'left'
-    ctx.textBaseline = 'top'
-    ctx.fillText(item.name, left + 52, top + 8)
+    ctx.textBaseline = 'middle'
+    ctx.fillText(item.name, left + 52, centerY)
 
-    // Price badge
+    // Price badge (vertically centered)
     ctx.font = 'bold 12px monospace'
     ctx.fillStyle = affordable ? colors.gold : colors.shopUnaffordable
     ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
     ctx.fillText(
       `${item.shopPrice}◈`,
       left + width - 12,
-      top + 8
+      centerY
     )
   }
 
@@ -326,12 +336,21 @@ export function createShopEncounterPanel(
     const inv = context.getInventory()
     const affordable = canAfford(item)
 
-    // Card background
+    // Card background with rounded corners
+    const radius = 4
     ctx.fillStyle = colors.shopCardBg
     ctx.strokeStyle = colors.shopBorder
     ctx.lineWidth = 1
     ctx.beginPath()
-    ctx.rect(left + 1, top + 1, width - 2, height - 2)
+    ctx.moveTo(left + 1 + radius, top + 1)
+    ctx.lineTo(left + width - 1 - radius, top + 1)
+    ctx.arcTo(left + width - 1, top + 1, left + width - 1, top + 1 + radius, radius)
+    ctx.lineTo(left + width - 1, top + height - 1 - radius)
+    ctx.arcTo(left + width - 1, top + height - 1, left + width - 1 - radius, top + height - 1, radius)
+    ctx.lineTo(left + 1 + radius, top + height - 1)
+    ctx.arcTo(left + 1, top + height - 1, left + 1, top + height - 1 - radius, radius)
+    ctx.lineTo(left + 1, top + 1 + radius)
+    ctx.arcTo(left + 1, top + 1, left + 1 + radius, top + 1, radius)
     ctx.fill()
     ctx.stroke()
 
@@ -382,8 +401,17 @@ export function createShopEncounterPanel(
     ctx.fillStyle = buyHovered ? 'rgba(122, 90, 26, 0.35)' : 'rgba(122, 90, 26, 0.2)'
     ctx.strokeStyle = colors.roomShop
     ctx.lineWidth = 1
+    const btnRadius = 3
     ctx.beginPath()
-    ctx.rect(buyBtnLeft, buyBtnTop, buyBtnWidth, buyBtnHeight)
+    ctx.moveTo(buyBtnLeft + btnRadius, buyBtnTop)
+    ctx.lineTo(buyBtnLeft + buyBtnWidth - btnRadius, buyBtnTop)
+    ctx.arcTo(buyBtnLeft + buyBtnWidth, buyBtnTop, buyBtnLeft + buyBtnWidth, buyBtnTop + btnRadius, btnRadius)
+    ctx.lineTo(buyBtnLeft + buyBtnWidth, buyBtnTop + buyBtnHeight - btnRadius)
+    ctx.arcTo(buyBtnLeft + buyBtnWidth, buyBtnTop + buyBtnHeight, buyBtnLeft + buyBtnWidth - btnRadius, buyBtnTop + buyBtnHeight, btnRadius)
+    ctx.lineTo(buyBtnLeft + btnRadius, buyBtnTop + buyBtnHeight)
+    ctx.arcTo(buyBtnLeft, buyBtnTop + buyBtnHeight, buyBtnLeft, buyBtnTop + buyBtnHeight - btnRadius, btnRadius)
+    ctx.lineTo(buyBtnLeft, buyBtnTop + btnRadius)
+    ctx.arcTo(buyBtnLeft, buyBtnTop, buyBtnLeft + btnRadius, buyBtnTop, btnRadius)
     ctx.fill()
     ctx.stroke()
 
@@ -431,8 +459,8 @@ export function createShopEncounterPanel(
       if (card.expanded) {
         // Check for Buy or Close buttons
         const cardTop = getCardTop(cardIdx)
-        const cardLeft = 8
-        const cardWidth = PANEL_W - 16
+        const cardLeft = 12
+        const cardWidth = PANEL_W - 24
         const contentLeft = cardLeft + 12
         const contentRight = cardLeft + cardWidth - 12
 
@@ -518,8 +546,8 @@ export function createShopEncounterPanel(
         const card = cardStates[cardIdx]
         if (card.expanded) {
           const cardTop = getCardTop(cardIdx)
-          const cardLeft = 8
-          const cardWidth = PANEL_W - 16
+          const cardLeft = 12
+          const cardWidth = PANEL_W - 24
           const contentLeft = cardLeft + 12
           const contentRight = cardLeft + cardWidth - 12
 
