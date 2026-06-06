@@ -57,17 +57,6 @@ that make chests feel like a genuine reward tier above item rooms.
 **Depends on:** 019 (gold), 020 (items), 025 (trapped variant), 030 (encounter panel), 034 (encounter registry).
 See `docs/features/026-chest-encounter.md` for the full spec.
 
-### 023 · Boss Encounter & Run Completion
-
-The cinematic boss fight and run-completion flow. Intro sequence (camera pull-back, title card,
-camera tighten), then the **Rat King** combat: a 4-intent Phase 1 cycle (Attack → Guard → Empower
-→ Attack×2) giving way at 50% HP to a brutal 3-intent Phase 2 (Attack → Lunge → Attack). A
-`BossSpec` data shape makes adding further bosses a data change, not a panel rewrite. Run
-completion and all defeat routing to Home specced.
-**Depends on:** 037 (combat overhaul), 046 (combat depth — Empower and Lunge intent kinds), 019
-(gold reward), 022 (boss room placement), 034 (encounter registry).
-See `docs/features/023-boss-encounter.md` for the full spec.
-
 ---
 
 ## NEEDS SPEC

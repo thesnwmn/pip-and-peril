@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 023 · Boss Encounter & Run Completion
+
+**Shipped:** 2026-06-06 · **PR:** #TBD · **Spec:** [docs/features/history/023-boss-encounter.md](docs/features/history/023-boss-encounter.md)
+
+The cinematic boss fight and run-completion flow. Intro sequence (camera pull-back, title card, camera tighten), then the **Rat King** combat: a 4-intent Phase 1 cycle (Attack → Guard → Empower → Attack×2) giving way at 50% HP to a brutal 3-intent Phase 2 (Attack → Lunge → Attack). Encoded as a `BossSpec` in the enemy roster; bosses are enemies with fixed intent cycles, enrage thresholds, and intro sequences.
+
+---
+
 ### 038 · Enemy Roster Expansion
 
 **Shipped:** 2026-06-05 · **PR:** (pending merge) · **Spec:** [docs/features/history/038-enemy-roster.md](docs/features/history/038-enemy-roster.md)
