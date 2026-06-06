@@ -338,8 +338,9 @@ export function createShopEncounterPanel(
         const cardHeight = CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2
         const cardLeft = CONTENT_LEFT
         const cardWidth = CONTENT_W
+        const textLeft = cardLeft + 52
         const textRight = cardLeft + cardWidth - 12
-        const btnWidth = cardWidth - (textRight - cardLeft) + 12
+        const btnWidth = cardWidth - 52 - 12
         const btnHeight = 20
         const btnTop = ITEM_AREA_TOP + cardIdx * (cardHeight + CARD_GAP) + CARD_PADDING + 2
         const btnLeft = textRight - btnWidth
@@ -375,16 +376,23 @@ export function createShopEncounterPanel(
             if (stock.length === 0) {
               cardStates = []
             }
+          } else {
+            lastUnaffordableClick = { itemId: card.itemId, timestamp: performance.now() }
           }
           return
         }
       } else {
-        // Card is not selected - select it
-        // Deselect all others
-        cardStates = cardStates.map((cs, i) => ({
-          ...cs,
-          selected: i === cardIdx,
-        }))
+        // Card is not selected - check affordability before selecting
+        if (canAfford(item)) {
+          // Deselect all others and select this one
+          cardStates = cardStates.map((cs, i) => ({
+            ...cs,
+            selected: i === cardIdx,
+          }))
+        } else {
+          // Cannot afford - show red flash feedback
+          lastUnaffordableClick = { itemId: card.itemId, timestamp: performance.now() }
+        }
         return
       }
     } else {
@@ -412,8 +420,9 @@ export function createShopEncounterPanel(
           const cardHeight = CARD_ICON_SIZE_COMPACT + CARD_PADDING * 2 + 2
           const cardLeft = CONTENT_LEFT
           const cardWidth = CONTENT_W
+          const textLeft = cardLeft + 52
           const textRight = cardLeft + cardWidth - 12
-          const btnWidth = cardWidth - (textRight - cardLeft) + 12
+          const btnWidth = cardWidth - 52 - 12
           const btnHeight = 20
           const btnTop = ITEM_AREA_TOP + cardIdx * (cardHeight + CARD_GAP) + CARD_PADDING + 2
           const btnLeft = textRight - btnWidth
