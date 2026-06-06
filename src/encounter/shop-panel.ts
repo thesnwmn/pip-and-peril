@@ -17,6 +17,11 @@ export interface ShopPanelContext {
 const PANEL_W = LOGICAL_W
 const PANEL_H = LOGICAL_H - PANEL_TOP
 
+const PANEL_MARGIN = 8
+const CONTENT_LEFT = PANEL_MARGIN
+const CONTENT_RIGHT = PANEL_W - PANEL_MARGIN
+const CONTENT_W = CONTENT_RIGHT - CONTENT_LEFT
+
 const HEADER_TOP = PANEL_TOP + 20
 const MERCHANT_CY = HEADER_TOP
 const FLAVOR_CY = HEADER_TOP + 18
@@ -107,7 +112,7 @@ export function createShopEncounterPanel(
         cardHeight = CARD_ICON_SIZE_EXPANDED + CARD_PADDING * 2 + 60
       }
 
-      if (y >= currentY && y < currentY + cardHeight && x >= 12 && x < PANEL_W - 12) {
+      if (y >= currentY && y < currentY + cardHeight && x >= CONTENT_LEFT && x < CONTENT_RIGHT) {
         return i
       }
 
@@ -137,19 +142,19 @@ export function createShopEncounterPanel(
     ctx.fillStyle = colors.textPrimary
     ctx.textAlign = 'left'
     ctx.textBaseline = 'middle'
-    ctx.fillText(merchantName, 16, MERCHANT_CY)
+    ctx.fillText(merchantName, CONTENT_LEFT, MERCHANT_CY)
 
     // Flavor line
     ctx.font = 'italic 12px monospace'
     ctx.fillStyle = colors.textMuted
-    ctx.fillText(merchantEntry.flavor, 16, FLAVOR_CY)
+    ctx.fillText(merchantEntry.flavor, CONTENT_LEFT, FLAVOR_CY)
 
     // Rule line
     ctx.strokeStyle = colors.shopBorder
     ctx.lineWidth = 1
     ctx.beginPath()
-    ctx.moveTo(12, RULE_Y)
-    ctx.lineTo(PANEL_W - 12, RULE_Y)
+    ctx.moveTo(CONTENT_LEFT, RULE_Y)
+    ctx.lineTo(CONTENT_RIGHT, RULE_Y)
     ctx.stroke()
 
     // Item cards or sold-out message
@@ -167,9 +172,9 @@ export function createShopEncounterPanel(
         const item = getItemById(card.itemId)
         if (!item) continue
 
-        const cardLeft = 12
-        const cardRight = PANEL_W - 12
-        const cardWidth = cardRight - cardLeft
+        const cardLeft = CONTENT_LEFT
+        const cardRight = CONTENT_RIGHT
+        const cardWidth = CONTENT_W
 
         if (card.expanded) {
           drawExpandedCard(ctx, item, i, cardLeft, currentY, cardWidth, timestamp)
@@ -247,7 +252,7 @@ export function createShopEncounterPanel(
     ctx.textAlign = 'left'
     ctx.textBaseline = 'middle'
     const inv = context.getInventory()
-    ctx.fillText(`◈ ${inv.gold} gold`, 16, GOLD_DISPLAY_Y)
+    ctx.fillText(`◈ ${inv.gold} gold`, CONTENT_LEFT, GOLD_DISPLAY_Y)
 
     // Leave button
     const leaveBgAlpha = hoveredElement === 'leave' ? 0.15 : 0
@@ -258,7 +263,7 @@ export function createShopEncounterPanel(
     ctx.fillStyle = hoveredElement === 'leave' ? colors.textPrimary : colors.textMuted
     ctx.textAlign = 'right'
     ctx.textBaseline = 'middle'
-    ctx.fillText('Leave', PANEL_W - 16, LEAVE_Y)
+    ctx.fillText('Leave', CONTENT_RIGHT, LEAVE_Y)
 
     ctx.restore()
   }
@@ -459,8 +464,8 @@ export function createShopEncounterPanel(
       if (card.expanded) {
         // Check for Buy or Close buttons
         const cardTop = getCardTop(cardIdx)
-        const cardLeft = 12
-        const cardWidth = PANEL_W - 24
+        const cardLeft = CONTENT_LEFT
+        const cardWidth = CONTENT_W
         const contentLeft = cardLeft + 12
         const contentRight = cardLeft + cardWidth - 12
 
@@ -546,8 +551,8 @@ export function createShopEncounterPanel(
         const card = cardStates[cardIdx]
         if (card.expanded) {
           const cardTop = getCardTop(cardIdx)
-          const cardLeft = 12
-          const cardWidth = PANEL_W - 24
+          const cardLeft = CONTENT_LEFT
+          const cardWidth = CONTENT_W
           const contentLeft = cardLeft + 12
           const contentRight = cardLeft + cardWidth - 12
 
