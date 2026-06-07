@@ -20,6 +20,14 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
+### 050 · Item Catalogue — Mechanics Integration
+
+Wire the UI rendering and combat integration for the mechanics shipped-but-unhooked in feature 049: charged item display (Nc badge), Tenacity reroll gate, Padded Coat Green penalty, Berserker Draught 3-turn status (2× Strike, no dodge), Tainted Mushroom self-damage + bonus pip assignment, Stolen Idol passive gold + enemy damage — plus passive armour (`applyPassiveArmour`) and death prevention (`applyDeathPrevention`), both tested but not yet called inside the combat loop.
+**Depends on:** 049 (Item Catalogue — shipped), 037 (Combat Overhaul — logic framework).
+See `docs/features/050-item-catalogue-mechanics.md` for the full spec.
+
+---
+
 ### 024 · Run Summary Screen
 
 A full-screen parchment retrospective at the end of every run — reached by boss victory (after
@@ -42,12 +50,6 @@ See `docs/features/024-run-summary-screen.md` for the full spec.
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) and **020 · Item System** — both already shipped. *(Item 036 · Raw Flee has been folded
 > into 037, which now owns the Flee action as part of the redesigned panel.)*
-
-### 050 · Item Catalogue — Mechanics Integration
-
-Wire the UI rendering and combat integration for five item mechanics from feature 049 that are currently stubbed: charged item display (3c remaining uses), Tenacity reroll window (dual pip-spend phases), Padded Coat Green penalty per roll, Berserker Draught 3-turn status (2× Strike damage, dodge disabled), Tainted Mushroom self-damage + bonus pips, and Stolen Idol passive gold + enemy damage bonus. Items are shipped; mechanics are not.
-**Depends on:** 049 (Item Catalogue item definitions — shipped), 037 (Combat Overhaul — logic framework in place).
-See `docs/features/050-item-catalogue-mechanics.md` for the full spec.
 
 ### 028 · NPC Encounter
 
