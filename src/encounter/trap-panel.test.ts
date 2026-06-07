@@ -408,9 +408,11 @@ describe('createTrapEncounterPanel', () => {
       panel.draw(ctx, 0)
       panel.draw(ctx, 600)  // luck-prompt
 
-      panel.handleClick(LUCK_USE_CX, LUCK_USE_CY)
+      panel.handleClick(LUCK_USE_CX, LUCK_USE_CY)  // [Use] — item consumed, enters rolling
+      expect(getLatestInventory().items).toHaveLength(0)  // item consumed immediately
+      panel.draw(ctx, 700)   // sets rollStartTime = 700, scramble fires
+      panel.draw(ctx, 1300)  // elapsed 600ms → rollComplete → outcome (reroll passed)
       expect(getPipHp()).toBe(10)   // no damage
-      expect(getLatestInventory().items).toHaveLength(0)  // item consumed
       panel.handleClick(ROLL_CX, ROLL_CY)
       expect(onComplete).toHaveBeenCalledWith('resolved')
     })
@@ -425,14 +427,16 @@ describe('createTrapEncounterPanel', () => {
       panel.draw(ctx, 0)
       panel.draw(ctx, 600)  // luck-prompt
 
-      panel.handleClick(LUCK_USE_CX, LUCK_USE_CY)  // [Use]
+      panel.handleClick(LUCK_USE_CX, LUCK_USE_CY)  // [Use] — enters rolling state
+      expect(getLatestInventory().items).toHaveLength(0)  // item consumed immediately
+      panel.draw(ctx, 700)   // sets rollStartTime = 700
+      panel.draw(ctx, 1300)  // rollComplete → fail, no re-prompt → outcome
       expect(getPipHp()).toBe(8)   // damage from reroll failure
-      expect(getLatestInventory().items).toHaveLength(0)  // item still consumed
       panel.handleClick(ROLL_CX, ROLL_CY)
       expect(onComplete).toHaveBeenCalledWith('resolved')
     })
 
-    it('item is consumed after [Use], not before', () => {
+    it('item is consumed at the moment [Use] is tapped (before animation completes)', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0)
       const { context, getLatestInventory } = makeContext(10, { gold: 0, items: [{ ...LUCKY_ACORN, quantity: 1 }] })
       const ctx = makeCtx()
@@ -442,8 +446,9 @@ describe('createTrapEncounterPanel', () => {
       panel.draw(ctx, 600)  // luck-prompt — item still present
       expect(getLatestInventory().items).toHaveLength(1)
 
-      panel.handleClick(LUCK_USE_CX, LUCK_USE_CY)  // [Use] — item consumed
+      panel.handleClick(LUCK_USE_CX, LUCK_USE_CY)  // [Use] — item consumed immediately
       expect(getLatestInventory().items).toHaveLength(0)
+      // animation still in progress — HP not yet applied
     })
   })
 })

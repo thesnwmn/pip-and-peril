@@ -151,6 +151,7 @@ export function createTrapEncounterPanel(
   // Luck prompt state
   let luckPromptStartTime: DOMHighResTimeStamp | null = null
   let pendingGreenTotal: number = 0  // the failed roll total, stored for dismissal
+  let noReLuckPrompt = false         // set after [Use] to suppress re-prompt on second fail
 
   function markTrapFired(): void {
     const ds = context.getDungeonState()
@@ -188,7 +189,8 @@ export function createTrapEncounterPanel(
       markTrapFired()
       panelState = 'outcome'
     } else {
-      const luckItem = getLuckItem()
+      const luckItem = noReLuckPrompt ? null : getLuckItem()
+      noReLuckPrompt = false
       if (luckItem !== null) {
         // Defer damage; show Luck interrupt prompt first
         pendingGreenTotal = greenTotal
@@ -204,24 +206,15 @@ export function createTrapEncounterPanel(
   }
 
   function useLuckItem(item: Item): void {
-    // Consume the item and reroll
+    // Consume item immediately, pre-roll the result, then animate through 'rolling'
+    // so the player sees the dice tumble before the new outcome lands.
     context.setInventory(consumeItem(context.getInventory(), item.id))
     rolledPool = rollPool(context.getPool())
-
-    const newGreenTotal = rolledPool.totals.green
-    const newPassed = trapDifficulty === 0 || newGreenTotal >= trapDifficulty
-
-    if (newPassed) {
-      resultText = `🟢 ${newGreenTotal} vs. ${trapDifficulty} — Pass`
-      outcomeText = flavour.pass
-      outcomeResult = 'resolved'
-    } else {
-      // Reroll also failed — apply damage, no re-prompt
-      applyTrapFailure(newGreenTotal)
-    }
-
+    noReLuckPrompt = true  // no re-prompt if this reroll also fails
     luckPromptStartTime = null
-    panelState = 'outcome'
+    rollStartTime = null
+    scramble = []
+    panelState = 'rolling'
   }
 
   function dismissLuckPrompt(): void {
