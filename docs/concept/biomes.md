@@ -49,20 +49,40 @@ same dice pool Pip takes into the dungeon.
 
 The camp gains a small addition: **the destination board** — a crude hand-drawn map pinned to
 the wall near the dungeon arch, marking the places Pip has found and can return to. The dungeon
-is always available. Other destinations appear on the board as Pip encounters and survives them
-— initially as a rumour from an NPC, then as a confirmed route.
+is always available. Other destinations appear as Pip is told about them — a new sketch added
+to the board, left by whoever gave him the route.
 
-**Unlocking biomes through Marks of Descent**, not scraps:
-- The dungeon is always available (no unlock)
-- The Wildwood unlocks after Pip defeats his first boss in any biome
-- The Ancient Halls unlock after Pip reaches floor 3 for the first time
-- The Larder unlocks after a specific rare NPC encounter in any biome (a domestic mouse
-  Pip helps, who tells him about the way in)
-- The Winter Fields unlock after Pip defeats a boss in the Wildwood (late-meta gate — the
-  most challenging environment)
+### How biomes unlock: discovery over transaction
+
+Biomes are not unlocked through a UI reward screen. They are **discovered through encounters** —
+a visitor at the camp, or an NPC deep in a run, who knows about a place and tells Pip about it.
+The destination board grows because someone gave Pip a route, not because a counter ticked over.
+
+Behind the scenes, **Marks of Descent act as invisible eligibility gates**. A biome's unlock
+visitor only appears in the pool once Pip has met the corresponding Mark. The player never sees
+the gate — they just find that, at some point, a stranger appeared who knew something. The Mark
+ensures Pip is ready; the encounter is how he finds out.
+
+**Pacing guarantee:** once a Mark is met, the corresponding unlock visitor is heavily weighted
+to appear within the next one or two camp visits. It may not come immediately — which preserves
+the feeling of a chance encounter — but it will not take six runs to materialise.
+
+| Biome | Eligibility (Mark, invisible) | Surface occasion (what Pip experiences) |
+|---|---|---|
+| Dungeon | Always available | Always on the board |
+| Wildwood | First boss kill in any biome | A Scout arrives: muddy, smelling of green things. He found a route he couldn't fit through. Thought a mouse might manage. Leaves a rough sketch. |
+| Ancient Halls | First floor 3 reach | A Scholar arrives: been researching something, heard about Pip's deep run. Thinks Pip would find this interesting. Leaves notes and a location sketch. |
+| Larder | Help a domestic mouse NPC during any run | A Wounded Traveller arrives: injured, came out through a gap she knows. After Pip's help, tells him about the pantry — the food, but also the dangers. Leaves the route. |
+| Winter Fields | First boss kill in the Wildwood | A Scout arrives (weathered variant): quiet, snow-crusted, doesn't make small talk. Warns Pip. Leaves a marker. |
+
+Each unlock visitor maps onto a type already defined in the visitor system — Scout, Scholar,
+Wounded Traveller — so biome discovery slots into existing infrastructure rather than requiring
+a new category. The visitors just carry a special flag: *this visit places a new sketch on the
+destination board*.
 
 This structure means biomes are discovered at the pace of mastery, not purchased. Each
-unlock is an event; the destination board grows slowly and feels earned.
+unlock is a story moment before it is a gameplay moment; the destination board grows slowly
+and always feels found rather than earned.
 
 ---
 
@@ -541,10 +561,12 @@ width* are identical. Navigation logic does not change; only the picture.
 
 These are open questions that the Designer will need to resolve when speccing biome features:
 
-**1. When does the destination board appear?** The camp currently has no biome-selection
-affordance. The destination board is the proposed addition — but when does it appear? Options:
-always present but with all slots empty except the dungeon; or revealed only after the first
-biome unlock. The second feels more appropriate to the game's "discover-don't-advertise" approach.
+**1. When does the destination board appear?** The board does not exist until the first unlock
+visitor arrives and leaves a sketch on it. Before that moment, Pip descends without choosing —
+there is only one place to go. The board materialises as a consequence of the first discovery,
+not as an empty UI element waiting to be filled. The Designer should treat the board's first
+appearance as a small camp moment: the sketch is pinned; the player taps it and sees the new
+destination for the first time. After that, subsequent sketches are added in the same way.
 
 **2. Does each biome have a distinct floor title card tone?** The meta-progression doc
 establishes that each floor starts with a title card. In the wildwood, *"Floor 1 — The Upper
@@ -579,5 +601,6 @@ tonal distinctiveness), then **Winter Fields** (most complex environmental mecha
   biome must obey the snapping rule; new archetypes extend the catalogue)
 - `docs/concept/enemies-and-bosses.md` — creature philosophy and threat tiers (biome creatures
   follow the same tier system; the mouse-scale lens applies everywhere)
-- `docs/concept/meta-progression.md` — the camp hub, destination board, and Marks of Descent
-  unlock structure that gates biome access
+- `docs/concept/meta-progression.md` — the camp hub, visitor system, and Marks of Descent;
+  biome unlock visitors slot into the existing visitor types; Marks act as invisible eligibility
+  gates behind each encounter

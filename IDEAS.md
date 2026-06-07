@@ -122,13 +122,14 @@ retrofitting as a polish pass.
 **Area:** UI / Meta
 **Inspiration:** Biome system concept; `docs/concept/biomes.md`
 
-A small hand-drawn map pinned to the wall of Pip's camp, near the dungeon arch. Initially shows
-only the dungeon entrance; new locations appear as crude sketches as Pip encounters and unlocks
-them via Marks of Descent. Tapping a location selects it as the run destination; the "Descend"
-CTA reflects the chosen location. The board is absent (or invisible) until the first biome
-unlock — it appears the first time a Mark triggers a new destination, making its appearance
-feel like a discovery. Risk: must read legibly as a tappable UI element on phone scale without
-dominating the camp screen's existing objects.
+A small hand-drawn map pinned to the wall of Pip's camp, near the dungeon arch. Does not exist
+until the first biome unlock visitor arrives and leaves a sketch — the board materialises as a
+consequence of that discovery, not as an empty UI waiting to be filled. New locations are added
+as crude sketches by subsequent unlock visitors. Tapping a location selects it as the run
+destination; the "Descend" CTA reflects the choice. Biome availability is gated invisibly by
+Marks of Descent; the player only ever sees the visitor encounter, not the gate behind it.
+Risk: must read legibly as a tappable UI element on phone scale without dominating the camp
+screen's existing objects.
 
 ---
 
