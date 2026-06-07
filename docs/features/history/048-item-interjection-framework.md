@@ -214,7 +214,7 @@ None. This item is **READY**.
 
 ## Shipped
 
-**Date:** 2026-06-07 · **PR:** #TBD
+**Date:** 2026-06-07 · **PR:** #92
 
 ### What was built
 
