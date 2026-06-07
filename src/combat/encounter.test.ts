@@ -31,6 +31,7 @@ function makeCombat(overrides: Partial<CombatState> = {}): CombatState {
     entryFrom: { col: 5, row: 6 },
     goldAwarded: 0,
     itemUsedThisTurn: false,
+    pipsSpentThisTurn: false,
     analysedThisCombat: false,
     analysedThisTurn: false,
     identified: false,

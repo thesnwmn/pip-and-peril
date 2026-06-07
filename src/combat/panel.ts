@@ -475,6 +475,12 @@ export interface CombatPanelDrawState {
   timestamp: DOMHighResTimeStamp
 }
 
+// Items that are currently usable in combat, respecting the Luck window gate.
+// Luck-class items are unavailable once pips have been spent this turn.
+export function getCombatUsableItems(inventory: Inventory, pipsSpentThisTurn: boolean): Item[] {
+  return inventory.items.filter(i => i.usableInCombat && (!i.luckyClass || !pipsSpentThisTurn))
+}
+
 export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDrawState): void {
   const { pool, combat, openCategory, lastEnemyHeadline, lastEnemyDetail, lastEnemyKind, inventory, timestamp } = s
   const inPlayerTurn = combat.phase === 'player-turn'
@@ -634,7 +640,7 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     }
 
     if (openCategory === 'item') {
-      drawItemList(ctx, inventory, s.hoveredElement, SUBMENU_Y)
+      drawItemList(ctx, inventory, combat.pipsSpentThisTurn, s.hoveredElement, SUBMENU_Y)
     }
   }
 
@@ -678,9 +684,9 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
   // ── Bottom button row (Flee | ROLL/END TURN | Item) ──
   const fleeDisabled = !inPlayerTurn || combat.enemy.isBoss
   const rollDisabled = pool.state === 'rolling'
-  const hasItems = inventory.items.some(i => i.usableInCombat)
+  const hasUsableItems = getCombatUsableItems(inventory, combat.pipsSpentThisTurn).length > 0
   const itemUsed = combat.itemUsedThisTurn
-  const itemDisabled = !hasItems || itemUsed
+  const itemDisabled = !hasUsableItems || itemUsed
   const rollLabel = combat.phase === 'player-turn' ? 'END TURN' : 'ROLL DICE'
 
   // Flee button
@@ -721,6 +727,7 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
 function drawItemList(
   ctx: CanvasRenderingContext2D,
   inventory: Inventory,
+  pipsSpentThisTurn: boolean,
   hovered: string | null,
   startY: number,
 ): void {
@@ -734,19 +741,23 @@ function drawItemList(
     return
   }
 
-  // Two-column layout (max 4 items = 2 rows × 2 columns)
+  // Two-column layout (max 4 items = 2 rows × 2 columns).
+  // Luck-class items are greyed and untappable once pips have been spent this turn.
   for (let i = 0; i < Math.min(items.length, 4); i++) {
     const item = items[i]
+    const locked = item.luckyClass && pipsSpentThisTurn
     const col = i % 2
     const row = Math.floor(i / 2)
     const x = subBtnX(col)
     const y = startY + row * (SUBMENU_BTN_H + 8)
-    const isHov = hovered === `item-${i}`
+    const isHov = !locked && hovered === `item-${i}`
+
+    ctx.globalAlpha = locked ? 0.38 : 1
 
     roundRect(ctx, x, y, SUBMENU_BTN_W, SUBMENU_BTN_H, 8)
     ctx.fillStyle = isHov ? colors.surfaceRaised : colors.surface
     ctx.fill()
-    ctx.strokeStyle = colors.gold
+    ctx.strokeStyle = locked ? colors.textMuted : colors.gold
     ctx.lineWidth = 1
     ctx.stroke()
 
@@ -756,8 +767,10 @@ function drawItemList(
     ctx.textBaseline = 'middle'
     ctx.fillText(item.name, x + SUBMENU_BTN_W / 2, y + SUBMENU_BTN_H / 2 - 8)
     ctx.font = '9px monospace'
-    ctx.fillStyle = colors.gold
+    ctx.fillStyle = locked ? colors.textMuted : colors.gold
     ctx.fillText(`×${item.quantity}`, x + SUBMENU_BTN_W / 2, y + SUBMENU_BTN_H / 2 + 8)
+
+    ctx.globalAlpha = 1
   }
 }
 
@@ -814,6 +827,8 @@ export function buildHitRects(
     if (openCategory === 'item') {
       const items = inventory.items.filter((i: Item) => i.usableInCombat)
       for (let i = 0; i < Math.min(items.length, 4); i++) {
+        // Luck items become untappable once pips have been spent this turn.
+        if (items[i]!.luckyClass && combat.pipsSpentThisTurn) continue
         const col = i % 2
         const row = Math.floor(i / 2)
         const x = subBtnX(col)

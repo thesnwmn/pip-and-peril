@@ -4,10 +4,15 @@ import {
   computeTrapDamage,
   TRAP_FLAVOURS,
   ROLL_BTN_X, ROLL_BTN_Y, ROLL_BTN_W, ROLL_BTN_H,
+  LUCK_BTN_X, LUCK_BTN_W,
+  LUCK_USE_BTN_Y, LUCK_USE_BTN_H,
+  LUCK_PASS_BTN_Y, LUCK_PASS_BTN_H,
   type TrapPanelContext,
 } from './trap-panel'
 import type { TileCell } from '../map/types'
 import type { MapViewConfig } from './panel'
+import type { Inventory } from '../satchel/types'
+import { LUCKY_ACORN } from '../satchel/catalog'
 import { starterPool } from '../dice/pool'
 import { initDungeon } from '../navigation/dungeon-state'
 
@@ -33,23 +38,28 @@ function makeTrapCell(trapDifficulty: number, flavourIdx = 0): TileCell {
   return { roomType: 'trap', exits: 0, trapDifficulty, trapFlavour: flavourIdx }
 }
 
-function makeContext(startHp = 10): {
+function makeContext(startHp = 10, startInventory: Inventory = { gold: 0, items: [] }): {
   context: TrapPanelContext
   getPipHp: () => number
   getLatestDungeonState: () => ReturnType<typeof initDungeon>
+  getLatestInventory: () => Inventory
 } {
   let hp = startHp
   let dungeonState = initDungeon()
+  let inventory = startInventory
   return {
     context: {
       getPool: () => starterPool(),
       getPipHp: () => hp,
       setPipHp: (v) => { hp = v },
+      getInventory: () => inventory,
+      setInventory: (inv) => { inventory = inv },
       getDungeonState: () => dungeonState,
       setDungeonState: (s) => { dungeonState = s },
     },
     getPipHp: () => hp,
     getLatestDungeonState: () => dungeonState,
+    getLatestInventory: () => inventory,
   }
 }
 
@@ -302,6 +312,138 @@ describe('createTrapEncounterPanel', () => {
         expect(typeof f.pass).toBe('string')
         expect(typeof f.fail).toBe('string')
       }
+    })
+  })
+
+  // ── Luck interrupt prompt ─────────────────────────────────────────────────
+
+  describe('Luck interrupt prompt', () => {
+    const LUCK_USE_CX = LUCK_BTN_X + LUCK_BTN_W / 2
+    const LUCK_USE_CY = LUCK_USE_BTN_Y + LUCK_USE_BTN_H / 2
+    const LUCK_PASS_CX = LUCK_BTN_X + LUCK_BTN_W / 2
+    const LUCK_PASS_CY = LUCK_PASS_BTN_Y + LUCK_PASS_BTN_H / 2
+
+    it('no Luck prompt when roll passes (no damage, onComplete resolves)', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.999)  // high green → pass
+      const onComplete = vi.fn()
+      const { context, getPipHp } = makeContext(10, { gold: 0, items: [{ ...LUCKY_ACORN, quantity: 1 }] })
+      const ctx = makeCtx()
+      const panel = createTrapEncounterPanel(onComplete, makeTrapCell(2), MOCK_MAP_VIEW, context)
+      simulateFullRoll(panel, ctx)
+      expect(getPipHp()).toBe(10)
+      expect(onComplete).toHaveBeenCalledWith('resolved')
+    })
+
+    it('no Luck prompt when roll fails but satchel has no Luck items', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0)  // green=1 < difficulty=3
+      const onComplete = vi.fn()
+      const { context, getPipHp } = makeContext(10, { gold: 0, items: [] })
+      const ctx = makeCtx()
+      const panel = createTrapEncounterPanel(onComplete, makeTrapCell(3), MOCK_MAP_VIEW, context)
+      // Roll and advance to outcome directly (no luck prompt)
+      panel.handleClick(ROLL_CX, ROLL_CY)
+      panel.draw(ctx, 0)
+      panel.draw(ctx, 600)  // rollComplete → outcome
+      expect(getPipHp()).toBe(8)  // 10 - ceil(3/2)=2
+      panel.handleClick(ROLL_CX, ROLL_CY)
+      expect(onComplete).toHaveBeenCalledWith('resolved')
+    })
+
+    it('Luck prompt fires (no onComplete yet) when roll fails with Luck item in satchel', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0)  // green=1 < difficulty=3
+      const onComplete = vi.fn()
+      const { context, getPipHp } = makeContext(10, { gold: 0, items: [{ ...LUCKY_ACORN, quantity: 1 }] })
+      const ctx = makeCtx()
+      const panel = createTrapEncounterPanel(onComplete, makeTrapCell(3), MOCK_MAP_VIEW, context)
+      panel.handleClick(ROLL_CX, ROLL_CY)
+      panel.draw(ctx, 0)
+      panel.draw(ctx, 600)  // rollComplete → luck-prompt (not outcome)
+      // No damage yet — waiting for player to decide
+      expect(getPipHp()).toBe(10)
+      expect(onComplete).not.toHaveBeenCalled()
+    })
+
+    it('[Pass] on Luck prompt applies original failure and advances to outcome', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0)  // green=1 < difficulty=3
+      const onComplete = vi.fn()
+      const { context, getPipHp } = makeContext(10, { gold: 0, items: [{ ...LUCKY_ACORN, quantity: 1 }] })
+      const ctx = makeCtx()
+      const panel = createTrapEncounterPanel(onComplete, makeTrapCell(3), MOCK_MAP_VIEW, context)
+      panel.handleClick(ROLL_CX, ROLL_CY)
+      panel.draw(ctx, 0)
+      panel.draw(ctx, 600)  // luck-prompt
+
+      panel.handleClick(LUCK_PASS_CX, LUCK_PASS_CY)
+      expect(getPipHp()).toBe(8)  // damage applied on Pass
+      panel.handleClick(ROLL_CX, ROLL_CY)  // tap to continue
+      expect(onComplete).toHaveBeenCalledWith('resolved')
+    })
+
+    it('auto-dismiss at 3 s applies failure and advances to outcome', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0)  // green=1 < difficulty=3
+      const onComplete = vi.fn()
+      const { context, getPipHp } = makeContext(10, { gold: 0, items: [{ ...LUCKY_ACORN, quantity: 1 }] })
+      const ctx = makeCtx()
+      const panel = createTrapEncounterPanel(onComplete, makeTrapCell(3), MOCK_MAP_VIEW, context)
+      panel.handleClick(ROLL_CX, ROLL_CY)
+      panel.draw(ctx, 0)
+      panel.draw(ctx, 600)    // luck-prompt (luckPromptStartTime = 600)
+      panel.draw(ctx, 3601)   // 3001 ms elapsed → auto-dismiss → outcome
+      expect(getPipHp()).toBe(8)  // damage applied after auto-dismiss
+      panel.handleClick(ROLL_CX, ROLL_CY)
+      expect(onComplete).toHaveBeenCalledWith('resolved')
+    })
+
+    it('[Use] when reroll passes: no damage, outcome resolved', () => {
+      // First roll fails (value=1), reroll passes (value=6)
+      const randomValues = [0, 0, 0, 0, 0.999, 0.999, 0.999, 0.999]
+      let callIdx = 0
+      vi.spyOn(Math, 'random').mockImplementation(() => randomValues[callIdx++ % randomValues.length] ?? 0)
+
+      const onComplete = vi.fn()
+      const { context, getPipHp, getLatestInventory } = makeContext(10, { gold: 0, items: [{ ...LUCKY_ACORN, quantity: 1 }] })
+      const ctx = makeCtx()
+      const panel = createTrapEncounterPanel(onComplete, makeTrapCell(3), MOCK_MAP_VIEW, context)
+      panel.handleClick(ROLL_CX, ROLL_CY)
+      panel.draw(ctx, 0)
+      panel.draw(ctx, 600)  // luck-prompt
+
+      panel.handleClick(LUCK_USE_CX, LUCK_USE_CY)
+      expect(getPipHp()).toBe(10)   // no damage
+      expect(getLatestInventory().items).toHaveLength(0)  // item consumed
+      panel.handleClick(ROLL_CX, ROLL_CY)
+      expect(onComplete).toHaveBeenCalledWith('resolved')
+    })
+
+    it('[Use] when reroll also fails: damage applied, no re-prompt', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0)  // all rolls = 1 → fail every time
+      const onComplete = vi.fn()
+      const { context, getPipHp, getLatestInventory } = makeContext(10, { gold: 0, items: [{ ...LUCKY_ACORN, quantity: 1 }] })
+      const ctx = makeCtx()
+      const panel = createTrapEncounterPanel(onComplete, makeTrapCell(3), MOCK_MAP_VIEW, context)
+      panel.handleClick(ROLL_CX, ROLL_CY)
+      panel.draw(ctx, 0)
+      panel.draw(ctx, 600)  // luck-prompt
+
+      panel.handleClick(LUCK_USE_CX, LUCK_USE_CY)  // [Use]
+      expect(getPipHp()).toBe(8)   // damage from reroll failure
+      expect(getLatestInventory().items).toHaveLength(0)  // item still consumed
+      panel.handleClick(ROLL_CX, ROLL_CY)
+      expect(onComplete).toHaveBeenCalledWith('resolved')
+    })
+
+    it('item is consumed after [Use], not before', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0)
+      const { context, getLatestInventory } = makeContext(10, { gold: 0, items: [{ ...LUCKY_ACORN, quantity: 1 }] })
+      const ctx = makeCtx()
+      const panel = createTrapEncounterPanel(vi.fn(), makeTrapCell(3), MOCK_MAP_VIEW, context)
+      panel.handleClick(ROLL_CX, ROLL_CY)
+      panel.draw(ctx, 0)
+      panel.draw(ctx, 600)  // luck-prompt — item still present
+      expect(getLatestInventory().items).toHaveLength(1)
+
+      panel.handleClick(LUCK_USE_CX, LUCK_USE_CY)  // [Use] — item consumed
+      expect(getLatestInventory().items).toHaveLength(0)
     })
   })
 })

@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 048 · Item Interjection Framework
+
+**Shipped:** 2026-06-07 · **PR:** — · **Spec:** [docs/features/history/048-item-interjection-framework.md](docs/features/history/048-item-interjection-framework.md)
+
+The rules layer that gives every item a precise home. Defines eight interjection windows (pre-roll through between-turns), extends the item data model with `window` tags, a `luckyClass` flag, a `charges` field, and stubs for death-prevention and passive-armour hooks. Primary engineering deliverable: the **Luck interrupt prompt** — an amber overlay fired at any failed non-combat dice check when Pip carries a Luck-class item, offering a one-time reroll before the failure lands. Reclassifies existing items (Lucky Acorn, Rabbit's Foot) as Luck-class.
+
+---
+
 ### 025 · Trap Encounter
 
 **Shipped:** 2026-06-06 · **PR:** (pending) · **Spec:** [docs/features/history/025-trap-encounter.md](docs/features/history/025-trap-encounter.md)

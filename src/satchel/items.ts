@@ -14,6 +14,52 @@ export function acquireItem(inventory: Inventory, item: Item): Inventory {
   return { ...inventory, items: [...inventory.items, { ...item }] }
 }
 
+// Consume one use of an item: depletes charges (if the item has them) or quantity otherwise.
+// Removes the item from inventory when depleted to zero.
+export function consumeItem(inventory: Inventory, itemId: string): Inventory {
+  const idx = inventory.items.findIndex(i => i.id === itemId)
+  if (idx < 0) return inventory
+  const item = inventory.items[idx]
+  const updated = [...inventory.items]
+
+  if (item.charges !== undefined) {
+    const remaining = item.charges - 1
+    if (remaining <= 0) {
+      updated.splice(idx, 1)
+    } else {
+      updated[idx] = { ...item, charges: remaining }
+    }
+  } else {
+    const remaining = item.quantity - 1
+    if (remaining <= 0) {
+      updated.splice(idx, 1)
+    } else {
+      updated[idx] = { ...item, quantity: remaining }
+    }
+  }
+
+  return { ...inventory, items: updated }
+}
+
+// Reduces incoming damage by the sum of all passiveArmour values in the satchel (floor 0).
+export function applyPassiveArmour(incomingDamage: number, inventory: Inventory): number {
+  const total = inventory.items.reduce((sum, item) => sum + (item.passiveArmour ?? 0), 0)
+  return Math.max(0, incomingDamage - total)
+}
+
+// Checks for death prevention at the moment pipHp would drop to ≤ 0.
+// If a death-prevention item is present: sets HP to 1 and consumes the item.
+// Returns unchanged HP and inventory when HP is already above 0 or no item exists.
+export function applyDeathPrevention(
+  pipHp: number,
+  inventory: Inventory,
+): { pipHp: number; inventory: Inventory } {
+  if (pipHp > 0) return { pipHp, inventory }
+  const item = inventory.items.find(i => i.deathPrevention === true)
+  if (!item) return { pipHp, inventory }
+  return { pipHp: 1, inventory: consumeItem(inventory, item.id) }
+}
+
 export interface ItemEffectContext {
   pipHp: number
   pipMaxHp: number

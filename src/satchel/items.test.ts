@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { acquireItem, applyItemEffect } from './items'
+import { acquireItem, applyItemEffect, consumeItem, applyPassiveArmour, applyDeathPrevention } from './items'
 import type { Inventory, Item } from './types'
 import { CHEESE_CRUMB, GOUDA_WEDGE, LUCKY_ACORN, SMOKE_PELLET, GLOWSTONE_DUST } from './catalog'
 import { starterPool } from '../dice/pool'
@@ -165,5 +165,106 @@ describe('applyItemEffect', () => {
       const fogValue = updatedFog[0][0]
       expect(fogValue).not.toBe('visible')
     })
+  })
+})
+
+describe('consumeItem', () => {
+  it('decrements quantity by 1', () => {
+    const inv: Inventory = { gold: 0, items: [{ ...CHEESE_CRUMB, quantity: 3 }] }
+    const result = consumeItem(inv, 'cheese-crumb')
+    expect(result.items[0]!.quantity).toBe(2)
+  })
+
+  it('removes item when quantity reaches 0', () => {
+    const inv: Inventory = { gold: 0, items: [{ ...CHEESE_CRUMB, quantity: 1 }] }
+    const result = consumeItem(inv, 'cheese-crumb')
+    expect(result.items).toHaveLength(0)
+  })
+
+  it('decrements charges instead of quantity when charges field is present', () => {
+    const chargedItem: Item = { ...CHEESE_CRUMB, id: 'charged-item', charges: 3, quantity: 1 }
+    const inv: Inventory = { gold: 0, items: [chargedItem] }
+    const result = consumeItem(inv, 'charged-item')
+    expect(result.items[0]!.charges).toBe(2)
+    expect(result.items[0]!.quantity).toBe(1)  // quantity unchanged
+  })
+
+  it('removes item when charges reaches 0', () => {
+    const chargedItem: Item = { ...CHEESE_CRUMB, id: 'charged-item', charges: 1, quantity: 1 }
+    const inv: Inventory = { gold: 0, items: [chargedItem] }
+    const result = consumeItem(inv, 'charged-item')
+    expect(result.items).toHaveLength(0)
+  })
+
+  it('is a no-op for an unknown item id', () => {
+    const inv: Inventory = { gold: 0, items: [{ ...CHEESE_CRUMB, quantity: 1 }] }
+    const result = consumeItem(inv, 'no-such-item')
+    expect(result.items).toHaveLength(1)
+    expect(result.items[0]!.quantity).toBe(1)
+  })
+
+  it('does not modify the original inventory', () => {
+    const inv: Inventory = { gold: 0, items: [{ ...CHEESE_CRUMB, quantity: 2 }] }
+    consumeItem(inv, 'cheese-crumb')
+    expect(inv.items[0]!.quantity).toBe(2)
+  })
+})
+
+describe('applyPassiveArmour', () => {
+  it('returns full damage when no passive armour items present', () => {
+    const inv: Inventory = { gold: 0, items: [] }
+    expect(applyPassiveArmour(5, inv)).toBe(5)
+  })
+
+  it('reduces damage by passiveArmour value', () => {
+    const armourItem: Item = { ...CHEESE_CRUMB, id: 'jerkin', passiveArmour: 1 }
+    const inv: Inventory = { gold: 0, items: [armourItem] }
+    expect(applyPassiveArmour(4, inv)).toBe(3)
+  })
+
+  it('stacks multiple passive armour items', () => {
+    const jerkin: Item = { ...CHEESE_CRUMB, id: 'jerkin', passiveArmour: 1 }
+    const coat: Item = { ...CHEESE_CRUMB, id: 'coat', passiveArmour: 2 }
+    const inv: Inventory = { gold: 0, items: [jerkin, coat] }
+    expect(applyPassiveArmour(5, inv)).toBe(2)
+  })
+
+  it('clamps result to 0 when armour exceeds damage', () => {
+    const armourItem: Item = { ...CHEESE_CRUMB, id: 'jerkin', passiveArmour: 10 }
+    const inv: Inventory = { gold: 0, items: [armourItem] }
+    expect(applyPassiveArmour(3, inv)).toBe(0)
+  })
+})
+
+describe('applyDeathPrevention', () => {
+  it('does nothing when HP is already above 0', () => {
+    const preventItem: Item = { ...CHEESE_CRUMB, id: 'talisman', deathPrevention: true }
+    const inv: Inventory = { gold: 0, items: [preventItem] }
+    const result = applyDeathPrevention(3, inv)
+    expect(result.pipHp).toBe(3)
+    expect(result.inventory.items).toHaveLength(1)  // item not consumed
+  })
+
+  it('does nothing when HP ≤ 0 but no death-prevention item', () => {
+    const inv: Inventory = { gold: 0, items: [{ ...CHEESE_CRUMB, quantity: 1 }] }
+    const result = applyDeathPrevention(0, inv)
+    expect(result.pipHp).toBe(0)
+    expect(result.inventory.items).toHaveLength(1)
+  })
+
+  it('sets HP to 1 and consumes the item when HP reaches 0', () => {
+    const preventItem: Item = { ...CHEESE_CRUMB, id: 'talisman', deathPrevention: true, quantity: 1 }
+    const inv: Inventory = { gold: 0, items: [preventItem] }
+    const result = applyDeathPrevention(0, inv)
+    expect(result.pipHp).toBe(1)
+    expect(result.inventory.items).toHaveLength(0)
+  })
+
+  it('also fires when HP is negative', () => {
+    const preventItem: Item = { ...CHEESE_CRUMB, id: 'talisman', deathPrevention: true, quantity: 1 }
+    const inv: Inventory = { gold: 0, items: [preventItem] }
+    const result = applyDeathPrevention(-2, inv)
+    expect(result.pipHp).toBe(1)
+    expect(result.inventory.items).toHaveLength(0)
   })
 })
