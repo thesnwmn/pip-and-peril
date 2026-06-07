@@ -51,3 +51,9 @@ owns and maintains them; the **Designer** reads the relevant docs before writing
   the Dungeon Stirs (soft pressure as pacing and dread), living-floor mechanics (roaming enemies,
   Sources/spawners, environmental hazards), the deliberate permission to out-scale and stomp, the
   three levers for scaling a floor across the meta, and the boss motif (runs themed by their climax).
+
+- [`concept/floor-objectives.md`](concept/floor-objectives.md) — the layer of *purpose* on top of a
+  floor's geography: spatial puzzles (Tier 1 gates & keys, Tier 2 linked switches, Tier 3 floor
+  mutation — rotating rooms and water levels), the design rules that keep puzzles inside the dice/
+  navigation idiom, the run-spanning Keystone objective, and **Errands** (in-run NPC sub-objectives)
+  with the Errand → Visitor relationship loop that carries acquaintances across runs.

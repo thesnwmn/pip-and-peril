@@ -279,3 +279,105 @@ snowballing run *feels* dominant, not just statistically ahead. The counterpart 
 the dungeon never rubber-bands within a run: when the player out-scales, the game leans into the blowout
 rather than hiding it. Risk: the mechanical sweetener must be cosmetic-leaning so it celebrates an
 already-won run without trivialising a close one; keep the power in the in-run item layer, not here.
+
+---
+
+## Idea 064 — Gates & Keys (Locked Doors)
+
+**Area:** System / Flow
+**Inspiration:** Manager — "at its simplest it's a locked door (or doors) and keys."
+`docs/concept/floor-objectives.md`.
+
+A navigation **gate** (locked door, barred passage, sealed grate) opened by one of three keys, each
+expressing a different system: a **dice check** (Blue picks / Red forces — pays in pips), a **found
+object** (an iron key in a chest down a spur or beyond an enemy — pays in risk/time), or **Pip's size**
+(a mouse-hole bypass — slower, or skips the door's reward, but never locked). Near-term and cheap: it
+reuses the locked/trapped **Chest** machinery (026/048), applied at a doorway instead of a chest lid.
+Gates display iconography for what opens them, and almost always guard an *optional* spur — the rare
+mandatory gate (a boss antechamber) is guaranteed solvable. Risk: a locked-only path with no
+affordable key bricks a permadeath run — gate reward, not progress, by default.
+
+---
+
+## Idea 065 — Linked Switches (Lever → Remote Door)
+
+**Area:** System / UI
+**Inspiration:** Manager — "a lever somewhere that opens a door somewhere else (maybe with iconography
+to indicate which)." `docs/concept/floor-objectives.md`.
+
+A lever that changes state elsewhere on the floor. The whole design is legibility on a phone: **matched
+iconography** (lever `⟳` blue → door `⟳` blue) links cause to effect without a tutorial; throwing it
+fires **immediate feedback** (a rumble + a fog-reveal pulse over the affected tile) and lights a
+persistent **map-pip**; the explored map becomes the puzzle's UI. The richest version opens one route
+*and closes another* — a genuine navigation decision, not a press-to-win. Risk: without clear feedback
+the player pulls a lever and feels nothing; needs the map-state/iconography layer before it's worth
+building. Later than Tier-1 gates.
+
+---
+
+## Idea 066 — Floor Mutation (Rotating Rooms, Water Levels)
+
+**Area:** System / Art
+**Inspiration:** Manager — "levers that rotate rooms to open new areas and close old ones, or raise
+and lower water levels." `docs/concept/floor-objectives.md`. Flagged by the manager as not-for-soon.
+
+The dungeon physically changes. Model a floor as a **state machine with 2–3 configurations** that
+mechanisms toggle between (water-high/water-low; rooms-aligned/rotated). Each config is a valid,
+snapping-correct floor; the lever swaps which is live. The snapping invariant must hold in every
+config — a rotated room re-maps its exits to the fixed doorway positions; a water level toggles which
+tiles/exits are *passable*, not where doors are. Best deployed as a **biome/boss signature** (water
+levels = Ancient Halls; clockwork rotation = a future mechanism boss), not scattered generically.
+Horizon piece: a large lift (floor-scale state, connectivity recompute, renderer holding multiple
+configs) — documented so the authored-floor architecture doesn't foreclose it.
+
+---
+
+## Idea 067 — In-Run Errands (NPC Sub-Objectives)
+
+**Area:** Flow / World
+**Inspiration:** Manager — "NPCs that set quests in runs… return to the NPC to get your reward."
+`docs/concept/floor-objectives.md`.
+
+Light, opportunistic favours an NPC offers mid-run — *carry this deeper in*, *deal with the beast in
+the east hall*, *bring me a [item type] if you find one* — that overlay the route the player would take
+anyway, never a fetch-checklist or a wander-off. Most pay **in-run** (a buff, a consumable, a die tweak,
+a shortcut, a boss hint); resolution avoids backtracking by **delivering forward**, **completing in
+place**, or **collecting at camp**. Failure is upside-only: skip or die and the favour simply went
+undone, no penalty. Builds on the NPC encounter (028). Risk: must stay rare (0–1 per run, occasionally
+2) or the run becomes a quest hub instead of a descent.
+
+---
+
+## Idea 068 — Errand → Visitor Relationship Loop
+
+**Area:** Meta / World / System
+**Inspiration:** Manager — "you could then meet them as a visitor later." Synthesises in-run Errands
+(067) with the existing visitor system (051) and the biome-unlock-visitor pattern.
+`docs/concept/floor-objectives.md`.
+
+Completing an Errand for an NPC sets a flag that makes *that NPC* eligible and heavily weighted to
+appear at camp as a **visitor** in the next run or two — the field mouse you escorted on floor 2 is,
+two runs later, on the stool by the fire with a gift and a "you again." Reuses the visitor system's
+existing relationship counter (051), seeded by an in-run event instead of repeat camp visits; each turn
+of the loop deepens the relationship and improves their offers. Delivers genuine cross-run continuity —
+the questgiver as the thread between run and meta layers — with **no new system and no authored
+dialogue**, just wiring two existing systems together. Highest value-to-cost ratio in the objectives
+set. Depends on 051 (visitors) and 067 (errands).
+
+---
+
+## Idea 069 — The Keystone (Run-Spanning Objective)
+
+**Area:** Flow / World / System
+**Inspiration:** Thinker's own — early floors can feel like throat-clearing before the climax; an
+objective that spans the whole run makes floor 1 matter to floor 3. `docs/concept/floor-objectives.md`.
+
+A key/sigil/quest item found early opens or weakens something at the climax: three sigils across the
+floors (each behind a Tier-1 gate) that weaken the boss's first phase, open a shortcut to the boss, or
+unlock a throne-room vault — collect none and the fight is merely harder, never impossible. Pairs with
+the **diegetic principle**: the best puzzle *is* the boss approach (drain the water flooding Mother
+Silk's chamber; open the Rat King's throne gate), so the puzzle, the foreshadowing, and the
+architecture become one — plugging straight into the boss motif and The Logical Place floor shape from
+run-architecture. Turns three floors in a row into one descent with a shape. Risk: cross-floor state +
+the player needing to *know* the objective exists (seed via the notice board 053 or an NPC); a later
+piece, after Tier-1 gates and the boss motif.

@@ -466,6 +466,9 @@ For the Designer and Documenter, the concrete edits this direction implies:
   snapping invariant that survives the change
 - `docs/concept/meta-progression.md` — the low-variance meta layer that must never trivialise the run
   (the counterweight to the high-variance stomp)
+- `docs/concept/floor-objectives.md` — the *purpose* layer built on top of these floors: puzzles,
+  gates, levers, floor mutation, the run-spanning Keystone, and in-run Errands (only possible because
+  the floor is authored, not drafted)
 - `IDEAS.md` — discrete ideas seeded from this document (058–063)
 </content>
 </invoke>
