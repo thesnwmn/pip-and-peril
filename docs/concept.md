@@ -52,6 +52,14 @@ owns and maintains them; the **Designer** reads the relevant docs before writing
   Sources/spawners, environmental hazards), the deliberate permission to out-scale and stomp, the
   three levers for scaling a floor across the meta, and the boss motif (runs themed by their climax).
 
+- [`concept/dice-checks.md`](concept/dice-checks.md) — dice *beyond combat*: the unified **check
+  model** (one roll of the existing pool, colour-as-approach, stakes shown first, fail-forward in
+  three bands, paid in pips/risk/time/HP), the two-idioms distinction (combat allocation vs. the
+  single-roll check), where dice fit today (NPC social checks, traps, foraging, haggling), in future
+  changes (gates, errands, roamer evasion, status resistance, in-fight check beats) and beyond (camp
+  dice, the Fortune Track, magic-as-checks), and the systemic payoff — every meta die upgrade
+  rippling across the whole game so a build becomes a personality.
+
 - [`concept/floor-objectives.md`](concept/floor-objectives.md) — the layer of *purpose* on top of a
   floor's geography: spatial puzzles (Tier 1 gates & keys, Tier 2 linked switches, Tier 3 floor
   mutation — rotating rooms and water levels), the design rules that keep puzzles inside the dice/

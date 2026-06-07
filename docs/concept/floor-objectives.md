@@ -309,4 +309,6 @@ them.
 - `docs/concept/tiles-and-props.md` — the snapping invariant that every gate, lever, and rotated room
   must obey; the Squeeze archetype as Pip's smallness made traversable
 - `docs/concept/enemies-and-bosses.md` — enemies that guard keys and become Errand targets
+- `docs/concept/dice-checks.md` — the unified check model that the Gates & Keys "dice-check key"
+  and Errand-resolution checks are instances of; the pay-in-pips/risk/time discipline shared here
 - `IDEAS.md` — discrete ideas seeded from this document (064–069)

@@ -381,3 +381,83 @@ architecture become one — plugging straight into the boss motif and The Logica
 run-architecture. Turns three floors in a row into one descent with a shape. Risk: cross-floor state +
 the player needing to *know* the objective exists (seed via the notice board 053 or an NPC); a later
 piece, after Tier-1 gates and the boss motif.
+
+---
+
+## Idea 070 — The Unified Check Model
+
+**Area:** System / Dice
+**Inspiration:** Manager — "where could dice be used in the game today if they're not already…
+D&D-style skill checks." `docs/concept/dice-checks.md`.
+
+One reusable machine for *every* non-combat dice moment, so checks feel like the same game as combat
+rather than a pile of mini-games: **one roll of Pip's existing pool, against a stated bar, where the
+player picks the *approach* (colour), sees the stakes before committing, and a near-miss fails
+*forward***. Colours keep their combat identities re-expressed as approaches — 🔴 Force/intimidate,
+🟢 Speed/slip, 🔵 Mind/reason-or-pick, 🟡 Fortune/charm — so charm needs no new stat. Results land in
+three bands (Success / Success-at-a-cost / Failure, with a Critical flourish), and every check is paid
+in the existing currencies (pips/risk/time/HP). Most checks offer 2–3 approaches so no build is ever
+bricked. Risk: over-rolling — a check earns its roll only when *both* outcomes matter. The Designer
+should generalise the shipped Chest check (026) into this one panel, starting with NPC checks (028).
+
+---
+
+## Idea 071 — NPC Social Checks (Charm / Intimidate / Reason / Slip)
+
+**Area:** Flow / World / Dice
+**Inspiration:** Manager — "an NPC conversation could rely on charm/persuasion to open favourable
+options or a different path, or they turn nasty and a fight starts if you fail."
+`docs/concept/dice-checks.md`. Folds into feature 028.
+
+A check *inside* dialogue: when a response calls for it, the player picks an approach colour to
+persuade, intimidate, charm, or deceive an NPC. Success opens a favourable branch (discount, hint,
+shortcut, reward); success-at-a-cost opens it with friction the NPC remembers; failure closes the
+favourable branch. **Pushback on the manager's framing:** combat-on-failure should be the rare,
+loudly-signposted exception (the panel says "if you fail, he attacks" *before* you choose), not the
+default — if talking routinely risks a fight, players avoid the blue rooms, which is backwards. Risk:
+keep hostile-on-failure NPCs a small, telegraphed subset so NPCs stay inviting.
+
+---
+
+## Idea 072 — Foraging / Search Checks
+
+**Area:** Flow / System / Dice
+**Inspiration:** Thinker's own — the prop layer (Idea 009) is atmosphere with nothing to *do*.
+`docs/concept/dice-checks.md`.
+
+Make a sparse subset of props searchable (rubble, old corpses, cracked walls): a check (🟢 rummage
+quickly / 🔵 know where to look) for a chance at scraps or an item, **paid in time** — a tick of the
+Dungeon Stirs (061), since lingering wakes the floor. Gives the thorough player a dice-driven reason
+to engage the world the fast player blows past, and plugs the search directly into the Stirs as the
+cost of greed. Risk: must stay sparse (1–2 searchable props per floor) or it becomes over-rolling;
+the time cost must be real or "fast vs. thorough" collapses.
+
+---
+
+## Idea 073 — Shop Haggle Check
+
+**Area:** UI / System / Dice
+**Inspiration:** Thinker's own — the shop is currently a flat menu with no dice in it.
+`docs/concept/dice-checks.md`.
+
+A single *optional* haggle on the shop screen — 🟡 charm the merchant down or 🔵 argue the price.
+Success lowers one price; success-at-a-cost lowers it but the merchant is cooler next time; failure
+bumps prices. Turns a deterministic menu into a dice beat and gives Yellow/Blue builds a non-combat
+payoff. Risk: must stay optional and one-shot per shop, or every purchase becomes a minigame — the
+menu stays, the haggle is one button on it.
+
+---
+
+## Idea 074 — Dice in the Camp (The Gambler & Tempering)
+
+**Area:** Meta / Dice / System
+**Inspiration:** Thinker's own — the camp is currently dice-*free*, which is the meta doc's own fear
+("a transaction, not a story"). `docs/concept/dice-checks.md`.
+
+Put the core mechanic back into the between-runs hub two ways. **The Gambler** — a new visitor type
+(slots into the visitor system, 051) who lets Pip bet scraps on a roll of his own pool: the camp's one
+push-your-luck flutter, fitting the Trickster family. **Tempering a die** — an optional, risky
+workbench operation beside the safe swap/add/engrave: gamble a die for a better outcome (a face-bump,
+or it cracks down a size). **Risk (load-bearing):** the permadeath meta economy must never let a player
+gamble their build into a hole — cap the downside hard, make it net-neutral-or-better, or gate to
+scraps only. Documented as a direction needing a firm safety rule before it is specced.

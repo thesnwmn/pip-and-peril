@@ -542,4 +542,6 @@ decisions before building.
   points in this doc supersede the earlier resolve-window thinking
 - `docs/concept/enemies-and-bosses.md` — enemy roster and escalation; enemy intents here
   complement the enemy personality traits in that doc
+- `docs/concept/dice-checks.md` — the *check idiom* (dice outside this turn loop); it re-expresses
+  these colour identities as out-of-combat *approaches* and would feed the deferred Fortune Track
 - `IDEAS.md` — discrete ideas seeded from this document (Ideas 039–043)
