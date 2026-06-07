@@ -37,3 +37,9 @@ owns and maintains them; the **Designer** reads the relevant docs before writing
   currency (shiny scraps and Marks of Descent), what the player upgrades (dice pool, weapons,
   skills, colour unlocks), scaling restraint, the camp hub, the visitor system, the dungeon
   notice board, and the full screen flow for the next iteration.
+
+- [`concept/biomes.md`](concept/biomes.md) — run destinations beyond the dungeon: the structural
+  model (biomes as distinct run destinations unlocked through Marks of Descent), the mouse-scale
+  design rule, and direction for five environments — The Dungeon (baseline), The Wildwood, The
+  Ancient Halls, The Larder, and The Winter Fields — covering enemies, bosses, tile archetypes,
+  art palette, traps, NPCs, and reward specialisation per biome.
