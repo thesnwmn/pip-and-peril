@@ -20,6 +20,12 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
+### 050 · Item Catalogue — Mechanics Integration
+
+Wire the UI rendering and combat integration for five item mechanics from feature 049 that are currently stubbed: charged item display (3c remaining uses), Tenacity reroll window (dual pip-spend phases), Padded Coat Green penalty per roll, Berserker Draught 3-turn status (2× Strike damage, dodge disabled), Tainted Mushroom self-damage + bonus pips, and Stolen Idol passive gold + enemy damage bonus. Items are shipped; mechanics are not. The integration layer completes the in-run item feature set.
+**Depends on:** 049 (Item Catalogue item definitions — shipped), 037 (Combat Overhaul — logic framework in place).
+See `docs/features/050-item-catalogue-mechanics.md` for the full spec.
+
 ### 024 · Run Summary Screen
 
 A full-screen parchment retrospective at the end of every run — reached by boss victory (after
