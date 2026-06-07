@@ -22,7 +22,8 @@ code; the Designer writes those.
 > **Recently promoted / consolidated** (kept here only as a pointer so numbers aren't reused):
 > Ideas 039 + 040 → feature **037** (Combat Overhaul); 043 → item **023** (Boss); 012 → item
 > **038** (Enemy Roster); 042 → item **029** (Meta-Progression); 044 → feature **048** (Item
-> Interjection Framework); 045 → feature **049** (Item Catalogue). The in-run item cluster
+> Interjection Framework); 045 → feature **049** (Item Catalogue); 075–080 → feature **050**
+> (Item Catalogue Mechanics Integration). The in-run item cluster
 > (019, 020, 021, 022, 024, 025, 026, 027, 028) was consolidated into Idea 045 and promoted;
 > weapon coatings → future Spec B; dice-face manipulation → future Spec C; knowledge/info
 > items → future Spec D (blocked on map-drawing approach decision).
@@ -462,57 +463,4 @@ or it cracks down a size). **Risk (load-bearing):** the permadeath meta economy 
 gamble their build into a hole — cap the downside hard, make it net-neutral-or-better, or gate to
 scraps only. Documented as a direction needing a firm safety rule before it is specced.
 
----
-
-## Idea 075 — Charged Item UI Rendering
-
-**Area:** UI / System
-**Inspiration:** Engineer (049 Item Catalogue) — charged items (Healing Bandage Roll 3×+3HP, Smoke Canister 2×flee) are implemented but display logic is stubbed.
-
-Display remaining charges as `3c` in the Satchel Pouch grid and ITEM overlay, distinct from `×N` quantity badges. Bandage Roll at 2 charges shows `2c` (10px monospace, `--gold` colour). When item is used, charges decrement by 1 and display updates; item removed when charges reach 0. Must distinguish charged items from stackable quantities at a glance. Risk: confusion between `3c` (3 uses left) and `×3` (3 copies); solution is the `c` suffix and different visual treatment.
-
----
-
-## Idea 076 — Tenacity Window in Combat UI
-
-**Area:** UI / Combat
-**Inspiration:** Engineer (049 Item Catalogue) — Tenacity consumables (Grit Stone, Second Wind Vial, Bitter Root Brew) are defined but combat gating and reroll-after-item flow incomplete.
-
-Tenacity items appear in the ITEM overlay greyed and untappable until `pipsSpentThisTurn` is true (any Red pip-spend action fires). Once any pip-spend happens and `itemUsedThisTurn === false`, Tenacity items activate (full opacity). Player taps item → item consumed, `itemUsedThisTurn = true`, dice pool rerols (~500ms animation), pip totals reset to new roll, player enters second spend phase. Enemy does NOT attack between spend phases. After second spend sequence, turn ends normally. Spec **037 § Tenacity Window** has full flow diagram and acceptance criteria. Risk: subtle state management around `itemUsedThisTurn` and `pipsSpentThisTurn` flags; dual-spend-phase UX may confuse if not clearly signalled.
-
----
-
-## Idea 077 — Padded Coat Green Penalty
-
-**Area:** Combat / Item Mechanics
-**Inspiration:** Engineer (049 Item Catalogue) — Padded Coat (passive −2 damage, `greenPenalty: 1`) is itemized but penalty logic not wired.
-
-Each time the dice pool rolls in combat while Padded Coat is in satchel, reduce the Green pip total by 1 (minimum 0) **before** the allocation UI renders. A roll showing 3 Green pips becomes 2; a 0 stays 0. Penalty fires automatically after each roll, once per combat (single combat log line: "Padded Coat — Green −1 per roll."). Penalty does NOT apply outside combat. Requirement: log the penalty once per combat, not per turn. Risk: the penalty must fire *after* roll but *before* player allocates, else the flow breaks.
-
----
-
-## Idea 078 — Berserker Draught Status & Strike Doubling
-
-**Area:** Combat / Status Effects
-**Inspiration:** Engineer (049 Item Catalogue) — Berserker Draught (cursed, `during-allocation` window) is itemized but status mechanic and damage calculation incomplete.
-
-On use, set `berserkTurnsLeft: 3` on CombatState. While active: all Strike actions deal 2× normal damage (multiplied *before* any enemy block/armour applies); Green pip reservation mechanic (the 2G full dodge and 1G partial dodge from 037) is **disabled** — pips can still be spent on Feint/Disengage (non-dodge Green actions) if available, but the dodge reserve cannot be set; unspent Green at END TURN are wasted as normal. `berserkTurnsLeft` decrements by 1 at the start of each new player turn (when ROLL fires). Status clears when it reaches 0 or combat ends. While active, a status indicator strip renders at combat panel top ("🔥 BERSERK · 2 turns left", `--room-enemy` bg, showing remaining turns and reminder "2× Strike · No dodge"). A second Draught in satchel is greyed in ITEM overlay while berserk is active (regardless of `itemUsedThisTurn`). Can be used again once berserk clears. Risk: dodge mechanic disable is a major rule break; must be visually unmistakable.
-
----
-
-## Idea 079 — Tainted Mushroom Self-Damage & Bonus Pips
-
-**Area:** Combat / Item Mechanics
-**Inspiration:** Engineer (049 Item Catalogue) — Tainted Mushroom (cursed, `during-allocation` window, +3 pips/−2 HP) is itemized but self-damage and bonus pip application incomplete.
-
-Player taps TAINTED_MUSHROOM in ITEM overlay → self-damage fires immediately (pipHp − 2, applied directly, not an enemy attack, so passive armour does NOT reduce it). If pipHp ≤ 0 after self-damage, the death-prevention hook fires (if available); if no prevention item, Pip dies and run ends. Otherwise, +3 bonus pips are added to the current allocation pool and the player assigns them freely across any colour. Item is consumed on use. Requirement: bonus pips fire *after* self-damage and death-prevention check, so a low-HP Pip can still get the bonus if they survive the cost. Risk: the damage-first-then-pips order is load-bearing; reversed order is a different game (risk-free bonus).
-
----
-
-## Idea 080 — Stolen Idol Passive Gold & Enemy Damage Bonus
-
-**Area:** Combat / Item Mechanics / Navigation
-**Inspiration:** Engineer (049 Item Catalogue) — Stolen Idol (cursed, passive, run-long) is itemized but gold and damage mechanics incomplete.
-
-On acquisition, two effects activate immediately and persist for the rest of the run. (1) **Gold bonus:** each time Pip enters a room for the first time (or first time after clearing a previously-cleared room — whichever is simpler for implementation), `gold += 2`. Fires on room-entry trigger, same hook as enemy-room entry if possible. (2) **Enemy damage bonus:** all enemy attacks deal +1 additional damage. Damage calculation order: base enemy damage + Stolen Idol bonus (+1) − passiveArmour reduction (if any) = clamped to 0 minimum. Idol appears in Satchel with "WORN" badge and `--item-cursed` red border as persistent reminder. Cannot be un-equipped or discarded once acquired. Does NOT appear in ITEM overlay. Risk: player must accept the burden to get the gold — removing the option removes the choice; keep it locked for the run. Interaction test case: Stolen Idol + Leather Jerkin (−1 damage) = (base + 1 − 1 = base): the two effects cancel, a valid and interesting run strategy.
 

@@ -20,12 +20,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-### 050 · Item Catalogue — Mechanics Integration
-
-Wire the UI rendering and combat integration for five item mechanics from feature 049 that are currently stubbed: charged item display (3c remaining uses), Tenacity reroll window (dual pip-spend phases), Padded Coat Green penalty per roll, Berserker Draught 3-turn status (2× Strike damage, dodge disabled), Tainted Mushroom self-damage + bonus pips, and Stolen Idol passive gold + enemy damage bonus. Items are shipped; mechanics are not. The integration layer completes the in-run item feature set.
-**Depends on:** 049 (Item Catalogue item definitions — shipped), 037 (Combat Overhaul — logic framework in place).
-See `docs/features/050-item-catalogue-mechanics.md` for the full spec.
-
 ### 024 · Run Summary Screen
 
 A full-screen parchment retrospective at the end of every run — reached by boss victory (after
@@ -35,12 +29,6 @@ defeat what felled Pip. Same screen serves both outcomes with different header t
 `RunState` counters (`enemiesDefeated`, `goldEarned`, `killedBy`).
 **Depends on:** 023 (run-complete trigger and banner), 006 (defeat signal routing), 034 (encounter registry).
 See `docs/features/024-run-summary-screen.md` for the full spec.
-
-### 049 · Item Catalogue — IN PROGRESS
-
-Thirteen new items across six mechanic classes: three **Tenacity** consumables (Grit Stone, Second Wind Vial, Bitter Root Brew) fill the long-empty post-spend window; one **Luck** item (Fortune Pebble) joins the existing two; two **passive armour** pieces (Leather Jerkin −1; Padded Coat −2 but Green −1/roll) introduce the equipment slot and a risk/reward tier; two **death-prevention** talismans (Saint's Acorn, Nine Lives Token) exercise the death hook; two **charged** items (Healing Bandage Roll 3×+3HP, Smoke Canister 2×flee); three **cursed/burden** items (Tainted Mushroom +3 pips/−2 HP; Stolen Idol +2 gold/room but enemies +1 dmg; Berserker Draught 2× Strike for 3 turns but no dodge) introduce a red-border warning visual and two new status mechanics. Brings the total catalog to ~21 items.
-**Depends on:** 048 (passiveArmour / deathPrevention / charges hooks, window/luckyClass fields), 020 (acquireItem, item registry), 026 (chest pool), 027 (shop pool).
-See `docs/features/049-item-catalogue.md` for the full spec.
 
 ---
 
@@ -54,6 +42,12 @@ See `docs/features/049-item-catalogue.md` for the full spec.
 > Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
 > model) and **020 · Item System** — both already shipped. *(Item 036 · Raw Flee has been folded
 > into 037, which now owns the Flee action as part of the redesigned panel.)*
+
+### 050 · Item Catalogue — Mechanics Integration
+
+Wire the UI rendering and combat integration for five item mechanics from feature 049 that are currently stubbed: charged item display (3c remaining uses), Tenacity reroll window (dual pip-spend phases), Padded Coat Green penalty per roll, Berserker Draught 3-turn status (2× Strike damage, dodge disabled), Tainted Mushroom self-damage + bonus pips, and Stolen Idol passive gold + enemy damage bonus. Items are shipped; mechanics are not.
+**Depends on:** 049 (Item Catalogue item definitions — shipped), 037 (Combat Overhaul — logic framework in place).
+See `docs/features/050-item-catalogue-mechanics.md` for the full spec.
 
 ### 028 · NPC Encounter
 

@@ -430,4 +430,20 @@ None. This item is **READY**.
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-07 · **PR:** `claude/item-catalogue-AzdfS`
+
+**What was built:** All 13 new items with correct properties (windows, effects, charges, passive armour, death-prevention, cursed flags). Item definitions exported from catalog module. Shop and item-room sourcing constraints enforced. Charged item combining fixed (charges properly combine when acquiring duplicates).
+
+**Test coverage:** 461 tests pass (449 existing + 12 new). Tests cover all 13 items, item properties, passive armour, death-prevention, charged mechanics, shop sourcing constraints, and item-room sourcing constraints.
+
+**Verification:** Dev server started, app builds clean (105.21 kB), typecheck passes, all tests green.
+
+**Remaining work:** UI rendering and combat integration for five mechanics (feature 050):
+- Charged item display (`Nc` rendering in overlays)
+- Tenacity dual-allocation UI flow
+- Padded Coat Green penalty application
+- Berserker Draught status strip and damage doubling
+- Tainted Mushroom self-damage and bonus pips
+- Stolen Idol passive gold and enemy damage bonus
+
+These mechanics are currently stubbed in code; feature 050 wires them into the UI and combat logic.

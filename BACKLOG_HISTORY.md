@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 049 · Item Catalogue
+
+**Shipped:** 2026-06-07 · **PR:** `claude/item-catalogue-AzdfS` · **Spec:** [docs/features/history/049-item-catalogue.md](docs/features/history/049-item-catalogue.md)
+
+Thirteen new items across six mechanic classes that collectively exercise every hook and field from 048 and extend run strategy. Total catalog now ~21 items. Item definitions shipped; UI rendering and combat integration mechanics deferred to feature 050.
+
+---
+
 ### 026 · Chest Encounter
 
 **Shipped:** 2026-06-07 · **PR:** (pending) · **Spec:** [docs/features/history/026-chest-encounter.md](docs/features/history/026-chest-encounter.md)
