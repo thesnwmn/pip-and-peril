@@ -295,9 +295,7 @@ describe('charged items', () => {
     const inv: Inventory = { gold: 0, items: [{ ...BANDAGE_ROLL, charges: 2 }] }
     const result = acquireItem(inv, { ...BANDAGE_ROLL, charges: 3 })
     expect(result.items).toHaveLength(1)
-    // Current implementation uses quantity, not charges, so this might need special handling
-    // For now, just check it doesn't create a second entry
-    expect(result.items).toHaveLength(1)
+    expect(result.items[0]!.charges).toBe(5)
   })
 })
 
