@@ -20,6 +20,7 @@ import { getEnemySpec } from '../combat/roster'
 import { createItemEncounterPanel } from '../encounter/item-panel'
 import { createShopEncounterPanel } from '../encounter/shop-panel'
 import { createTrapEncounterPanel, TRAP_FLAVOURS } from '../encounter/trap-panel'
+import { createChestEncounterPanel } from '../encounter/chest-panel'
 import { ITEM_CONFIG } from '../encounter/config'
 import {
   LOGICAL_W,
@@ -277,6 +278,38 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
       )
     },
     handlers: {
+      left: () => {
+        navPanel.clearWhisper()
+      },
+    },
+  })
+
+  // Register chest encounter.
+  registry.register({
+    trigger: (cell) => cell.roomType === 'chest' && cell.chestState !== 'opened',
+    factory: (onComplete) => {
+      const vpCol = state.pip.col - (state.camera.col - Math.floor(VIEWPORT_COLS / 2))
+      const vpRow = state.pip.row - (state.camera.row - Math.floor(VIEWPORT_ROWS / 2))
+      const pipNatX = MAP_X + vpCol * TILE_SIZE + TILE_SIZE / 2
+      const pipNatY = MAP_Y + vpRow * TILE_SIZE + TILE_SIZE / 2
+      const cell = state.grid.cells[state.pip.row][state.pip.col]!
+      return createChestEncounterPanel(onComplete, cell,
+        { zoom: 1.6, pipTargetX: pipNatX, pipTargetY: pipNatY },
+        {
+          getPool: () => dicePool,
+          getPipHp: () => pipHp,
+          setPipHp: (hp) => { pipHp = hp },
+          getInventory: () => inventory,
+          setInventory: (inv) => { inventory = inv },
+          getDungeonState: () => state,
+          setDungeonState: (s) => { state = s },
+        },
+      )
+    },
+    handlers: {
+      collected: () => {
+        navPanel.clearWhisper()
+      },
       left: () => {
         navPanel.clearWhisper()
       },

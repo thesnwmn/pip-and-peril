@@ -194,7 +194,7 @@ describe('placeRoom', () => {
   })
 
   describe('item room itemId assignment', () => {
-    const CATALOG_IDS = ['cheese-crumb', 'gouda-wedge', 'lucky-acorn', 'smoke-pellet', 'glowstone-dust']
+    const CATALOG_IDS = ['cheese-crumb', 'gouda-wedge', 'lucky-acorn', 'smoke-pellet', 'glowstone-dust', 'stout-flask', 'rabbits-foot', 'iron-thimble']
 
     it('assigns a non-null itemId for item rooms', () => {
       const base = initDungeon()
@@ -426,7 +426,7 @@ describe('Enemy tier selection and placement', () => {
 })
 
 describe('shop room placement', () => {
-  const CATALOG_IDS = ['cheese-crumb', 'gouda-wedge', 'lucky-acorn', 'smoke-pellet', 'glowstone-dust']
+  const CATALOG_IDS = ['cheese-crumb', 'gouda-wedge', 'lucky-acorn', 'smoke-pellet', 'glowstone-dust', 'stout-flask', 'rabbits-foot', 'iron-thimble']
 
   it('assigns shopStock with exactly 3 items for shop rooms', () => {
     const base = initDungeon()

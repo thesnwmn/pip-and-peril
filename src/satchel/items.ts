@@ -82,6 +82,12 @@ export function applyItemEffect(context: ItemEffectContext, effect: ItemEffect):
     }
   }
 
+  if (effect.type === 'heal-full') {
+    return {
+      pipHpAfter: context.pipMaxHp,
+    }
+  }
+
   if (effect.type === 'reroll-dice') {
     return {
       poolAfter: rollPool(context.pool),
@@ -112,6 +118,11 @@ export function applyItemEffect(context: ItemEffectContext, effect: ItemEffect):
     return {
       dungeonStateAfter: { ...context.dungeonState, fog },
     }
+  }
+
+  if (effect.type === 'armor-buff') {
+    // Armor buff is handled at combat time, not here
+    return {}
   }
 
   return {}

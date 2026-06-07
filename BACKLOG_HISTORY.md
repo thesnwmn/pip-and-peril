@@ -16,6 +16,17 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 026 · Chest Encounter
+
+**Shipped:** 2026-06-07 · **PR:** (pending) · **Spec:** [docs/features/history/026-chest-encounter.md](docs/features/history/026-chest-encounter.md)
+
+The amber **Chest**: the concept's two-beat reveal (anticipation → loot), paying out gold and/or
+an item. Three variants — basic (open freely), locked (Blue dice check), and trapped (agility
+check before loot) — plus three new chest-tier items (Stout Flask, Rabbit's Foot, Iron Thimble)
+that make chests feel like a genuine reward tier above item rooms.
+
+---
+
 ### 048 · Item Interjection Framework
 
 **Shipped:** 2026-06-07 · **PR:** #92 · **Spec:** [docs/features/history/048-item-interjection-framework.md](docs/features/history/048-item-interjection-framework.md)

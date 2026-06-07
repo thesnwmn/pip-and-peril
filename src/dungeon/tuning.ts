@@ -25,6 +25,24 @@ export interface DungeonTuning {
 
   // Enemy tier weights for weighted random selection by floor and depth phase
   enemyTierWeights: Record<1 | 2 | 3, Record<'early' | 'mid' | 'late', { t1: number; t2: number; t3: number }>>
+
+  // Chest variant weights
+  chestVariantWeights: Record<'basic' | 'locked' | 'trapped', number>
+
+  // Lock difficulty thresholds
+  lockDifficultyThresholds: Record<'easy' | 'medium' | 'hard', number>
+
+  // Chest loot table item weights
+  chestLootWeights: Record<string, number>
+
+  // Gold range per floor
+  chestGoldRange: Record<1 | 2 | 3, { min: number; max: number }>
+
+  // Chance of empty chest (basic variant only)
+  emptyChestChance: number
+
+  // Chance of item in chest loot
+  chestHasItemChance: number
 }
 
 export const DUNGEON_TUNING: DungeonTuning = {
@@ -196,4 +214,36 @@ export const DUNGEON_TUNING: DungeonTuning = {
       late: { t1: 0, t2: 1, t3: 9 },
     },
   },
+
+  chestVariantWeights: {
+    basic: 6,
+    locked: 3,
+    trapped: 1,
+  },
+
+  lockDifficultyThresholds: {
+    easy: 2,
+    medium: 3,
+    hard: 5,
+  },
+
+  chestLootWeights: {
+    'cheese-crumb': 3,
+    'lucky-acorn': 3,
+    'smoke-pellet': 3,
+    'glowstone-dust': 3,
+    'gouda-wedge': 4,
+    'stout-flask': 5,
+    'rabbits-foot': 5,
+    'iron-thimble': 5,
+  },
+
+  chestGoldRange: {
+    1: { min: 3, max: 6 },
+    2: { min: 5, max: 9 },
+    3: { min: 7, max: 12 },
+  },
+
+  emptyChestChance: 0.10,
+  chestHasItemChance: 0.60,
 }
