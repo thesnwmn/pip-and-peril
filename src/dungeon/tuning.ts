@@ -25,6 +25,24 @@ export interface DungeonTuning {
 
   // Enemy tier weights for weighted random selection by floor and depth phase
   enemyTierWeights: Record<1 | 2 | 3, Record<'early' | 'mid' | 'late', { t1: number; t2: number; t3: number }>>
+
+  // Chest variant weights
+  chestVariantWeights: Record<'basic' | 'locked' | 'trapped', number>
+
+  // Lock difficulty thresholds
+  lockDifficultyThresholds: Record<'easy' | 'medium' | 'hard', number>
+
+  // Chest loot table item weights
+  chestLootWeights: Record<string, number>
+
+  // Gold range per floor
+  chestGoldRange: Record<1 | 2 | 3, { min: number; max: number }>
+
+  // Chance of empty chest (basic variant only)
+  emptyChestChance: number
+
+  // Chance of item in chest loot
+  chestHasItemChance: number
 }
 
 export const DUNGEON_TUNING: DungeonTuning = {
@@ -42,33 +60,33 @@ export const DUNGEON_TUNING: DungeonTuning = {
   roomWeights: {
     1: {
       early: {
-        corridor: 50,
+        corridor: 52,
         enemy: 18,
         npc: 8,
         item: 10,
-        chest: 3,
+        chest: 1,
         trap: 3,
         shop: 8,
         stairwell: 0,
         boss: 0,
       },
       mid: {
-        corridor: 42,
+        corridor: 45,
         enemy: 24,
         npc: 5,
         item: 10,
-        chest: 5,
+        chest: 2,
         trap: 7,
         shop: 7,
         stairwell: 8,
         boss: 0,
       },
       late: {
-        corridor: 35,
+        corridor: 38,
         enemy: 30,
         npc: 3,
         item: 10,
-        chest: 7,
+        chest: 3,
         trap: 10,
         shop: 5,
         stairwell: 7,
@@ -77,33 +95,33 @@ export const DUNGEON_TUNING: DungeonTuning = {
     },
     2: {
       early: {
-        corridor: 40,
+        corridor: 42,
         enemy: 28,
         npc: 5,
         item: 10,
-        chest: 5,
+        chest: 2,
         trap: 5,
-        shop: 7,
+        shop: 8,
         stairwell: 0,
         boss: 0,
       },
       mid: {
-        corridor: 35,
+        corridor: 38,
         enemy: 35,
         npc: 4,
         item: 10,
-        chest: 7,
+        chest: 3,
         trap: 8,
         shop: 6,
         stairwell: 7,
         boss: 0,
       },
       late: {
-        corridor: 28,
+        corridor: 31,
         enemy: 42,
         npc: 3,
         item: 9,
-        chest: 9,
+        chest: 4,
         trap: 12,
         shop: 5,
         stairwell: 6,
@@ -112,33 +130,33 @@ export const DUNGEON_TUNING: DungeonTuning = {
     },
     3: {
       early: {
-        corridor: 30,
+        corridor: 32,
         enemy: 38,
         npc: 4,
         item: 10,
-        chest: 7,
+        chest: 3,
         trap: 8,
-        shop: 6,
+        shop: 5,
         stairwell: 0,
         boss: 0,
       },
       mid: {
-        corridor: 25,
+        corridor: 28,
         enemy: 44,
         npc: 3,
         item: 9,
-        chest: 9,
+        chest: 4,
         trap: 12,
         shop: 5,
         stairwell: 0,
         boss: 0,
       },
       late: {
-        corridor: 20,
+        corridor: 23,
         enemy: 50,
         npc: 2,
         item: 7,
-        chest: 10,
+        chest: 5,
         trap: 15,
         shop: 4,
         stairwell: 0,
@@ -196,4 +214,36 @@ export const DUNGEON_TUNING: DungeonTuning = {
       late: { t1: 0, t2: 1, t3: 9 },
     },
   },
+
+  chestVariantWeights: {
+    basic: 6,
+    locked: 3,
+    trapped: 1,
+  },
+
+  lockDifficultyThresholds: {
+    easy: 2,
+    medium: 3,
+    hard: 5,
+  },
+
+  chestLootWeights: {
+    'cheese-crumb': 3,
+    'lucky-acorn': 3,
+    'smoke-pellet': 3,
+    'glowstone-dust': 3,
+    'gouda-wedge': 4,
+    'stout-flask': 5,
+    'rabbits-foot': 5,
+    'iron-thimble': 5,
+  },
+
+  chestGoldRange: {
+    1: { min: 3, max: 6 },
+    2: { min: 5, max: 9 },
+    3: { min: 7, max: 12 },
+  },
+
+  emptyChestChance: 0,
+  chestHasItemChance: 0.60,
 }

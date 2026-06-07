@@ -176,6 +176,58 @@ export function placeRoom(
     cell.shopStock = selectShopStock()
   }
 
+  if (offering.roomType === 'chest') {
+    // Generate chest variant
+    const variantWeights = DUNGEON_TUNING.chestVariantWeights
+    const variantRand = Math.random()
+    const variantTotal = variantWeights.basic + variantWeights.locked + variantWeights.trapped
+    let variantCumulative = 0
+    let variant: 'basic' | 'locked' | 'trapped' = 'basic'
+
+    variantCumulative += variantWeights.basic
+    if (variantRand * variantTotal < variantCumulative) variant = 'basic'
+    else {
+      variantCumulative += variantWeights.locked
+      if (variantRand * variantTotal < variantCumulative) variant = 'locked'
+      else variant = 'trapped'
+    }
+
+    cell.chestVariant = variant
+    cell.chestState = 'closed'
+
+    // Generate difficulty for locked/trapped variants
+    if (variant === 'locked') {
+      cell.lockDifficulty = DUNGEON_TUNING.lockDifficultyThresholds.easy
+    }
+    if (variant === 'trapped') {
+      cell.trapDifficulty = getTrapDifficulty(state.floor, state.floorTilesPlaced)
+    }
+
+    // Generate loot: gold + maybe item
+    const goldRand = Math.random()
+    const goldRange = DUNGEON_TUNING.chestGoldRange[state.floor as 1 | 2 | 3]
+    const goldMin = goldRange.min
+    const goldMax = goldRange.max
+    const gold = goldMin + Math.floor(goldRand * (goldMax - goldMin + 1))
+
+    const itemRand = Math.random()
+    let loot: { gold: number; item?: string } = { gold }
+    if (itemRand < DUNGEON_TUNING.chestHasItemChance) {
+      const lootWeights = DUNGEON_TUNING.chestLootWeights
+      const weightedItems = Object.entries(lootWeights)
+      const totalWeight = Object.values(lootWeights).reduce((a, b) => a + b, 0)
+      let itemRand2 = Math.random() * totalWeight
+      for (const [itemId, weight] of weightedItems) {
+        itemRand2 -= weight
+        if (itemRand2 <= 0) {
+          loot.item = itemId
+          break
+        }
+      }
+    }
+    cell.loot = loot
+  }
+
   newCells[targetPos.row][targetPos.col] = cell
   const newGrid = { ...state.grid, cells: newCells }
 

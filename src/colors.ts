@@ -93,6 +93,9 @@ export const colors = {
   // Spent trap tile overlay
   trapSpent: '#1a1a2a',
 
+  // Spent chest tile overlay
+  chestSpent: '#1a1400',
+
   // Nav panel direction buttons & map-zone fog marker
   navDirNone: '#3a3a50',
   navDirFog:  '#c8941e',

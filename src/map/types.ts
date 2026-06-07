@@ -25,6 +25,10 @@ export interface TileCell {
   enemyId?: string
   shopStock?: string[]
   shopMerchant?: string
+  chestVariant?: 'basic' | 'locked' | 'trapped'
+  chestState?: 'closed' | 'opened'
+  lockDifficulty?: number
+  loot?: { gold: number; item?: string } | null
 }
 
 export interface GameMap {

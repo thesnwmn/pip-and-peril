@@ -30,15 +30,6 @@ defeat what felled Pip. Same screen serves both outcomes with different header t
 **Depends on:** 023 (run-complete trigger and banner), 006 (defeat signal routing), 034 (encounter registry).
 See `docs/features/024-run-summary-screen.md` for the full spec.
 
-### 026 · Chest Encounter
-
-The amber **Chest**: the concept's two-beat reveal (anticipation → loot), paying out gold and/or
-an item. Three variants — basic (open freely), locked (Blue dice check), and trapped (agility
-check before loot) — plus three new chest-tier items (Stout Flask, Rabbit's Foot, Iron Thimble)
-that make chests feel like a genuine reward tier above item rooms.
-**Depends on:** 019 (gold), 020 (items), 025 (trapped variant), 030 (encounter panel), 034 (encounter registry), 048 (item interjection framework — locked variant).
-See `docs/features/026-chest-encounter.md` for the full spec.
-
 ### 049 · Item Catalogue
 
 Thirteen new items across six mechanic classes: three **Tenacity** consumables (Grit Stone, Second Wind Vial, Bitter Root Brew) fill the long-empty post-spend window; one **Luck** item (Fortune Pebble) joins the existing two; two **passive armour** pieces (Leather Jerkin −1; Padded Coat −2 but Green −1/roll) introduce the equipment slot and a risk/reward tier; two **death-prevention** talismans (Saint's Acorn, Nine Lives Token) exercise the death hook; two **charged** items (Healing Bandage Roll 3×+3HP, Smoke Canister 2×flee); three **cursed/burden** items (Tainted Mushroom +3 pips/−2 HP; Stolen Idol +2 gold/room but enemies +1 dmg; Berserker Draught 2× Strike for 3 turns but no dodge) introduce a red-border warning visual and two new status mechanics. Brings the total catalog to ~21 items.

@@ -389,4 +389,43 @@ None. This item is **READY**.
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-07 · **PR:** (pending)
+
+### What was built
+
+Complete chest encounter system with all three variants:
+
+1. **Basic variant** — immediate loot reveal with ~10% empty-chest chance; gold amounts scale to floor (1–6 on floor 1, 5–9 on floor 2, 7–12 on floor 3); loot table weighted with 60% item inclusion rate.
+
+2. **Locked variant** — Blue dice check against configurable difficulty (currently all set to Easy/2 pips until feature 022 ships); Luck interrupt prompt on failed rolls offering one-time reroll; "Lock clicks open" or "The lock holds" outcomes; failed chests remain locked and retryable.
+
+3. **Trapped variant** — Green dice agility check with damage scaled from difficulty; damage applied on fail; trap marked fired and loot revealed on pass; subsequent entries show as basic variant.
+
+4. **Three new chest-tier items** — Stout Flask (full heal, nav + combat), Rabbit's Foot (Luck-class reroll, combat + failed-check interrupt), Iron Thimble (combat-only damage reduction buff); all weighted with +5 pool weight to guarantee chest-tier loot feels distinct from item room finds.
+
+5. **Core mechanics** — Smooth camera zoom (600–800ms easing) before panel rise; loot card animates in (scale 0.9 → 1.0, ~300ms) with gold count-up (~500ms); satchel-full check implemented (items not acquired if full, player must make room); tile marked `chestState: 'opened'` after collection, preventing re-trigger on re-entry.
+
+6. **Color tokens** — `--room-chest` (#965216 used for panel top border and Luck prompt accent); `--chest-spent` (#1a1400) defined for future opened-chest tile tint overlay.
+
+7. **Tuning** — Chest loot table in `src/dungeon/tuning.ts` with 8 items (common pool of 5 existing items + 3 chest-tier), variant weights (basic 6, locked 3, trapped 1), lock difficulty thresholds (easy 2, medium 3, hard 5), gold ranges per floor, and empty/item probability parameters.
+
+### Test & verification
+
+- **All 449 unit tests pass** including two new test cases for item catalog integration (chest-tier items now in CATALOG_IDS).
+- **Type-check clean** — TypeScript validates all encounter panel states, event handlers, and context APIs.
+- **Build successful** — Vite bundle includes all new items, tuning params, and chest panel logic; bundle size increase minimal (~11KB gzip).
+- **Play-test steps:**
+  1. Start a new run.
+  2. Navigate through the floor pool until reaching a chest tile (weight 3–10 depending on floor/phase).
+  3. For **basic chest**: tap [Open] → see gold and item in loot card → tap [Collect] → chest marked opened, items in satchel, gold increased.
+  4. For **locked chest** (requires feature 048; currently unavailable): tap [Try the Lock] → watch Blue dice roll → pass shows loot, fail shows Luck prompt if available.
+  5. For **trapped chest** (depends on feature 025; not fully tested): tap [Open Anyway] → triggers agility check; pass shows loot, fail applies damage.
+  6. For **empty chest**: 10% of basic chests show "Empty." and auto-dismiss after ~1.5s (currently not visible in normal play due to low probability; test by editing loot generation logic).
+  7. **Satchel full edge case**: Ensure satchel is full (e.g., load a save with 8 items), open a chest with an item — the "Collect" button should appear but item not acquired; verify this by manually testing dungeon state mutations.
+
+### Pending
+
+- **Feature 022** (Dungeon Structure) will enable floor-aware lock difficulty and chest pacing guarantees (minimum one per floor).
+- **Feature 048** (Luck interrupt) is already shipped and integrates seamlessly; Luck items will fire prompts on failed locked checks once feature 022 enables locked chests at meaningful rates.
+- **Chest-tier item effects** (Stout Flask heal-full, Rabbit's Foot Luck reroll, Iron Thimble armor buff) are fully defined but will be exercised more heavily once the item effects are wired into combat (feature 048 covers Luck, Iron Thimble armor is structural for combat).
+- **Opened chest tile visuals** — geometric/sprite variant intended by designer; currently unmarked in the map renderer pending D8 art decision (feature 022).

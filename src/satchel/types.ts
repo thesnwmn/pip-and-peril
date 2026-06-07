@@ -1,8 +1,10 @@
 export type ItemEffect =
   | { type: 'heal'; amount: number }
+  | { type: 'heal-full' }
   | { type: 'reroll-dice' }
   | { type: 'flee-combat' }
   | { type: 'reveal-fog'; radius: number }
+  | { type: 'armor-buff'; reduction: number }
 
 export type ItemWindow =
   | 'pre-roll'

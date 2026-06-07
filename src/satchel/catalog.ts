@@ -75,6 +75,52 @@ export const GLOWSTONE_DUST: Item = {
   luckyClass: false,
 }
 
+export const STOUT_FLASK: Item = {
+  id: 'stout-flask',
+  name: 'Stout Flask',
+  iconType: 'flask',
+  quantity: 1,
+  description: 'Restore to full health.',
+  kind: 'consumable',
+  usableInNav: true,
+  usableInCombat: true,
+  effect: { type: 'heal-full' },
+  shopPrice: 8,
+  window: 'post-damage',
+  luckyClass: false,
+}
+
+export const RABBITS_FOOT: Item = {
+  id: 'rabbits-foot',
+  name: 'Rabbit\'s Foot',
+  iconType: 'foot',
+  quantity: 1,
+  description: 'Reroll dice — combat or on a failed check.',
+  kind: 'consumable',
+  usableInNav: false,
+  usableInCombat: true,
+  effect: { type: 'reroll-dice' },
+  shopPrice: 6,
+  window: 'on-roll-luck',
+  luckyClass: true,
+}
+
+export const IRON_THIMBLE: Item = {
+  id: 'iron-thimble',
+  name: 'Iron Thimble',
+  iconType: 'thimble',
+  quantity: 1,
+  description: 'Use in combat',
+  kind: 'consumable',
+  usableInNav: false,
+  usableInCombat: true,
+  effect: { type: 'armor-buff', reduction: 1 },
+  shopPrice: 7,
+  window: 'during-allocation',
+  luckyClass: false,
+}
+
 export const CATALOG_ITEMS: Item[] = [
   CHEESE_CRUMB, GOUDA_WEDGE, LUCKY_ACORN, SMOKE_PELLET, GLOWSTONE_DUST,
+  STOUT_FLASK, RABBITS_FOOT, IRON_THIMBLE,
 ]
