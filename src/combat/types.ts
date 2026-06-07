@@ -84,4 +84,5 @@ export interface CombatState {
   analysedThisTurn: boolean                // set when Analyse fires this turn; reset each turn
   identified: boolean                      // set by Identify (exact HP shown)
   pipPoison: PipState['poison']
+  berserkTurnsLeft: number                 // Berserker Draught status; 0 = inactive
 }

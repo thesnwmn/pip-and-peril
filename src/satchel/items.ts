@@ -8,7 +8,13 @@ export function acquireItem(inventory: Inventory, item: Item): Inventory {
   const existingIndex = inventory.items.findIndex(i => i.id === item.id)
   if (existingIndex >= 0) {
     const updated = [...inventory.items]
-    updated[existingIndex] = { ...updated[existingIndex], quantity: updated[existingIndex].quantity + item.quantity }
+    const existing = updated[existingIndex]
+    // For charged items, combine charges; otherwise combine quantity
+    if (item.charges !== undefined && existing.charges !== undefined) {
+      updated[existingIndex] = { ...existing, charges: existing.charges + item.charges }
+    } else {
+      updated[existingIndex] = { ...existing, quantity: existing.quantity + item.quantity }
+    }
     return { ...inventory, items: updated }
   }
   return { ...inventory, items: [...inventory.items, { ...item }] }
@@ -122,6 +128,18 @@ export function applyItemEffect(context: ItemEffectContext, effect: ItemEffect):
 
   if (effect.type === 'armor-buff') {
     // Armor buff is handled at combat time, not here
+    return {}
+  }
+
+  if (effect.type === 'bonus-pips') {
+    // Bonus pips handled in combat panel, self-damage applies to pipHp
+    return {
+      pipHpAfter: Math.max(0, context.pipHp - effect.selfDamage),
+    }
+  }
+
+  if (effect.type === 'berserk') {
+    // Berserk status handled in combat state
     return {}
   }
 

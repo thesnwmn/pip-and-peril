@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { acquireItem, applyItemEffect, consumeItem, applyPassiveArmour, applyDeathPrevention } from './items'
 import type { Inventory, Item } from './types'
-import { CHEESE_CRUMB, GOUDA_WEDGE, LUCKY_ACORN, SMOKE_PELLET, GLOWSTONE_DUST } from './catalog'
+import {
+  CHEESE_CRUMB, GOUDA_WEDGE, LUCKY_ACORN, SMOKE_PELLET, GLOWSTONE_DUST, BANDAGE_ROLL,
+  GRIT_STONE, SECOND_WIND_VIAL, BITTER_ROOT_BREW, FORTUNE_PEBBLE, LEATHER_JERKIN, PADDED_COAT,
+  SAINTS_ACORN, NINE_LIVES_TOKEN, SMOKE_CANISTER, TAINTED_MUSHROOM, STOLEN_IDOL, BERSERKER_DRAUGHT,
+} from './catalog'
 import { starterPool } from '../dice/pool'
 import { initDungeon } from '../navigation/dungeon-state'
 
@@ -266,5 +270,114 @@ describe('applyDeathPrevention', () => {
     const result = applyDeathPrevention(-2, inv)
     expect(result.pipHp).toBe(1)
     expect(result.inventory.items).toHaveLength(0)
+  })
+
+  it('only consumes the first death-prevention item', () => {
+    const item1: Item = { ...CHEESE_CRUMB, id: 'item1', deathPrevention: true, quantity: 1 }
+    const item2: Item = { ...CHEESE_CRUMB, id: 'item2', deathPrevention: true, quantity: 1 }
+    const inv: Inventory = { gold: 0, items: [item1, item2] }
+    const result = applyDeathPrevention(0, inv)
+    expect(result.pipHp).toBe(1)
+    expect(result.inventory.items).toHaveLength(1)
+    expect(result.inventory.items[0]!.id).toBe('item2')
+  })
+})
+
+describe('charged items', () => {
+  it('charged items decrement charges instead of quantity', () => {
+    const chargedItem: Item = { ...BANDAGE_ROLL, charges: 3 }
+    const inv: Inventory = { gold: 0, items: [chargedItem] }
+    const result = consumeItem(inv, 'bandage-roll')
+    expect(result.items[0]!.charges).toBe(2)
+  })
+
+  it('combining two charged items of same type adds charges', () => {
+    const inv: Inventory = { gold: 0, items: [{ ...BANDAGE_ROLL, charges: 2 }] }
+    const result = acquireItem(inv, { ...BANDAGE_ROLL, charges: 3 })
+    expect(result.items).toHaveLength(1)
+    expect(result.items[0]!.charges).toBe(5)
+  })
+})
+
+describe('bonus-pips effect (Tainted Mushroom)', () => {
+  it('applies self-damage before bonus pips', () => {
+    const result = applyItemEffect(
+      {
+        pipHp: 5,
+        pipMaxHp: 10,
+        pool: starterPool(),
+        dungeonState: initDungeon(),
+        tileRow: 0,
+        tileCol: 0,
+      },
+      { type: 'bonus-pips', amount: 3, selfDamage: 2 },
+    )
+    expect(result.pipHpAfter).toBe(3)
+  })
+
+  it('clamps self-damage to 0 HP minimum', () => {
+    const result = applyItemEffect(
+      {
+        pipHp: 1,
+        pipMaxHp: 10,
+        pool: starterPool(),
+        dungeonState: initDungeon(),
+        tileRow: 0,
+        tileCol: 0,
+      },
+      { type: 'bonus-pips', amount: 3, selfDamage: 3 },
+    )
+    expect(result.pipHpAfter).toBe(0)
+  })
+})
+
+describe('item catalogue exports', () => {
+  it('exports all 13 new items', () => {
+    expect(GRIT_STONE.id).toBe('grit-stone')
+    expect(SECOND_WIND_VIAL.id).toBe('second-wind-vial')
+    expect(BITTER_ROOT_BREW.id).toBe('bitter-root-brew')
+    expect(FORTUNE_PEBBLE.id).toBe('fortune-pebble')
+    expect(LEATHER_JERKIN.id).toBe('leather-jerkin')
+    expect(PADDED_COAT.id).toBe('padded-coat')
+    expect(SAINTS_ACORN.id).toBe('saints-acorn')
+    expect(NINE_LIVES_TOKEN.id).toBe('nine-lives-token')
+    expect(BANDAGE_ROLL.id).toBe('bandage-roll')
+    expect(SMOKE_CANISTER.id).toBe('smoke-canister')
+    expect(TAINTED_MUSHROOM.id).toBe('tainted-mushroom')
+    expect(STOLEN_IDOL.id).toBe('stolen-idol')
+    expect(BERSERKER_DRAUGHT.id).toBe('berserker-draught')
+  })
+
+  it('Tenacity items have correct window', () => {
+    expect(GRIT_STONE.window).toBe('post-spend-tenacity')
+    expect(SECOND_WIND_VIAL.window).toBe('post-spend-tenacity')
+    expect(BITTER_ROOT_BREW.window).toBe('post-spend-tenacity')
+  })
+
+  it('Fortune Pebble is luck class', () => {
+    expect(FORTUNE_PEBBLE.luckyClass).toBe(true)
+    expect(FORTUNE_PEBBLE.window).toBe('on-roll-luck')
+  })
+
+  it('Passive armour items have passiveArmour field', () => {
+    expect(LEATHER_JERKIN.passiveArmour).toBe(1)
+    expect(PADDED_COAT.passiveArmour).toBe(2)
+    expect(PADDED_COAT.greenPenalty).toBe(1)
+  })
+
+  it('Death prevention items have deathPrevention field', () => {
+    expect(SAINTS_ACORN.deathPrevention).toBe(true)
+    expect(NINE_LIVES_TOKEN.deathPrevention).toBe(true)
+  })
+
+  it('Charged items have charges field', () => {
+    expect(BANDAGE_ROLL.charges).toBe(3)
+    expect(SMOKE_CANISTER.charges).toBe(2)
+  })
+
+  it('Cursed items have cursed field', () => {
+    expect(TAINTED_MUSHROOM.cursed).toBe(true)
+    expect(STOLEN_IDOL.cursed).toBe(true)
+    expect(BERSERKER_DRAUGHT.cursed).toBe(true)
   })
 })

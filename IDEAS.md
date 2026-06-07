@@ -22,7 +22,8 @@ code; the Designer writes those.
 > **Recently promoted / consolidated** (kept here only as a pointer so numbers aren't reused):
 > Ideas 039 + 040 → feature **037** (Combat Overhaul); 043 → item **023** (Boss); 012 → item
 > **038** (Enemy Roster); 042 → item **029** (Meta-Progression); 044 → feature **048** (Item
-> Interjection Framework); 045 → feature **049** (Item Catalogue). The in-run item cluster
+> Interjection Framework); 045 → feature **049** (Item Catalogue); 075–080 → feature **050**
+> (Item Catalogue Mechanics Integration). The in-run item cluster
 > (019, 020, 021, 022, 024, 025, 026, 027, 028) was consolidated into Idea 045 and promoted;
 > weapon coatings → future Spec B; dice-face manipulation → future Spec C; knowledge/info
 > items → future Spec D (blocked on map-drawing approach decision).
@@ -461,3 +462,5 @@ workbench operation beside the safe swap/add/engrave: gamble a die for a better 
 or it cracks down a size). **Risk (load-bearing):** the permadeath meta economy must never let a player
 gamble their build into a hole — cap the downside hard, make it net-neutral-or-better, or gate to
 scraps only. Documented as a direction needing a firm safety rule before it is specced.
+
+

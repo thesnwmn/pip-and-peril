@@ -5,6 +5,8 @@ export type ItemEffect =
   | { type: 'flee-combat' }
   | { type: 'reveal-fog'; radius: number }
   | { type: 'armor-buff'; reduction: number }
+  | { type: 'bonus-pips'; amount: number; selfDamage: number }
+  | { type: 'berserk'; turnsLeft: number }
 
 export type ItemWindow =
   | 'pre-roll'
@@ -32,7 +34,9 @@ export interface Item {
   luckyClass: boolean
   charges?: number
   passiveArmour?: number
+  greenPenalty?: number
   deathPrevention?: boolean
+  cursed?: boolean
 }
 
 export interface Inventory {

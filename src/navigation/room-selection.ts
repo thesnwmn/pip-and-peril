@@ -141,7 +141,9 @@ function selectShopMerchant(): { name: string; flavor: string } {
 }
 
 function selectShopStock(): string[] {
-  const shuffled = [...CATALOG_ITEMS].sort(() => Math.random() - 0.5)
+  // Exclude items that don't appear in shops
+  const shopItems = CATALOG_ITEMS.filter(item => !['saints-acorn', 'nine-lives-token', 'stolen-idol'].includes(item.id))
+  const shuffled = [...shopItems].sort(() => Math.random() - 0.5)
   return shuffled.slice(0, 3).map(item => item.id)
 }
 
@@ -154,7 +156,9 @@ export function placeRoom(
   const cell: TileCell = { roomType: offering.roomType, exits: offering.exits }
 
   if (offering.roomType === 'item') {
-    cell.itemId = CATALOG_ITEMS[Math.floor(Math.random() * CATALOG_ITEMS.length)].id
+    // Exclude items that don't appear in item rooms per spec sourcing table
+    const itemRoomItems = CATALOG_ITEMS.filter(item => !['leather-jerkin', 'padded-coat', 'saints-acorn', 'nine-lives-token', 'stolen-idol'].includes(item.id))
+    cell.itemId = itemRoomItems[Math.floor(Math.random() * itemRoomItems.length)].id
   }
 
   if (offering.roomType === 'trap') {
