@@ -141,7 +141,9 @@ function selectShopMerchant(): { name: string; flavor: string } {
 }
 
 function selectShopStock(): string[] {
-  const shuffled = [...CATALOG_ITEMS].sort(() => Math.random() - 0.5)
+  // Exclude items that don't appear in shops
+  const shopItems = CATALOG_ITEMS.filter(item => !['saints-acorn', 'nine-lives-token', 'stolen-idol'].includes(item.id))
+  const shuffled = [...shopItems].sort(() => Math.random() - 0.5)
   return shuffled.slice(0, 3).map(item => item.id)
 }
 

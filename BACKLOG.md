@@ -30,7 +30,7 @@ defeat what felled Pip. Same screen serves both outcomes with different header t
 **Depends on:** 023 (run-complete trigger and banner), 006 (defeat signal routing), 034 (encounter registry).
 See `docs/features/024-run-summary-screen.md` for the full spec.
 
-### 049 · Item Catalogue
+### 049 · Item Catalogue — IN PROGRESS
 
 Thirteen new items across six mechanic classes: three **Tenacity** consumables (Grit Stone, Second Wind Vial, Bitter Root Brew) fill the long-empty post-spend window; one **Luck** item (Fortune Pebble) joins the existing two; two **passive armour** pieces (Leather Jerkin −1; Padded Coat −2 but Green −1/roll) introduce the equipment slot and a risk/reward tier; two **death-prevention** talismans (Saint's Acorn, Nine Lives Token) exercise the death hook; two **charged** items (Healing Bandage Roll 3×+3HP, Smoke Canister 2×flee); three **cursed/burden** items (Tainted Mushroom +3 pips/−2 HP; Stolen Idol +2 gold/room but enemies +1 dmg; Berserker Draught 2× Strike for 3 turns but no dodge) introduce a red-border warning visual and two new status mechanics. Brings the total catalog to ~21 items.
 **Depends on:** 048 (passiveArmour / deathPrevention / charges hooks, window/luckyClass fields), 020 (acquireItem, item registry), 026 (chest pool), 027 (shop pool).

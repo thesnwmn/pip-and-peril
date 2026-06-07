@@ -81,6 +81,7 @@ export function createCombatEncounterPanel(
     analysedThisTurn: false,
     identified: false,
     pipPoison: null,
+    berserkTurnsLeft: 0,
   }
 
   let lastEnemyHeadline = ''

@@ -125,5 +125,17 @@ export function applyItemEffect(context: ItemEffectContext, effect: ItemEffect):
     return {}
   }
 
+  if (effect.type === 'bonus-pips') {
+    // Bonus pips handled in combat panel, self-damage applies to pipHp
+    return {
+      pipHpAfter: Math.max(0, context.pipHp - effect.selfDamage),
+    }
+  }
+
+  if (effect.type === 'berserk') {
+    // Berserk status handled in combat state
+    return {}
+  }
+
   return {}
 }
