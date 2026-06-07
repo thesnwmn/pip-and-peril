@@ -129,7 +129,8 @@ export function createChestEncounterPanel(
   mapView: MapViewConfig,
   context: ChestPanelContext,
 ): EncounterPanel {
-  const variant = cell.chestVariant ?? 'basic'
+  // If trapped chest with trapFired, show as basic (trap is spent)
+  const variant = (cell.chestVariant === 'trapped' && cell.trapFired) ? 'basic' : (cell.chestVariant ?? 'basic')
   const loot = cell.loot
   const lockDifficulty = cell.lockDifficulty ?? 0
   const trapDifficulty = cell.trapDifficulty ?? 0
@@ -138,6 +139,7 @@ export function createChestEncounterPanel(
   let panelState: PanelState = 'closed'
   let completed = false
   let hoveredElement: 'primary' | 'secondary' | 'collect' | null = null
+  let emptyChestDismissTime: DOMHighResTimeStamp | null = null
 
   // Lock roll state
   let rolledPool: DicePool | null = null
@@ -275,15 +277,16 @@ export function createChestEncounterPanel(
       }
     }
 
-    if (panelState === 'empty-reveal') {
-      // Auto-dismiss after 1.5s
-      setTimeout(() => {
-        if (panelState === 'empty-reveal' && !completed) {
-          completed = true
-          markChestOpened()
-          onComplete('collected')
-        }
-      }, 1500)
+    if (panelState === 'empty-reveal' && emptyChestDismissTime === null) {
+      emptyChestDismissTime = timestamp
+    }
+
+    if (panelState === 'empty-reveal' && emptyChestDismissTime !== null) {
+      if (timestamp - emptyChestDismissTime >= 1500 && !completed) {
+        completed = true
+        markChestOpened()
+        onComplete('collected')
+      }
     }
 
     // Render background and header
