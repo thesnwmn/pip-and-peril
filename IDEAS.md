@@ -30,52 +30,21 @@ code; the Designer writes those.
 > **051** → backlog **051** (Visitor System); **052** → backlog **052** (Marks of Descent);
 > **053** → backlog **053** (Notice Board). *(046 and 047 are pre-existing shipped features —
 > the visitor/marks ideas originally mislabelled 046–047 were corrected to 051–052.)*
+> **Planner session 2026-06-07:** **008** → backlog **081** (Interior Tile Archetypes);
+> **009** → backlog **082** (Prop Layer); **010** → backlog **083** (Squeeze Tiles);
+> **041** → backlog **041** (Rattled / Emboldened Combat States);
+> **054** → backlog **054** (Destination Board);
+> **058** → backlog **058** (Authored-Procedural Floors);
+> **059** → backlog **059** (Floor Shape Catalogue);
+> **060** → backlog **060** (Roaming Enemies & Sources);
+> **061** → backlog **061** (Dungeon Stirs);
+> **064** → backlog **064** (Gates & Keys).
+> Biomes Ancient Halls / Wildwood / Larder / Winter Fields → backlog **084–087** (no prior idea
+> numbers; concept in `docs/concept/biomes.md`).
 
 ---
 
 
-## Idea 008 — Interior Tile Archetypes
-
-**Area:** Art
-**Inspiration:** Manager — "every tile is exactly the same"; concept note `docs/concept/tiles-and-props.md`.
-
-Treat a tile as four independent layers — exit layout × **interior archetype** × room type × props —
-and add the missing archetype layer: the *shape and substance between the doorways*. Starting set:
-Chamber (today), Passage (a real corridor, floor only where it connects exits), Cavern (rough,
-narrower, rubble), Pillared Hall, Rubble/Collapse. The hard invariant is that doorway openings stay
-at the fixed snapping position and width, so any interior tiles cleanly. Recommend shipping as a
-pure visual skin first (new `drawCell` branches, no rule changes). Risk: must stay legible at
-phone-thumbnail size — favour *shape* changes over texture.
-
----
-
-## Idea 009 — Prop Layer (Decor & Features)
-
-**Area:** Art
-**Inspiration:** Manager — "props that can be randomly placed… torches on the wall, rocks, etc."
-
-A draw pass that scatters small objects over a finished tile from a weighted set: wall torches
-(with a soft light glow), rubble, bones/skulls, glowing mushrooms, cobwebs, puddles, coin glints.
-Props use **anchor zones** (wall band, floor corners, centre) rather than raw coordinates; the
-placer never covers a doorway and caps density (~0–3 per tile) for readability. Torch glow tints
-the surrounding stone so props feel lit by the room. Rough shape: `Prop = { kind, anchors[], weight }`
-plus a `placeProps(tile)` that fills anchors. Risk: over-cluttered thumbnails — needs a tight cap
-and a "no prop over exits" rule.
-
----
-
-## Idea 010 — Squeeze Tiles (Pip-Only Shortcuts)
-
-**Area:** System
-**Inspiration:** Pillar "Pip's small size is a mechanic"; manager — "slightly narrower than usual".
-
-A Squeeze archetype: a crack far narrower than a normal doorway, with a mouse-hole motif, that only
-Pip can pass. Renders as atmosphere but carries a mechanic — a shortcut or secret route that large
-enemies (and pursuing bosses) cannot follow, turning Pip's smallness into traversable geography
-rather than flavour text. Open question: does a Squeeze guarantee a safe escape, or just a different
-path? Pairs naturally with backtracking and any future "chase" pressure.
-
----
 
 ## Idea 011 — Boss Foreshadowing
 
@@ -90,15 +59,6 @@ must be vague enough not to feel like promises if the player never reaches the b
 
 ---
 
-## Idea 041 — Rattled / Emboldened Combat States
-
-**Area:** System / Character
-**Inspiration:** Entirely the Thinker's own — not a direct development of the manager's direction.
-**Parked behind:** feature 037 (Combat Overhaul) — these states layer on top of the new turn loop.
-
-Transient per-fight modifiers that track how the fight is going, without permanent complexity. **Rattled** triggers when Pip takes damage on two consecutive turns without landing a hit — one die locks to its minimum face until Pip lands an attack (representing flinching fear). **Emboldened** triggers when Pip lands a killing blow — the *next* combat starts with one free virtual Yellow pip on the first roll (confidence following a win). Both states clear naturally; neither compounds. They make fights feel like they have texture and momentum beyond HP tracking, and they create natural hooks for items (*Steadying Brew* clears Rattled) and meta-skills (*Counter-Strike* triggers on a full dodge; *Battle Cry* extends Emboldened). Risk: Rattled's visual representation — a "shaky" die — must read clearly on a small phone screen without being distracting mid-allocation.
-
----
 
 ## Idea 050 — Named Dice
 
@@ -118,21 +78,6 @@ retrofitting as a polish pass.
 
 ---
 
-## Idea 054 — Destination Board (Camp Biome Selection)
-
-**Area:** UI / Meta
-**Inspiration:** Biome system concept; `docs/concept/biomes.md`
-
-A small hand-drawn map pinned to the wall of Pip's camp, near the dungeon arch. Does not exist
-until the first biome unlock visitor arrives and leaves a sketch — the board materialises as a
-consequence of that discovery, not as an empty UI waiting to be filled. New locations are added
-as crude sketches by subsequent unlock visitors. Tapping a location selects it as the run
-destination; the "Descend" CTA reflects the choice. Biome availability is gated invisibly by
-Marks of Descent; the player only ever sees the visitor encounter, not the gate behind it.
-Risk: must read legibly as a tappable UI element on phone scale without dominating the camp
-screen's existing objects.
-
----
 
 ## Idea 055 — Biome-Keyed Marks of Descent
 
@@ -184,71 +129,6 @@ persistent between-room effect; spec alongside or after feature 037 (Combat Over
 
 ---
 
-## Idea 058 — Branching Authored-Procedural Floors
-
-**Area:** System / Flow
-**Inspiration:** Manager — "remove player tile selection entirely; pre-design the floor on entry."
-Developed (and pushed back on) in `docs/concept/run-architecture.md`.
-
-Replace the room-drafting mechanic (shipped feature 004) with floors generated **complete and hidden
-under fog** before Pip enters. The player's agency moves from *drafting tiles into being* to *routing
-through a place that already exists* — choosing branches, spurs, and shortcuts read through fog. Keep
-the renderer, fog, snapping invariant, camera, and multi-floor structure; discard only the
-room-selection card UI and on-choice placement. The floor is generated in four layers — shape × beat
-skeleton × population × motif — mirroring the four-layer tile model one level up. Risk: if floors are
-authored *linear*, navigation becomes a passive corridor; floors **must branch** so navigation stays a
-renewable decision. This is the foundational change the rest of the run-architecture ideas build on.
-
----
-
-## Idea 059 — Floor Shape Catalogue
-
-**Area:** System / Art
-**Inspiration:** Manager — "long floors, wide floors, winding floors, floors that spiral to a boss,
-architecturally logical floors." `docs/concept/run-architecture.md`.
-
-A catalogue of macro floor topologies, each with a distinct feel and pacing implication: Gauntlet
-(forced march), Spiral (winds to a climax you can glimpse), Warren (dense maze of dead-ends), Hub
-(central chamber + optional spokes), Long Hall (wide, patrolled sightlines), Split Level (verticality,
-one-way drops), and **The Logical Place** (generated from a *semantic blueprint* — gatehouse → hall →
-storerooms → throne — where a room's *purpose* is itself foreshadowing). Shapes are weighted by depth,
-biome, and boss motif, never uniform-random. Risk: each shape needs its own snapping-safe layout
-generator; recommend shipping two or three shapes first (Gauntlet + Hub + Spiral) and growing the set.
-
----
-
-## Idea 060 — Roaming Enemies & Floor Sources (Spawners)
-
-**Area:** System
-**Inspiration:** Manager — "roaming enemies from the start… a mother spider who sends out little
-minions across the map until we kill the source." `docs/concept/run-architecture.md`.
-
-Two linked mechanics the authored floor unlocks. **Roamers** occupy and move across the floor map
-(tick-based on Pip's movement, partially visible through fog), turning navigation into avoid-or-engage;
-catching Pip from behind opens combat at a disadvantage (a home for Rattled), and squeeze routes let
-Pip evade what can't follow. **Sources** are fixed tiles (nest, egg sac, shrine) that emit minions
-until destroyed — a pressure clock with a kill-switch that creates a real routing dilemma (detour to
-silence it, or race the exit and eat the brood) and doubles as boss foreshadowing (Mother Silk's
-spiderlings roam from floor 1). Risk: needs a brood cap so a dawdling player isn't swarmed unbounded,
-and a fog-telegraph radius tuned so avoidance is possible but not trivial.
-
----
-
-## Idea 061 — The Dungeon Stirs (Soft Pacing Pressure)
-
-**Area:** Flow / System
-**Inspiration:** Thinker's own — the tension between branching loot (rewards thoroughness) and the
-10–30 minute contract (punishes it). `docs/concept/run-architecture.md`.
-
-A soft, escalating presence — *not* a timer — measured in **rooms entered**: the longer Pip lingers
-on a floor, the more it wakes up. Torches gutter and fog thickens; patrols quicken; a Source's
-brood-rate ticks up; the boss "stirs." It paces the run toward the time contract without a stopwatch,
-rewards decisiveness (a fast or stomping run *outruns* it entirely), and delivers tonally-correct dread
-("the dungeon is waking" instead of "hurry up"). Because it's measured in movement, it's fair to a slow
-*thinker* and only bites a slow *explorer*. Risk: must stay soft — most runs the player should never
-consciously feel it; only the room-vacuumer gets squeezed. Needs careful tuning of the escalation curve.
-
----
 
 ## Idea 062 — The Boss Motif (Runs Themed by Their Climax)
 
@@ -283,22 +163,6 @@ already-won run without trivialising a close one; keep the power in the in-run i
 
 ---
 
-## Idea 064 — Gates & Keys (Locked Doors)
-
-**Area:** System / Flow
-**Inspiration:** Manager — "at its simplest it's a locked door (or doors) and keys."
-`docs/concept/floor-objectives.md`.
-
-A navigation **gate** (locked door, barred passage, sealed grate) opened by one of three keys, each
-expressing a different system: a **dice check** (Blue picks / Red forces — pays in pips), a **found
-object** (an iron key in a chest down a spur or beyond an enemy — pays in risk/time), or **Pip's size**
-(a mouse-hole bypass — slower, or skips the door's reward, but never locked). Near-term and cheap: it
-reuses the locked/trapped **Chest** machinery (026/048), applied at a doorway instead of a chest lid.
-Gates display iconography for what opens them, and almost always guard an *optional* spur — the rare
-mandatory gate (a boss antechamber) is guaranteed solvable. Risk: a locked-only path with no
-affordable key bricks a permadeath run — gate reward, not progress, by default.
-
----
 
 ## Idea 065 — Linked Switches (Lever → Remote Door)
 
