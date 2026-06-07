@@ -43,3 +43,11 @@ owns and maintains them; the **Designer** reads the relevant docs before writing
   design rule, and direction for five environments — The Dungeon (baseline), The Wildwood, The
   Ancient Halls, The Larder, and The Winter Fields — covering enemies, bosses, tile archetypes,
   art palette, traps, NPCs, and reward specialisation per biome.
+
+- [`concept/run-architecture.md`](concept/run-architecture.md) — the shape of a run and the space
+  it happens in: the shift from player tile-drafting to branching authored-procedural floors, the
+  four-layer floor model and floor-shape catalogue, the 10–30 minute pacing contract (spine vs.
+  spurs, floor count as a variable), the Complication Curve (introducing mechanics one at a time),
+  the Dungeon Stirs (soft pressure as pacing and dread), living-floor mechanics (roaming enemies,
+  Sources/spawners, environmental hazards), the deliberate permission to out-scale and stomp, the
+  three levers for scaling a floor across the meta, and the boss motif (runs themed by their climax).

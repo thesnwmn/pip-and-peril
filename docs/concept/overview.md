@@ -15,7 +15,9 @@ The player controls Pip, a small mouse descending into procedurally generated du
 ## Core Pillars
 
 - **Portrait/mobile-first** layout
-- **Tile-based dungeon** built room by room through player choice
+- **Tile-based dungeon** explored by player choice — branching, authored-procedural floors read
+  through fog (the navigation model is detailed in [`run-architecture.md`](run-architecture.md),
+  which supersedes the room-by-room *drafting* model originally described below)
 - **Turn-based** resolution — player rolls dice, then spends pips on actions
 - **Roguelike** — permadeath, procedural maps, meta-progression between runs
 - **Tone** — dungeon exploration with the feeling of D&D; the mouse gives it a fuzzy, whimsical edge but the underlying tension is real
@@ -66,6 +68,13 @@ interjection points, and how combat scales — are in [`combat-system.md`](comba
 ---
 
 ## Dungeon Navigation
+
+> **Superseded — see [`run-architecture.md`](run-architecture.md).** The tile-*drafting* model below
+> (pick one of three room types as Pip moves) is being replaced by **branching authored-procedural
+> floors**: each floor is generated complete and hidden under fog, and the player exercises agency by
+> *routing through* it rather than *drafting it into being*. The tile renderer, fog, snapping
+> invariant, camera, and multi-floor structure all survive the change; only the room-selection draft
+> is discarded. The exit-layout and tile-snapping material below remains accurate and load-bearing.
 
 The dungeon is a **grid of tiles**. Tiles are not pre-generated and then explored — they are **chosen as Pip moves**, giving the player agency over what they face.
 
@@ -122,6 +131,11 @@ Each room type has a distinct **colour-coded border** and tints the room's wall 
 ---
 
 ## Dungeon Structure
+
+> **Extended by [`run-architecture.md`](run-architecture.md).** Run-level structure — the four-layer
+> floor model, floor shapes, the 10–30 minute pacing contract, floor count as a per-biome variable,
+> in-run and cross-meta scaling, and living-floor mechanics — is owned by that document. The end-trigger
+> and depth-weighting notes below remain valid.
 
 A floor ends when an **end trigger** is reached. The most common is a **Boss room**, but other triggers are possible — a particular depth, a specific tile combination, an NPC quest resolution, or a timed pressure mechanic. Boss rooms are the primary end trigger but not the only one.
 

@@ -180,3 +180,102 @@ decisions across multiple rooms rather than in a single combat. Unlike poison (w
 acquired), Cold is primarily environmental — a reason to route through shelter rather than the
 fastest path. Risk: requires the status system (currently Rattled/Emboldened) to support a
 persistent between-room effect; spec alongside or after feature 037 (Combat Overhaul).
+
+---
+
+## Idea 058 — Branching Authored-Procedural Floors
+
+**Area:** System / Flow
+**Inspiration:** Manager — "remove player tile selection entirely; pre-design the floor on entry."
+Developed (and pushed back on) in `docs/concept/run-architecture.md`.
+
+Replace the room-drafting mechanic (shipped feature 004) with floors generated **complete and hidden
+under fog** before Pip enters. The player's agency moves from *drafting tiles into being* to *routing
+through a place that already exists* — choosing branches, spurs, and shortcuts read through fog. Keep
+the renderer, fog, snapping invariant, camera, and multi-floor structure; discard only the
+room-selection card UI and on-choice placement. The floor is generated in four layers — shape × beat
+skeleton × population × motif — mirroring the four-layer tile model one level up. Risk: if floors are
+authored *linear*, navigation becomes a passive corridor; floors **must branch** so navigation stays a
+renewable decision. This is the foundational change the rest of the run-architecture ideas build on.
+
+---
+
+## Idea 059 — Floor Shape Catalogue
+
+**Area:** System / Art
+**Inspiration:** Manager — "long floors, wide floors, winding floors, floors that spiral to a boss,
+architecturally logical floors." `docs/concept/run-architecture.md`.
+
+A catalogue of macro floor topologies, each with a distinct feel and pacing implication: Gauntlet
+(forced march), Spiral (winds to a climax you can glimpse), Warren (dense maze of dead-ends), Hub
+(central chamber + optional spokes), Long Hall (wide, patrolled sightlines), Split Level (verticality,
+one-way drops), and **The Logical Place** (generated from a *semantic blueprint* — gatehouse → hall →
+storerooms → throne — where a room's *purpose* is itself foreshadowing). Shapes are weighted by depth,
+biome, and boss motif, never uniform-random. Risk: each shape needs its own snapping-safe layout
+generator; recommend shipping two or three shapes first (Gauntlet + Hub + Spiral) and growing the set.
+
+---
+
+## Idea 060 — Roaming Enemies & Floor Sources (Spawners)
+
+**Area:** System
+**Inspiration:** Manager — "roaming enemies from the start… a mother spider who sends out little
+minions across the map until we kill the source." `docs/concept/run-architecture.md`.
+
+Two linked mechanics the authored floor unlocks. **Roamers** occupy and move across the floor map
+(tick-based on Pip's movement, partially visible through fog), turning navigation into avoid-or-engage;
+catching Pip from behind opens combat at a disadvantage (a home for Rattled), and squeeze routes let
+Pip evade what can't follow. **Sources** are fixed tiles (nest, egg sac, shrine) that emit minions
+until destroyed — a pressure clock with a kill-switch that creates a real routing dilemma (detour to
+silence it, or race the exit and eat the brood) and doubles as boss foreshadowing (Mother Silk's
+spiderlings roam from floor 1). Risk: needs a brood cap so a dawdling player isn't swarmed unbounded,
+and a fog-telegraph radius tuned so avoidance is possible but not trivial.
+
+---
+
+## Idea 061 — The Dungeon Stirs (Soft Pacing Pressure)
+
+**Area:** Flow / System
+**Inspiration:** Thinker's own — the tension between branching loot (rewards thoroughness) and the
+10–30 minute contract (punishes it). `docs/concept/run-architecture.md`.
+
+A soft, escalating presence — *not* a timer — measured in **rooms entered**: the longer Pip lingers
+on a floor, the more it wakes up. Torches gutter and fog thickens; patrols quicken; a Source's
+brood-rate ticks up; the boss "stirs." It paces the run toward the time contract without a stopwatch,
+rewards decisiveness (a fast or stomping run *outruns* it entirely), and delivers tonally-correct dread
+("the dungeon is waking" instead of "hurry up"). Because it's measured in movement, it's fair to a slow
+*thinker* and only bites a slow *explorer*. Risk: must stay soft — most runs the player should never
+consciously feel it; only the room-vacuumer gets squeezed. Needs careful tuning of the escalation curve.
+
+---
+
+## Idea 062 — The Boss Motif (Runs Themed by Their Climax)
+
+**Area:** World / System / Art
+**Inspiration:** Manager — "sub-themed biomes based on who the boss is." Synthesises boss foreshadowing
+(Idea 011), tile/prop variety (008/009), roamers/Sources (060), and biomes.
+`docs/concept/run-architecture.md`.
+
+The boss (drawn at run start) becomes a run-wide **theme overlay** — layer 4 of the floor model — that
+biases props, archetype weights, floor shape, the living-floor mechanic, and foreshadowing hints. A run
+is no longer "the Dungeon" but *Mother Silk's* dungeon (webs, cocoons, spiderling Sources, a Warren) or
+*the Rat King's* (bones, banners, a Logical-Place fortress, guard patrols) — same biome palette, a
+different sub-theme each run. Makes the boss reveal land as fate, not a coin flip, and multiplies a
+biome's felt variety by its boss roster with **no new biome required** — the cheapest, highest-impact
+variety lever available. Risk: always-on motif may telegraph the boss too early; consider a curve that
+is faint on floor 1 and loud on floor 3.
+
+---
+
+## Idea 063 — On a Tear (Run-Scale Momentum State)
+
+**Area:** Character / Flow
+**Inspiration:** Manager — "numbers go up is fun"; the Thinker's "permission to stomp."
+The run-scale sibling of the per-fight Emboldened state. `docs/concept/run-architecture.md`.
+
+A run-level momentum state that makes the power fantasy *visible*. Consecutive clean clears build
+escalating swagger — faster kill animations, a louder battle log, a small mechanical sweetener — so a
+snowballing run *feels* dominant, not just statistically ahead. The counterpart to the design rule that
+the dungeon never rubber-bands within a run: when the player out-scales, the game leans into the blowout
+rather than hiding it. Risk: the mechanical sweetener must be cosmetic-leaning so it celebrates an
+already-won run without trivialising a close one; keep the power in the in-run item layer, not here.
