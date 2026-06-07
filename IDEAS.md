@@ -114,3 +114,68 @@ flavour — but it transforms the upgrade system from number management into som
 feels like Pip's history. Risk: requires a data model change (provenance string on die objects)
 and a workbench UI pass; worth deferring until after the base workbench is built, then
 retrofitting as a polish pass.
+
+---
+
+## Idea 054 — Destination Board (Camp Biome Selection)
+
+**Area:** UI / Meta
+**Inspiration:** Biome system concept; `docs/concept/biomes.md`
+
+A small hand-drawn map pinned to the wall of Pip's camp, near the dungeon arch. Initially shows
+only the dungeon entrance; new locations appear as crude sketches as Pip encounters and unlocks
+them via Marks of Descent. Tapping a location selects it as the run destination; the "Descend"
+CTA reflects the chosen location. The board is absent (or invisible) until the first biome
+unlock — it appears the first time a Mark triggers a new destination, making its appearance
+feel like a discovery. Risk: must read legibly as a tappable UI element on phone scale without
+dominating the camp screen's existing objects.
+
+---
+
+## Idea 055 — Biome-Keyed Marks of Descent
+
+**Area:** Meta / System
+**Inspiration:** Biome system concept; existing Marks of Descent framework in `docs/concept/meta-progression.md`
+
+A small parallel track of Marks that are biome-specific: "First Wildwood Boss Kill," "First Ancient
+Halls floor 3 reach," etc. These sit alongside the existing generic Marks (first boss kill, first
+floor 3) rather than replacing them. The biome-specific Marks unlock things that can only come from
+that environment — the Thorn Whip from the Wildwood, the Carved Staff from the Ancient Halls,
+the Shortbow from the Winter Fields — making each biome worth returning to for its own content
+expansion rather than just its scraps yield. Risk: the Mark list grows; needs careful scoping so
+early-meta players are not overwhelmed by locks they cannot yet see the purpose of.
+
+---
+
+## Idea 056 — The Larder as Scratch's Natural Domain
+
+**Area:** World / System
+**Inspiration:** Thinker's own; the observation that Scratch (already named in enemies-and-bosses.md)
+is described as "a feral tabby who fell into the dungeon one winter" — which makes him a dungeon
+creature by accident, not by nature.
+
+Reposition Scratch: he is the boss of the Larder biome, not a dungeon boss candidate. A cat in a
+pantry is at home — territorial, confident, playing before killing. A cat in a dungeon is a lost
+creature, and that framing (already in the doc: "lost, half-mad, completely unpredictable") fits
+well for the dungeon. But the Larder Scratch should be the opposite — unhurried, familiar with
+every shelf and corner, fighting on his own terms. The two appearances of Scratch (if both are
+eventually implemented) would feel like two different animals, which is the point: in the dungeon
+he's a chaos boss; in the larder he's a territorial one. No mechanical duplication required — they
+share a name and sprite; the boss pool handles the distinction.
+
+---
+
+## Idea 057 — Cold Status (Winter Fields Environmental Mechanic)
+
+**Area:** System / Flow
+**Inspiration:** Winter Fields biome concept; `docs/concept/biomes.md`
+
+A persistent status unique to the winter fields: **Cold**, acquired by breaking through ice,
+getting caught in wind exposure tiles, or certain enemy attacks. Cold drains 1 HP per room
+entered until resolved by either a warming item (new item type: "Charred Tinder," "Wool Wrap")
+or reaching a sheltered tile (Snowbank Room, Hedgerow Interior archetypes). It is the winter
+fields' answer to the Dungeon Adder's poison — a slow, creeping consequence that forces resource
+decisions across multiple rooms rather than in a single combat. Unlike poison (which is combat-
+acquired), Cold is primarily environmental — a reason to route through shelter rather than the
+fastest path. Risk: requires the status system (currently Rattled/Emboldened) to support a
+persistent between-room effect; spec alongside or after feature 037 (Combat Overhaul).
