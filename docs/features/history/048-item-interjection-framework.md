@@ -214,4 +214,77 @@ None. This item is **READY**.
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-07 · **PR:** #92
+
+### What was built
+
+The complete item interjection framework as specified:
+
+**Data model extensions (`src/satchel/types.ts`):**
+- `ItemWindow` type union — 9 values covering every fire-point in the turn loop and navigation
+- `window: ItemWindow` field on every `Item`
+- `luckyClass: boolean` field on every `Item`
+- `charges?: number` — depletes by 1 per use; item removed when 0 (no charged items yet, field ready for 049)
+- `passiveArmour?: number` — stub hook; auto-reduces incoming damage before HP applies (no items yet, ready for 049)
+- `deathPrevention?: boolean` — stub hook; fires at pipHp ≤ 0, sets HP to 1, consumes item (no items yet, ready for 049)
+
+**Catalog reclassification (`src/satchel/catalog.ts`):**
+- Lucky Acorn → `window: 'on-roll-luck'`, `luckyClass: true`
+- Crumb of Cheese, Wedge of Gouda → `window: 'post-damage'`, `luckyClass: false`
+- Smoke Pellet → `window: 'during-allocation'`, `luckyClass: false`
+- Glowstone Dust → `window: 'navigation'`, `luckyClass: false`
+
+**Item helpers (`src/satchel/items.ts`):**
+- `consumeItem(inventory, itemId)` — depletes charges if present, else consumes whole item; removes when depleted
+- `applyPassiveArmour(incomingDamage, inventory)` — sums passiveArmour values; floors result at 0
+- `applyDeathPrevention(pipHp, inventory)` — sets HP to 1, consumes first deathPrevention item when HP ≤ 0
+
+**Combat Luck gating (`src/combat/types.ts`, `src/combat/panel.ts`, `src/combat/combat-panel.ts`):**
+- `pipsSpentThisTurn: boolean` added to `CombatState`; reset false on every roll, set true on every pip-spend action (Strike, Reserve, Analyse, Exploit, Resist, Identify, Convert, LuckyShot, Shove, Feint, Disengage)
+- `getCombatUsableItems(inventory, pipsSpentThisTurn)` — exported helper; filters `usableInCombat` items; excludes Luck items once pips spent
+- Luck items rendered greyed (α = 0.38, muted border) and no hit rect registered when locked by pipsSpentThisTurn
+
+**Luck interrupt — trap encounter (`src/encounter/trap-panel.ts`, `src/screens/game.ts`):**
+- `TrapPanelContext` extended with `getInventory` / `setInventory`
+- `'luck-prompt'` panel state added to the state machine
+- On failed roll: checks for first luckyClass item; if found, enters luck-prompt before damage applies
+- [Use]: consumes item via `consumeItem`, reruns roll, evaluates new result normally; no re-prompt on second fail
+- [Pass] / auto-dismiss (3 000 ms): original failure consequence applies unchanged
+- Amber sub-panel overlay (border `--room-chest`): item name, "Reroll?" label, [Use] amber CTA, [Pass] muted, draining timer bar
+- All other panel inputs locked while prompt visible
+- Layout constants exported (`LUCK_BTN_X/W`, `LUCK_USE_BTN_Y/H`, `LUCK_PASS_BTN_Y/H`) so tests and render share the same source of truth
+
+### Evidence
+
+**Tests:** 449 tests pass across 23 test files (33 new tests for this feature):
+
+- `src/satchel/catalog.test.ts` (new) — window tag for all 5 items; luckyClass for all 5 items; every item has both fields
+- `src/combat/panel.test.ts` (new) — `getCombatUsableItems`: all items when pipsSpent=false; excludes Luck when pipsSpent=true; empty when only Luck and spent; includes Luck when unspent; excludes nav-only items
+- `src/encounter/trap-panel.test.ts` (extended) — no prompt on pass; no prompt without Luck items; prompt fires on fail+Luck; [Pass] applies failure; auto-dismiss at 3 s; [Use] on passing reroll; [Use] on failing reroll; item consumed after [Use]
+
+**Type-check:** `npm run typecheck` — clean.
+**Build:** `npm run build` — clean.
+**init.sh:** full pass before and after implementation.
+
+**Inline Reviewer:** Ran `code-review --effort high` on the diff. All 6 candidates REFUTED — no confirmed or plausible findings.
+
+### Play-test instructions
+
+1. **Luck interrupt — trap encounter**
+   a. Start a run. Carry a **Lucky Acorn** (acquire from an item room).
+   b. Enter a trap tile. When the agility roll fires, deliberately aim for a fail (allow the roll to resolve with insufficient green pips).
+   c. On failure: the amber Luck prompt should appear over the lower panel — Lucky Acorn name, "Reroll?" label, [Use] and [Pass] buttons, draining timer bar.
+   d. Tap **[Use]**: the dice reroll. If the new roll passes, the trap is avoided; if it fails, damage lands (no second prompt).
+   e. Repeat: let the 3-second timer run out without tapping — confirm failure damage applies exactly as it would without the framework.
+   f. Repeat: tap **[Pass]** — confirm failure damage applies immediately.
+   g. After using [Use]: open the Satchel and confirm the Lucky Acorn is gone.
+
+2. **Luck item grey-out in combat**
+   a. Enter a combat encounter. Open the ITEM menu after rolling.
+   b. With the Lucky Acorn in the satchel and **no pips spent**, confirm it appears normally (full opacity, tappable).
+   c. Spend a pip (e.g. Strike or Reserve). Re-open ITEM — confirm Lucky Acorn is greyed out and tapping it has no effect.
+   d. Begin the next turn (new roll). Confirm Lucky Acorn is available again before any pips are spent.
+
+3. **consumeItem charges path** — no charged items ship in 048; this path is covered by unit tests only.
+
+4. **passiveArmour / deathPrevention stubs** — no items use these fields yet; covered by unit tests in `src/satchel/items.ts`.

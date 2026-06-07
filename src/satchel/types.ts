@@ -4,6 +4,17 @@ export type ItemEffect =
   | { type: 'flee-combat' }
   | { type: 'reveal-fog'; radius: number }
 
+export type ItemWindow =
+  | 'pre-roll'
+  | 'on-roll-luck'
+  | 'during-allocation'
+  | 'on-strike'
+  | 'post-spend-tenacity'
+  | 'on-enemy-hit'
+  | 'post-damage'
+  | 'between-turns'
+  | 'navigation'
+
 export interface Item {
   id: string
   name: string
@@ -15,6 +26,11 @@ export interface Item {
   usableInCombat: boolean
   effect: ItemEffect
   shopPrice?: number
+  window: ItemWindow
+  luckyClass: boolean
+  charges?: number
+  passiveArmour?: number
+  deathPrevention?: boolean
 }
 
 export interface Inventory {

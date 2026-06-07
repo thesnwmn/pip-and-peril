@@ -79,6 +79,7 @@ export interface CombatState {
   entryFrom: { col: number; row: number }  // tile Pip stepped in from (for Flee retreat)
   goldAwarded: number
   itemUsedThisTurn: boolean
+  pipsSpentThisTurn: boolean               // set when any pip-spend action fires; gates Luck items
   analysedThisCombat: boolean              // set by Analyse; persists until combat ends
   analysedThisTurn: boolean                // set when Analyse fires this turn; reset each turn
   identified: boolean                      // set by Identify (exact HP shown)

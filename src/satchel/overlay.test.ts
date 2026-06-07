@@ -321,8 +321,8 @@ describe('createSatchelOverlay — draw tabs', () => {
     const inventory: Inventory = {
       gold: 5,
       items: [
-        { id: 'cheese-1', name: 'Cheese', iconType: 'cheese', quantity: 1, description: 'Restores 2 HP.', kind: 'consumable', usableInNav: true, usableInCombat: true, effect: { type: 'heal', amount: 2 } },
-        { id: 'charm-1',  name: 'Charm',  iconType: 'charm',  quantity: 3, description: 'One free reroll.', kind: 'consumable', usableInNav: false, usableInCombat: true, effect: { type: 'reroll-dice' } },
+        { id: 'cheese-1', name: 'Cheese', iconType: 'cheese', quantity: 1, description: 'Restores 2 HP.', kind: 'consumable', usableInNav: true, usableInCombat: true, effect: { type: 'heal', amount: 2 }, window: 'post-damage' as const, luckyClass: false },
+        { id: 'charm-1',  name: 'Charm',  iconType: 'charm',  quantity: 3, description: 'One free reroll.', kind: 'consumable', usableInNav: false, usableInCombat: true, effect: { type: 'reroll-dice' }, window: 'on-roll-luck' as const, luckyClass: true },
       ],
     }
     overlay.open()

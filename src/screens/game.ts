@@ -183,6 +183,8 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
           getPool: () => dicePool,
           getPipHp: () => pipHp,
           setPipHp: (hp) => { pipHp = hp },
+          getInventory: () => inventory,
+          setInventory: (inv) => { inventory = inv },
           getDungeonState: () => state,
           setDungeonState: (s) => { state = s },
         },

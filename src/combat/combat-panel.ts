@@ -18,7 +18,7 @@ import {
   canFlee,
   rollGoldReward,
 } from './encounter'
-import { drawCombatBanner, drawCombatPanel, hitTest, type CatId } from './panel'
+import { drawCombatBanner, drawCombatPanel, getCombatUsableItems, hitTest, type CatId } from './panel'
 import { drawCombatOverlay } from './overlay'
 import type { Inventory, Item } from '../satchel/types'
 import type { DungeonState } from '../navigation/dungeon-state'
@@ -76,6 +76,7 @@ export function createCombatEncounterPanel(
     entryFrom,
     goldAwarded: 0,
     itemUsedThisTurn: false,
+    pipsSpentThisTurn: false,
     analysedThisCombat: false,
     analysedThisTurn: false,
     identified: false,
@@ -160,7 +161,7 @@ export function createCombatEncounterPanel(
 
     if (combat.phase === 'awaiting-roll') {
       // First roll: start player turn.
-      combat = { ...combat, phase: 'player-turn', itemUsedThisTurn: false, analysedThisTurn: false }
+      combat = { ...combat, phase: 'player-turn', itemUsedThisTurn: false, pipsSpentThisTurn: false, analysedThisTurn: false }
       startRoll()
       return
     }
@@ -172,7 +173,7 @@ export function createCombatEncounterPanel(
       const result = applyEnemyTurn(combat, prevHp)
       ctx.setPipHp(result.pipHp)
       // Return to awaiting-roll so the player sees the new intent before rolling again.
-      combat = { ...result.combat, phase: result.defeat ? 'defeat' : 'awaiting-roll', itemUsedThisTurn: false, analysedThisTurn: false }
+      combat = { ...result.combat, phase: result.defeat ? 'defeat' : 'awaiting-roll', itemUsedThisTurn: false, pipsSpentThisTurn: false, analysedThisTurn: false }
       openCategory = null
       fleePending = false
 
@@ -233,7 +234,7 @@ export function createCombatEncounterPanel(
     ctx.setPool(updated)
     const prevEnemyHp = combat.enemy.hp
     const result = heavy ? applyHeavyStrike(combat) : applyStrike(combat)
-    combat = result.combat
+    combat = { ...result.combat, pipsSpentThisTurn: true }
     if (result.victory) {
       const goldEarned = rollGoldReward(combat.enemy)
       ctx.setInventory({ ...ctx.getInventory(), gold: ctx.getInventory().gold + goldEarned })
@@ -248,7 +249,7 @@ export function createCombatEncounterPanel(
     if (!canAfford(ctx.getPool(), { green: 1 })) { flash('sub-reserve'); return }
     const { pool: updated } = spendPips(ctx.getPool(), { green: 1 })
     ctx.setPool(updated)
-    combat = { ...combat, reservedGreen: combat.reservedGreen + 1 }
+    combat = { ...combat, reservedGreen: combat.reservedGreen + 1, pipsSpentThisTurn: true }
   }
 
   function handleClearReserve(): void {
@@ -264,7 +265,7 @@ export function createCombatEncounterPanel(
     if (combat.analysedThisTurn) { flash('sub-analyse'); return }
     const { pool: updated } = spendPips(ctx.getPool(), { blue: 2 })
     ctx.setPool(updated)
-    combat = applyAnalyse(combat)
+    combat = { ...applyAnalyse(combat), pipsSpentThisTurn: true }
   }
 
   function handleExploit(): void {
@@ -273,7 +274,7 @@ export function createCombatEncounterPanel(
     const { pool: updated } = spendPips(ctx.getPool(), { blue: 4 })
     ctx.setPool(updated)
     const result = applyExploit(combat)
-    combat = result.combat
+    combat = { ...result.combat, pipsSpentThisTurn: true }
     if (result.victory) {
       const goldEarned = rollGoldReward(combat.enemy)
       ctx.setInventory({ ...ctx.getInventory(), gold: ctx.getInventory().gold + goldEarned })
@@ -289,7 +290,7 @@ export function createCombatEncounterPanel(
     if (combat.pipPoison === null) { flash('sub-resist'); return }
     const { pool: updated } = spendPips(ctx.getPool(), { blue: 3 })
     ctx.setPool(updated)
-    combat = applyResist(combat)
+    combat = { ...applyResist(combat), pipsSpentThisTurn: true }
   }
 
   function handleIdentify(): void {
@@ -297,14 +298,14 @@ export function createCombatEncounterPanel(
     if (combat.identified) { flash('sub-identify'); return }
     const { pool: updated } = spendPips(ctx.getPool(), { blue: 1 })
     ctx.setPool(updated)
-    combat = applyIdentify(combat)
+    combat = { ...applyIdentify(combat), pipsSpentThisTurn: true }
   }
 
   function handleConvert(): void {
     if (!canAfford(ctx.getPool(), { yellow: 3 })) { flash('sub-convert'); return }
     const { pool: updated } = spendPips(ctx.getPool(), { yellow: 3 })
     ctx.setPool(updated)
-    combat = applyConvert(combat, 'red')
+    combat = { ...applyConvert(combat, 'red'), pipsSpentThisTurn: true }
   }
 
   function handleLuckyShot(): void {
@@ -312,7 +313,7 @@ export function createCombatEncounterPanel(
     const { pool: updated } = spendPips(ctx.getPool(), { yellow: 4 })
     ctx.setPool(updated)
     const result = applyLuckyShot(combat)
-    combat = result.combat
+    combat = { ...result.combat, pipsSpentThisTurn: true }
     if (result.victory) {
       const goldEarned = rollGoldReward(combat.enemy)
       ctx.setInventory({ ...ctx.getInventory(), gold: ctx.getInventory().gold + goldEarned })
@@ -346,6 +347,7 @@ export function createCombatEncounterPanel(
 
   function handleItem(item: Item): void {
     if (combat.itemUsedThisTurn) return
+    if (item.luckyClass && combat.pipsSpentThisTurn) return
     const inventory = ctx.getInventory()
     const prevHp = ctx.getPipHp()
     const ds = ctx.getDungeonState()
@@ -545,7 +547,8 @@ export function createCombatEncounterPanel(
       return
     }
     if (id === 'cat-item') {
-      if (!ctx.getInventory().items.some(i => i.usableInCombat) || combat.itemUsedThisTurn) {
+      const usableItems = getCombatUsableItems(ctx.getInventory(), combat.pipsSpentThisTurn)
+      if (usableItems.length === 0 || combat.itemUsedThisTurn) {
         flash('cat-item'); return
       }
       openCategory = openCategory === 'item' ? null : 'item'
