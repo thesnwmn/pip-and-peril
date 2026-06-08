@@ -41,6 +41,8 @@ code; the Designer writes those.
 > **064** → backlog **064** (Gates & Keys).
 > Biomes Ancient Halls / Wildwood / Larder / Winter Fields → backlog **084–087** (no prior idea
 > numbers; concept in `docs/concept/biomes.md`).
+> **Designer session 2026-06-08:** **070** (Unified Check Model) + **071** (NPC Social Checks) →
+> feature **028** (NPC Encounter); both folded into the unified check panel spec.
 
 ---
 
@@ -246,41 +248,6 @@ architecture become one — plugging straight into the boss motif and The Logica
 run-architecture. Turns three floors in a row into one descent with a shape. Risk: cross-floor state +
 the player needing to *know* the objective exists (seed via the notice board 053 or an NPC); a later
 piece, after Tier-1 gates and the boss motif.
-
----
-
-## Idea 070 — The Unified Check Model
-
-**Area:** System / Dice
-**Inspiration:** Manager — "where could dice be used in the game today if they're not already…
-D&D-style skill checks." `docs/concept/dice-checks.md`.
-
-One reusable machine for *every* non-combat dice moment, so checks feel like the same game as combat
-rather than a pile of mini-games: **one roll of Pip's existing pool, against a stated bar, where the
-player picks the *approach* (colour), sees the stakes before committing, and a near-miss fails
-*forward***. Colours keep their combat identities re-expressed as approaches — 🔴 Force/intimidate,
-🟢 Speed/slip, 🔵 Mind/reason-or-pick, 🟡 Fortune/charm — so charm needs no new stat. Results land in
-three bands (Success / Success-at-a-cost / Failure, with a Critical flourish), and every check is paid
-in the existing currencies (pips/risk/time/HP). Most checks offer 2–3 approaches so no build is ever
-bricked. Risk: over-rolling — a check earns its roll only when *both* outcomes matter. The Designer
-should generalise the shipped Chest check (026) into this one panel, starting with NPC checks (028).
-
----
-
-## Idea 071 — NPC Social Checks (Charm / Intimidate / Reason / Slip)
-
-**Area:** Flow / World / Dice
-**Inspiration:** Manager — "an NPC conversation could rely on charm/persuasion to open favourable
-options or a different path, or they turn nasty and a fight starts if you fail."
-`docs/concept/dice-checks.md`. Folds into feature 028.
-
-A check *inside* dialogue: when a response calls for it, the player picks an approach colour to
-persuade, intimidate, charm, or deceive an NPC. Success opens a favourable branch (discount, hint,
-shortcut, reward); success-at-a-cost opens it with friction the NPC remembers; failure closes the
-favourable branch. **Pushback on the manager's framing:** combat-on-failure should be the rare,
-loudly-signposted exception (the panel says "if you fail, he attacks" *before* you choose), not the
-default — if talking routinely risks a fight, players avoid the blue rooms, which is backwards. Risk:
-keep hostile-on-failure NPCs a small, telegraphed subset so NPCs stay inviting.
 
 ---
 

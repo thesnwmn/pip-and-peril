@@ -40,6 +40,19 @@ See `docs/features/024-run-summary-screen.md` for the full spec.
 
 ---
 
+### 028 · NPC Encounter
+
+The blue **NPC**: dialogue-first, the inverse of combat — text and choices primary, with branching
+choices and a dice check appearing *inside* the dialogue when a response calls for one (check-gated
+responses with rewards/consequences). Delivers hints, small rewards, and world voice; completes the
+encounter-type set. Introduces the **unified check panel** (one roll, approach colour, three-band
+fail-forward) as a reusable module; folds in Ideas 070 and 071.
+**Depends on:** 005 (dice for checks), 004 (entry trigger), 030 (encounter panel), 034 (encounter
+registry), 048 (Luck interrupt on failed checks).
+See `docs/features/028-npc-encounter.md` for the full spec.
+
+---
+
 ## NEEDS SPEC
 
 > **Planner note (2026-06-07):** Three principles govern the sequence below.
@@ -51,16 +64,6 @@ See `docs/features/024-run-summary-screen.md` for the full spec.
 > 058 (authored-procedural floors) — a biome's architectural identity (floor shapes, roaming
 > enemies, boss motif) only lands when the floor is pre-authored. Building biome content on the
 > current drafting model would require full rework.
-
-### 028 · NPC Encounter
-
-The blue **NPC**: dialogue-first, the inverse of combat — text and choices primary, with branching
-choices and a dice check appearing *inside* the dialogue when a response calls for one (check-gated
-responses with rewards/consequences). Delivers hints, small rewards, and world voice; completes the
-encounter-type set. The Designer should fold in Idea 070 (Unified Check Model) so NPC checks use
-the same one-roll, approach-colour, fail-forward mechanic as chest checks (026) — spec it here
-rather than as a separate feature to avoid a later unification rework.
-**Depends on:** 005 (dice for checks), 004 (entry trigger), 030 (encounter panel).
 
 ### 029 · Meta-Progression: Shiny Scraps & Dice Upgrades
 
