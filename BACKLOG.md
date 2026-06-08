@@ -42,68 +42,215 @@ See `docs/features/024-run-summary-screen.md` for the full spec.
 
 ## NEEDS SPEC
 
-> **Recommended build order (dependency-respecting):** 037 → 046 → 038 → 028 → 029. 037 and
-> 046 are in READY above; 038 is now also READY. The non-combat encounters (025, 026, 027) and
-> dungeon structure (022) proceeded in parallel and are in READY above. 023 (boss) is READY above.
-> The Planner sets final priority; *Depends on* notes carry the real ordering constraints.
->
-> Everything touching gold or items depends on **016 · Pip's Satchel** (the inventory/currency data
-> model) and **020 · Item System** — both already shipped. *(Item 036 · Raw Flee has been folded
-> into 037, which now owns the Flee action as part of the redesigned panel.)*
+> **Planner note (2026-06-07):** Three principles govern the sequence below.
+> **Meta first:** 028–052 deliver the NPC encounter and the full outer loop (camp, visitors,
+> marks, notice board) with no dependency on floor architecture — build these before touching
+> how floors are generated. **Art before the rewrite:** 041, 081, and 082 touch only the combat
+> layer and renderer, which survive the authored-floors change intact; these are quick wins that
+> avoid merging against a major rewrite. **Biomes after authored floors:** 084–087 ship *after*
+> 058 (authored-procedural floors) — a biome's architectural identity (floor shapes, roaming
+> enemies, boss motif) only lands when the floor is pre-authored. Building biome content on the
+> current drafting model would require full rework.
 
 ### 028 · NPC Encounter
 
 The blue **NPC**: dialogue-first, the inverse of combat — text and choices primary, with branching
 choices and a dice check appearing *inside* the dialogue when a response calls for one (check-gated
 responses with rewards/consequences). Delivers hints, small rewards, and world voice; completes the
-encounter-type set.
+encounter-type set. The Designer should fold in Idea 070 (Unified Check Model) so NPC checks use
+the same one-roll, approach-colour, fail-forward mechanic as chest checks (026) — spec it here
+rather than as a separate feature to avoid a later unification rework.
 **Depends on:** 005 (dice for checks), 004 (entry trigger), 030 (encounter panel).
 
 ### 029 · Meta-Progression: Shiny Scraps & Dice Upgrades
 
 The between-runs loop and the roguelike pillar's payoff: a run awards **shiny scraps** (persisted
-across runs), spent in a cool parchment **camp/hub** to earn and persist scraps, upgrade the dice
-pool (swap d6→d8, add dice), engrave faces, and unlock passive skills. Dice upgrades are a choice of
-**risk profile**, not just bigger numbers — d4 consistent, d8 volatile, d10/d12 spikey — so swapping
-a die or adding one is a strategic identity choice, and engraving (locking a face) tames variance.
-Turns a single completable run into a reason to play again. **Deferrable:** the in-run loop is
-complete without it; include when the manager wants the outer loop closed.
+across runs), spent in a warm parchment **camp/hub** at the workbench — swap dice for higher-risk
+face counts, add dice, or engrave a face to tame variance. Choosing a weapon from the rack is the
+last decision before descending; the pool preview shows exactly what Pip brings in. Turns a single
+completable run into a reason to play again.
 **Depends on:** 024 (scraps awarded at run end), 019/016 (currency model + persistence).
 *(Absorbs Idea 042 · Die Type Risk Profiles.)*
-**Related:** `docs/concept/overview.md` (Meta Progression), `docs/concept/screen-layout-and-transitions.md`
-(Meta-Progression Hub direction sketch), `docs/concept/meta-progression.md` (full direction).
+**Related:** `docs/concept/meta-progression.md` (full direction).
 
-### 052 · Marks of Descent
+### 053 · Dungeon Notice Board
 
-Milestone tokens earned from specific firsts and achievements — first boss kill, first floor 3 reach,
-first full run without healing, and similar. Marks unlock **content rather than power**: new weapons
-appear on the rack, skill scrolls arrive, new visitor types become possible. The achievement gate
-means players cannot bypass meaningful unlocks by grinding scraps. Locked slots are visible but
-unrevealing; a light "show unlock condition" affordance addresses frustration without spoiling
-discovery.
-**Depends on:** 029 (camp hub), 024 (run summary — marks awarded at run end).
+Two generated notices pinned to the camp wall before each run, assembled from weighted templates
+(enemy activity reports, merchant sightings, atmospheric warnings, past-run echoes). Primes each
+run's feel and makes successive descents feel distinct before the first tile is placed. Ships first
+as pure flavour text; notices can be wired to actual run parameters incrementally after.
+**Depends on:** 029 (camp hub).
 **Related:** `docs/concept/meta-progression.md`.
 
 ### 051 · Visitor System
 
-Procedurally generated visitors arrive at Pip's camp between runs (0–2, rarely 3). Each visitor is
-assembled from a **type** (Tinker, Scout, Scholar, Trader, Wounded Traveller, Trickster — each with
-a distinct offer pool) × **condition** (situational flavour line) × **offer**. Interaction is one
-panel, one tap-and-confirm. Relationship counters on recurring visitors produce named regulars over
-time, delivering Hades-style story texture without authored dialogue. Interaction must stay under
-~10 seconds or the camp bloats beyond its purpose.
+Procedurally generated visitors arrive at Pip's camp between runs (0–2, rarely 3), assembled from
+**type** (Tinker, Scout, Scholar, Trader, Wounded Traveller, Trickster) × **condition** (flavour
+line) × **offer**. One tap-and-confirm interaction. Relationship counters on recurring visitors
+produce named regulars over time — Hades-style story texture without authored dialogue.
 **Depends on:** 029 (camp hub).
 **Related:** `docs/concept/meta-progression.md`.
 
-### 053 · Dungeon Notice Board
+### 052 · Marks of Descent
 
-Two generated notices shown in the camp before each run, assembled from weighted templates (enemy
-activity reports, merchant sightings, atmospheric warnings, past-run echoes). Primes each run's feel
-and makes successive descents feel distinct before the first tile is placed. **Ships first as pure
-flavour text**; individual notices can be wired to actual run parameters (enemy weighting, shop
-guarantee, boss state) incrementally after.
-**Depends on:** 029 (camp hub).
+Milestone tokens earned from specific firsts and achievements — first boss kill, first floor 3
+reach, first full run without healing, and similar. Marks unlock **content rather than power**: new
+weapons appear on the rack, skill scrolls arrive, new visitor types become possible. Locked slots
+are visible but unrevealing; a light "show unlock condition" affordance addresses frustration
+without spoiling discovery.
+**Depends on:** 029 (camp hub), 024 (run summary — marks awarded at run end).
 **Related:** `docs/concept/meta-progression.md`.
+
+---
+
+### 041 · Rattled / Emboldened Combat States
+
+Transient per-fight modifiers that give combat texture and momentum without permanent complexity.
+**Rattled** triggers when Pip takes damage on two consecutive turns without landing a hit — one die
+locks to its minimum face until Pip lands an attack. **Emboldened** triggers on a killing blow — the
+next combat starts with one free virtual Yellow pip on the first roll. Both clear naturally and hook
+into items and meta skills.
+**Depends on:** 037 (Combat Overhaul — turn loop).
+
+### 081 · Interior Tile Archetypes
+
+Add the missing interior-shape layer to the tile model: Chamber (current default), Passage (floor
+only between connecting exits), Cavern (rough, narrow, rubble-edged), Pillared Hall, and
+Rubble / Collapse. Pure visual additions to the `drawCell()` renderer; exit positions and the
+snapping invariant are unchanged. Ships as skin before any rule changes.
+**Depends on:** 003 (Tile Map Core — renderer).
+*(Promotes Idea 008.)*
+
+### 082 · Prop Layer
+
+A draw pass that scatters small atmospheric objects over finished tiles from a weighted, anchor-
+zoned set: wall torches (with a soft light tint), rubble, bones, glowing mushrooms, cobwebs, coin
+glints. Props use wall-band and floor-corner anchors, cap at ~3 per tile, and never cover a
+doorway. Pure atmosphere; no mechanics changed.
+**Depends on:** 003 (Tile Map Core — renderer), 081 (Interior Tile Archetypes — archetype shapes
+inform valid anchor positions).
+*(Promotes Idea 009.)*
+
+---
+
+### 058 · Authored-Procedural Floors
+
+Replace player tile-drafting (feature 004) with floors generated complete and hidden under fog
+before Pip enters — navigational agency moves from *conjuring tiles* to *choosing routes through a
+real place*. The renderer, fog, snapping invariant, camera, and multi-floor structure are unchanged;
+only the room-selection card UI and on-choice placement logic retire. **Large item** — the Designer
+should consider splitting: floor-generator core, shape-template population, fog/entry migration,
+NPC and roamer positioning hooks. All biome architecture, floor objectives, and roaming enemies
+depend on this foundation.
+**Depends on:** 022 (multi-floor structure), 003 (renderer).
+*(Promotes Idea 058; see `docs/concept/run-architecture.md` for full direction.)*
+
+### 059 · Floor Shape Catalogue
+
+A starting set of macro floor topologies — Gauntlet (linear march), Spiral (winds to a climax),
+Warren (tangle of dead-ends), Hub / Wheel (central chamber + spokes), Long Hall (patrolled
+sightlines), Split Level (vertical strata), and The Logical Place (semantic blueprint:
+antechamber → hall → storerooms → throne). Shapes are weighted by floor depth, biome, and boss
+motif. Recommend shipping Gauntlet + Hub + Spiral first and growing the set.
+**Depends on:** 058 (Authored-Procedural Floors).
+*(Promotes Idea 059; see `docs/concept/run-architecture.md`.)*
+
+### 061 · Dungeon Stirs
+
+A soft, escalating presence measured in rooms entered, not real time: the longer Pip lingers the
+more the floor wakes — torches gutter and fog thickens, patrols quicken, spawner brood-rate ticks
+up, the boss "stirs." Paces runs toward the 10–30 minute contract without a hard timer; rewards
+decisiveness; delivers tonally-correct dread. The escalation curve should be tuned so most runs
+never consciously feel the pressure.
+**Depends on:** 058 (Authored-Procedural Floors — the stir wakes a pre-existing floor).
+*(Promotes Idea 061; see `docs/concept/run-architecture.md`.)*
+
+### 083 · Squeeze Tiles (Pip-Only Shortcuts)
+
+Mouse-hole-width passages that only Pip can navigate — shortcuts or secret routes that larger
+enemies cannot follow, turning Pip's smallness into traversable geography. Most valuable once
+roaming enemies patrol (060) and in biomes like the Wildwood where squeeze-width exits are the
+architectural norm. Ships as a visual and navigation primitive; the "roamers cannot follow" rule
+wires up with 060.
+**Depends on:** 058 (Authored-Procedural Floors — floor must pre-exist for positioning to matter).
+*(Promotes Idea 010.)*
+
+### 060 · Roaming Enemies & Sources (Spawners)
+
+Two linked mechanics the authored floor unlocks: **Roamers** occupy and patrol the map tick-by-step
+with Pip, turning navigation into avoid-or-engage decisions (catching Pip from behind opens combat
+Rattled; squeeze routes let Pip slip past what can't follow). **Sources** (nests, egg sacs,
+corrupted shrines) periodically emit minions until destroyed — a pressure clock with a kill-switch
+that creates a genuine routing dilemma: detour to silence it, or race the exit.
+**Depends on:** 058 (Authored-Procedural Floors), 041 (Rattled — disadvantaged-start state).
+*(Promotes Idea 060; see `docs/concept/run-architecture.md`.)*
+
+### 064 · Gates & Keys
+
+Navigation gates (locked doors, barred passages, sealed grates) opened by one of three keys: a
+**dice check** (Blue picks, Red forces), a **found key** (item from a chest or spur), or **Pip's
+size** (a mouse-hole bypass via squeeze tiles). Gate machinery reuses the locked-chest logic from
+026/048 applied at a doorway. Gates guard optional spurs by default; the rare mandatory gate is
+guaranteed solvable.
+**Depends on:** 058 (Authored-Procedural Floors — stable topology required), 026 (chest lock
+mechanic), 083 (Squeeze Tiles — mouse-hole bypass).
+*(Promotes Idea 064; see `docs/concept/floor-objectives.md`.)*
+
+---
+
+### 054 · Destination Board (Camp Biome Selection)
+
+A hand-drawn map pinned to the camp wall that materialises when the first biome-unlock visitor
+arrives — not as an empty UI waiting to be filled, but as a consequence of discovery. New locations
+are added as crude sketches by subsequent unlock visitors. Tapping a location selects the run
+destination; biome availability gates through Marks of Descent invisibly.
+**Depends on:** 029 (camp screen), 051 (visitor system), 084 (first biome in play).
+*(Promotes Idea 054; see `docs/concept/biomes.md`.)*
+
+### 084 · Biome: Ancient Halls
+
+The first biome beyond the dungeon — crumbled stone ruins, phosphorescent moss, flooded chambers,
+and open vaults open to a night sky. Closest to the dungeon's tile grammar: recommended first for
+the Engineer. New archetypes: Flooded Chamber, Open Vault, Inscription Panel (🔵 check for hints),
+Column Rubble. New enemies: Stone Mite, Mould Bat, Ancient Beetle, Ghost Moth (pip-drain), Ruin
+Adder, Tomb Warden. Boss candidates: The Stone Warden, Lord Musk. Blue-leaning reward pool; rare
+unlock: the **Carved Staff**. Unlock via Scholar visitor (Marks gate: first floor-3 reach).
+**Depends on:** 058 (Authored-Procedural Floors), 029, 051, 052.
+*(See `docs/concept/biomes.md` — Ancient Halls section.)*
+
+### 085 · Biome: Wildwood
+
+An English garden gone wild — living bramble-walls, dappled light shafts, gaps-in-undergrowth as
+exits. Green-leaning: stream fords (🟢), web rooms (🟢 to thread through), agility-heavy traps.
+New enemies: Woodlouse, Field Vole, Garden Spider, Centipede, Grass Snake, Hornet (alarm-trigger),
+Stoat (Red Phase). Boss candidates: The Hornet Queen, Barnabus the Badger. Rare unlock: the
+**Thorn Whip** weapon (Green dice instead of Red). Unlock via Scout visitor (Marks gate: first boss
+kill in any biome).
+**Depends on:** 058, 029, 051, 052.
+*(See `docs/concept/biomes.md` — Wildwood section.)*
+
+### 086 · Biome: Larder
+
+A human pantry at mouse-scale — wooden floorboards, gnawed exits, glass jars as rooms, a
+mousetrap in plain sight. Red and Yellow-leaning. New archetypes: Jar Room, Shelf Ledge, Trap Floor
+(disarm or route around). New enemies: House Mouse Rival, Grain Weevil, Domestic Rat, Cockroach,
+Cat Scout. Boss: Scratch the Cat (or The Warder). Rare unlock: the **Cooking Needle** weapon.
+Unlock via Wounded Traveller visitor (Marks gate: help a domestic mouse NPC in any run).
+**Depends on:** 058, 029, 051, 052.
+*(See `docs/concept/biomes.md` — Larder section.)*
+
+### 087 · Biome: Winter Fields
+
+Open sky, exposed ground, and a **Cold status** (acquired from broken ice, wind-exposure tiles, or
+enemy attacks) that drains 1 HP per room until resolved by a warming item or a sheltered tile.
+Yellow-leaning. New archetypes: Snowbank Room, Frozen Stream, Exposed Clearing (hawk-event),
+Wind Exposure. New enemies: Winter Shrew, Rabbit (Juvenile), Winter Stoat (tier-2 in its element),
+Fieldfare, Hungry Robin, Fox Cub. Boss candidates: The Silent Hunter (barn owl), Mara the Winter
+Fox. Rare unlock: the **Shortbow** (Yellow dice, bypasses some Guard). Unlock via weathered Scout
+(Marks gate: first Wildwood boss kill).
+**Depends on:** 058, 029, 051, 052, 085 (Wildwood boss kill — Marks gate).
+*(See `docs/concept/biomes.md` — Winter Fields section. Cold status mechanic may warrant a
+sub-spec; see also Idea 057.)*
 
 ---
 
