@@ -261,11 +261,12 @@ export function createCheckPanel(
         drawDieFace(ctx, centres[i], die, value, chosen)
       })
 
-      // Roll button
-      ctx.font = '18px monospace'
-      ctx.fillStyle = colors.textPrimary
+      // Roll button background
       ctx.fillStyle = 'rgba(200, 180, 150, 0.2)'
       ctx.fillRect(hitZones.roll.x, hitZones.roll.y, hitZones.roll.w, hitZones.roll.h)
+
+      // Roll button text
+      ctx.font = '18px monospace'
       ctx.fillStyle = colors.textPrimary
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'

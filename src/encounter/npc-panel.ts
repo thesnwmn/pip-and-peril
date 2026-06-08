@@ -62,13 +62,13 @@ export function createNpcEncounterPanel(
     throw new Error(`Unknown NPC type: ${npcType}`)
   }
 
-  let phase: PanelPhase = 'dialogue'
+  let phase: PanelPhase = cell.npcState === 'completed' ? 'dismissal' : 'dialogue'
   let currentNodeId = script.rootNode
   let completed = false
   let checkPanel: ReturnType<typeof createCheckPanel> | null = null
   let activeReward: ActiveReward | null = null
   let rewardStartTime: DOMHighResTimeStamp | null = null
-  let dismissalTime: DOMHighResTimeStamp | null = null
+  let dismissalTime: DOMHighResTimeStamp | null = cell.npcState === 'completed' ? performance.now() : null
   let hoveredButton: number | null = null
 
   function signalComplete(outcome: string): void {
@@ -138,6 +138,7 @@ export function createNpcEncounterPanel(
 
     if (nextNodeId) {
       // Handle reward
+      activeReward = null
       if (band === 'critical' && response.reward) {
         const baseReward = response.reward
         if (response.check?.critBonus) {
@@ -166,21 +167,20 @@ export function createNpcEncounterPanel(
     if (!activeReward) return
 
     const reward = activeReward
-    const inv = context.getInventory()
-    let newInv = inv
+    let inv = context.getInventory()
 
     if (reward.gold) {
-      newInv = { ...newInv, gold: newInv.gold + reward.gold }
-      context.setInventory(newInv)
+      inv = { ...inv, gold: inv.gold + reward.gold }
     }
 
     if (reward.item) {
       const item = CATALOG_ITEMS.find(i => i.id === reward.item)
-      if (item && newInv.items.length < 6) {
-        acquireItem(newInv, item)
-        context.setInventory(newInv)
+      if (item && inv.items.length < 6) {
+        inv = acquireItem(inv, item)
       }
     }
+
+    context.setInventory(inv)
 
     if (reward.hint) {
       // TODO: wire up journal append when journal is ready
@@ -284,9 +284,12 @@ export function createNpcEncounterPanel(
         if (rewardStartTime && timestamp - rewardStartTime > 2000) {
           applyReward()
           if (cell.npcState === 'active') {
-            cell.npcState = 'completed'
             const state = context.getDungeonState()
-            context.setDungeonState(state)
+            const updatedCell = { ...cell, npcState: 'completed' as const }
+            const updatedGrid = state.grid.cells.map(row =>
+              row.map(c => c === cell ? updatedCell : c)
+            )
+            context.setDungeonState({ ...state, grid: { ...state.grid, cells: updatedGrid } })
           }
           signalComplete('completed')
         }
@@ -294,9 +297,12 @@ export function createNpcEncounterPanel(
         // No reward, just terminal
         applyReward()
         if (cell.npcState === 'active') {
-          cell.npcState = 'completed'
           const state = context.getDungeonState()
-          context.setDungeonState(state)
+          const updatedCell = { ...cell, npcState: 'completed' as const }
+          const updatedGrid = state.grid.cells.map(row =>
+            row.map(c => c === cell ? updatedCell : c)
+          )
+          context.setDungeonState({ ...state, grid: { ...state.grid, cells: updatedGrid } })
         }
         signalComplete('completed')
       }
