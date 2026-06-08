@@ -7,7 +7,7 @@ import { acquireItem } from '../satchel/items'
 import { NPC_SCRIPTS } from './npc-scripts'
 import { createCheckPanel, type CheckBand } from './check-panel'
 import { colors } from '../colors'
-import { PANEL_TOP, LOGICAL_W, LOGICAL_H, MAP_X, MAP_Y, MAP_W, TILE_SIZE, VIEWPORT_COLS, VIEWPORT_ROWS } from '../screens/game-layout'
+import { PANEL_TOP, LOGICAL_W, LOGICAL_H, MAP_X, MAP_W } from '../screens/game-layout'
 
 interface NpcPanelContext {
   getPool: () => DicePool
@@ -17,7 +17,7 @@ interface NpcPanelContext {
   setDungeonState: (s: import('../navigation/dungeon-state').DungeonState) => void
 }
 
-type PanelPhase = 'dialogue' | 'check' | 'outcome' | 'reward' | 'dismissal'
+type PanelPhase = 'dialogue' | 'check' | 'reward' | 'dismissal'
 
 interface ActiveReward {
   gold?: number
@@ -25,30 +25,76 @@ interface ActiveReward {
   hint?: string
 }
 
-const PORTRAIT_SIZE = 36
-const PORTRAIT_Y = PANEL_TOP - PORTRAIT_SIZE / 2
-const PORTRAIT_X = LOGICAL_W / 2 - PORTRAIT_SIZE / 2
+// ── Portrait — right-aligned, straddles PANEL_TOP ────────────────────────────
 
-const DIALOGUE_TOP = PANEL_TOP + 20
-const BUTTON_TOP = DIALOGUE_TOP + 80
-const BUTTON_H = 44
-const BUTTON_GAP = 8
-const BUTTON_W = LOGICAL_W - 32
-const BUTTON_X = 16
-
-const REWARD_TOP = PANEL_TOP + 100
-const ITEM_CARD_W = 160
-const ITEM_CARD_H = 80
-const ITEM_CARD_X = LOGICAL_W / 2 - ITEM_CARD_W / 2
+const PORTRAIT_R = 26           // radius (52px diameter)
+const PORTRAIT_CX = LOGICAL_W - 16 - PORTRAIT_R   // 348: right-aligned with 16px margin
+const PORTRAIT_CY = PANEL_TOP                      // straddles map/panel boundary
 
 function getPortraitColor(archetypeId: string): string {
-  const colors_map: Record<string, string> = {
-    'rat-scavenger': '#8b6f47',
-    'frightened-mouse': '#aaaaaa',
-    'old-hermit': '#4a4a66',
+  const map: Record<string, string> = {
+    'rat-scavenger':   '#8b6f47',
+    'frightened-mouse': '#9aaa9a',
+    'old-hermit':       '#5a5a7a',
   }
-  return colors_map[archetypeId] ?? '#888888'
+  return map[archetypeId] ?? '#888888'
 }
+
+// Head-and-shoulders silhouette clipped to a badge circle
+function drawPortrait(ctx: CanvasRenderingContext2D, archetypeId: string): void {
+  const cx = PORTRAIT_CX
+  const cy = PORTRAIT_CY
+  const r = PORTRAIT_R
+  const color = getPortraitColor(archetypeId)
+
+  // Badge background
+  ctx.beginPath()
+  ctx.arc(cx, cy, r, 0, Math.PI * 2)
+  ctx.fillStyle = colors.surfaceRaised
+  ctx.fill()
+  ctx.strokeStyle = colors.roomNpc
+  ctx.lineWidth = 2
+  ctx.stroke()
+
+  // Clip silhouette inside badge
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(cx, cy, r - 2, 0, Math.PI * 2)
+  ctx.clip()
+
+  // Shoulders: upper semicircle below center
+  ctx.beginPath()
+  ctx.arc(cx, cy + r * 0.5, r * 0.72, Math.PI, 0, false)
+  ctx.fillStyle = color
+  ctx.fill()
+
+  // Head: circle
+  ctx.beginPath()
+  ctx.arc(cx, cy - r * 0.1, r * 0.38, 0, Math.PI * 2)
+  ctx.fillStyle = color
+  ctx.fill()
+
+  ctx.restore()
+}
+
+// ── Dialogue layout ───────────────────────────────────────────────────────────
+
+const SIDE_MARGIN = 16
+const CONTENT_LEFT = MAP_X + SIDE_MARGIN                 // 26
+const CONTENT_W = MAP_W - SIDE_MARGIN * 2                // 328
+
+// Text starts below portrait's lower edge (PORTRAIT_CY + PORTRAIT_R = PANEL_TOP + 26)
+const DIALOGUE_TOP = PANEL_TOP + 34
+const BUTTON_TOP = PANEL_TOP + 94   // leave room for 2 dialogue lines + gap
+const BUTTON_H = 48
+const BUTTON_GAP = 8
+
+const REWARD_TOP = PANEL_TOP + 50
+const ITEM_CARD_W = 220
+const ITEM_CARD_H = 74
+const ITEM_CARD_X = MAP_X + (MAP_W - ITEM_CARD_W) / 2
+
+// ── Panel factory ─────────────────────────────────────────────────────────────
 
 export function createNpcEncounterPanel(
   onComplete: (outcome: string) => void,
@@ -58,9 +104,7 @@ export function createNpcEncounterPanel(
 ): EncounterPanel {
   const npcType = cell.npcType ?? 'rat-scavenger'
   const script = NPC_SCRIPTS[npcType]
-  if (!script) {
-    throw new Error(`Unknown NPC type: ${npcType}`)
-  }
+  if (!script) throw new Error(`Unknown NPC type: ${npcType}`)
 
   let phase: PanelPhase = cell.npcState === 'completed' ? 'dismissal' : 'dialogue'
   let currentNodeId = script.rootNode
@@ -68,8 +112,11 @@ export function createNpcEncounterPanel(
   let checkPanel: ReturnType<typeof createCheckPanel> | null = null
   let activeReward: ActiveReward | null = null
   let rewardStartTime: DOMHighResTimeStamp | null = null
-  let dismissalTime: DOMHighResTimeStamp | null = cell.npcState === 'completed' ? performance.now() : null
   let hoveredButton: number | null = null
+
+  // Pick dismissal line once at init (not every frame)
+  const dismissalLine = script.dismissalLines[Math.floor(Math.random() * script.dismissalLines.length)]
+  let dismissalTime: DOMHighResTimeStamp | null = cell.npcState === 'completed' ? performance.now() : null
 
   function signalComplete(outcome: string): void {
     if (completed) return
@@ -85,12 +132,8 @@ export function createNpcEncounterPanel(
     currentNodeId = nodeId
     phase = 'dialogue'
     checkPanel = null
-    const node = getCurrentNode()
-    if (node.responses.length === 0 || node.responses.some(r => r.isTerminal)) {
-      // This is a terminal node - prepare to auto-advance after reward
-      rewardStartTime = performance.now()
-      phase = 'reward'
-    }
+    // Do NOT skip to reward here — let the dialogue node show first.
+    // Terminal response taps in handleResponseClick set phase = 'reward'.
   }
 
   function handleResponseClick(responseIdx: number): void {
@@ -107,9 +150,7 @@ export function createNpcEncounterPanel(
     if (response.check) {
       checkPanel = createCheckPanel(response.check, {
         getPool: context.getPool,
-        onResult: (band: CheckBand) => {
-          handleCheckResult(response, band)
-        },
+        onResult: (band: CheckBand) => { handleCheckResult(response, band) },
         allowBack: false,
       })
       phase = 'check'
@@ -122,42 +163,32 @@ export function createNpcEncounterPanel(
     }
 
     if (response.isTerminal) {
-      activeReward = response.reward ?? {}
+      activeReward = response.reward ?? null
       rewardStartTime = performance.now()
       phase = 'reward'
-      return
     }
   }
 
   function handleCheckResult(response: any, band: CheckBand): void {
     const nextNodeId =
       band === 'critical' ? (response.nextCrit ?? response.nextSuccess ?? response.next) :
-      band === 'success' ? (response.nextSuccess ?? response.next) :
-      band === 'cost' ? (response.nextCost ?? response.nextSuccess ?? response.next) :
+      band === 'success'  ? (response.nextSuccess ?? response.next) :
+      band === 'cost'     ? (response.nextCost ?? response.nextSuccess ?? response.next) :
       response.nextFail
 
-    if (nextNodeId) {
-      // Handle reward
-      activeReward = null
-      if (band === 'critical' && response.reward) {
-        const baseReward = response.reward
-        if (response.check?.critBonus) {
-          activeReward = {
-            gold: (baseReward.gold ?? 0) + (response.check.critBonus.gold ?? 0),
-            item: baseReward.item,
-            hint: response.check.critBonus.hint ?? baseReward.hint,
-          }
-        } else {
-          activeReward = baseReward
-        }
-      } else if ((band === 'success' || band === 'cost') && response.reward) {
-        activeReward = response.reward
-      }
+    activeReward = null
+    if (band === 'critical' && response.reward) {
+      const base = response.reward
+      activeReward = response.check?.critBonus
+        ? { gold: (base.gold ?? 0) + (response.check.critBonus.gold ?? 0), item: base.item, hint: response.check.critBonus.hint ?? base.hint }
+        : base
+    } else if ((band === 'success' || band === 'cost') && response.reward) {
+      activeReward = response.reward
+    }
 
+    if (nextNodeId) {
       transitionToNode(nextNodeId)
     } else {
-      // Terminal node
-      activeReward = response.reward ?? {}
       rewardStartTime = performance.now()
       phase = 'reward'
     }
@@ -165,201 +196,157 @@ export function createNpcEncounterPanel(
 
   function applyReward(): void {
     if (!activeReward) return
-
     const reward = activeReward
     let inv = context.getInventory()
 
-    if (reward.gold) {
-      inv = { ...inv, gold: inv.gold + reward.gold }
-    }
+    if (reward.gold) inv = { ...inv, gold: inv.gold + reward.gold }
 
     if (reward.item) {
       const item = CATALOG_ITEMS.find(i => i.id === reward.item)
-      if (item && inv.items.length < 6) {
-        inv = acquireItem(inv, item)
-      }
+      if (item && inv.items.length < 6) inv = acquireItem(inv, item)
     }
 
     context.setInventory(inv)
-
-    if (reward.hint) {
-      // TODO: wire up journal append when journal is ready
-    }
-
+    // TODO: journal hint append when journal feature ships
     activeReward = null
   }
+
+  function markCompleted(): void {
+    if (cell.npcState === 'active') {
+      const state = context.getDungeonState()
+      const updatedGrid = state.grid.cells.map(row =>
+        row.map(c => c === cell ? { ...cell, npcState: 'completed' as const } : c),
+      )
+      context.setDungeonState({ ...state, grid: { ...state.grid, cells: updatedGrid } })
+    }
+  }
+
+  // ── Draw ────────────────────────────────────────────────────────────────────
 
   function draw(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
     ctx.save()
     ctx.globalAlpha = 1
 
-    // Background
+    // Background — always
     ctx.fillStyle = colors.surface
     ctx.fillRect(0, PANEL_TOP, LOGICAL_W, LOGICAL_H - PANEL_TOP)
 
-    // Top border stripe
+    // Top border stripe — always
     ctx.fillStyle = colors.roomNpc
     ctx.fillRect(0, PANEL_TOP, LOGICAL_W, 3)
 
-    // Portrait
-    const portraitColor = getPortraitColor(script.archetypeId)
-    ctx.fillStyle = portraitColor
-    ctx.beginPath()
-    ctx.arc(PORTRAIT_X + PORTRAIT_SIZE / 2, PORTRAIT_Y + PORTRAIT_SIZE / 2, PORTRAIT_SIZE / 2, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.strokeStyle = colors.roomNpc
-    ctx.lineWidth = 2
-    ctx.stroke()
-
-    if (phase === 'dismissal') {
-      const node = getCurrentNode()
-      const dismissalIdx = Math.floor(Math.random() * script.dismissalLines.length)
-      const dismissalLine = script.dismissalLines[dismissalIdx]
-
+    // Phase-specific content
+    if (phase === 'check' && checkPanel) {
+      checkPanel.draw(ctx, timestamp)
+    } else if (phase === 'dismissal') {
       ctx.font = '16px monospace'
       ctx.fillStyle = colors.textPrimary
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
-      const lines = wrapText(ctx, dismissalLine, LOGICAL_W - 32)
-      lines.forEach((line, idx) => {
-        ctx.fillText(line, 16, DIALOGUE_TOP + idx * 20)
+      wrapText(ctx, dismissalLine, CONTENT_W - PORTRAIT_R * 2 - 8).forEach((line, i) => {
+        ctx.fillText(line, CONTENT_LEFT, DIALOGUE_TOP + i * 22)
       })
-
-      if (dismissalTime && timestamp - dismissalTime > 2000) {
-        signalComplete('dismissed')
-      }
-    } else if (phase === 'check' && checkPanel) {
-      checkPanel.draw(ctx)
+      if (dismissalTime && timestamp - dismissalTime > 2000) signalComplete('dismissed')
     } else if (phase === 'reward') {
-      if (activeReward?.gold || activeReward?.item || activeReward?.hint) {
-        // Draw reward display
-        ctx.font = '14px monospace'
-        ctx.fillStyle = colors.textMuted
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'top'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      let ry = REWARD_TOP
 
-        let rewardY = REWARD_TOP
+      const reward = activeReward
+      if (reward?.gold) {
+        ctx.font = 'bold 18px monospace'
+        ctx.fillStyle = colors.gold
+        ctx.fillText(`+ ${reward.gold} ◈`, MAP_X + MAP_W / 2, ry)
+        ry += 32
+      }
 
-        if (activeReward?.gold) {
-          ctx.fillStyle = colors.gold
-          ctx.font = '16px monospace'
-          ctx.fillText(`+ ${activeReward.gold} ◈`, LOGICAL_W / 2, rewardY)
-          rewardY += 30
-        }
-
-        if (activeReward?.item) {
-          const item = CATALOG_ITEMS.find(i => i.id === activeReward!.item)
-          if (item) {
-            // Draw item card
-            ctx.fillStyle = 'rgba(200, 180, 150, 0.1)'
-            ctx.fillRect(ITEM_CARD_X, rewardY, ITEM_CARD_W, ITEM_CARD_H)
-            ctx.strokeStyle = colors.textMuted
-            ctx.lineWidth = 1
-            ctx.strokeRect(ITEM_CARD_X, rewardY, ITEM_CARD_W, ITEM_CARD_H)
-
-            ctx.font = '15px monospace'
-            ctx.fillStyle = colors.textPrimary
-            ctx.textAlign = 'center'
-            ctx.fillText(item.name, LOGICAL_W / 2, rewardY + 10)
-
-            ctx.font = '13px monospace'
-            ctx.fillStyle = colors.textMuted
-            ctx.fillText(item.description, LOGICAL_W / 2, rewardY + 35)
-
-            rewardY += ITEM_CARD_H + 20
-          }
-        }
-
-        if (activeReward?.hint) {
-          ctx.font = '14px italic monospace'
+      if (reward?.item) {
+        const item = CATALOG_ITEMS.find(i => i.id === reward.item)
+        if (item) {
+          ctx.fillStyle = 'rgba(200,180,150,0.1)'
+          ctx.fillRect(ITEM_CARD_X, ry, ITEM_CARD_W, ITEM_CARD_H)
+          ctx.strokeStyle = colors.textMuted
+          ctx.lineWidth = 1
+          ctx.strokeRect(ITEM_CARD_X, ry, ITEM_CARD_W, ITEM_CARD_H)
+          ctx.font = '15px monospace'
+          ctx.fillStyle = colors.textPrimary
+          ctx.fillText(item.name, MAP_X + MAP_W / 2, ry + 12)
+          ctx.font = '13px monospace'
           ctx.fillStyle = colors.textMuted
-          ctx.textAlign = 'center'
-          const hintLines = wrapText(ctx, activeReward.hint, LOGICAL_W - 32)
-          hintLines.forEach((line, idx) => {
-            ctx.fillText(line, LOGICAL_W / 2, rewardY + idx * 20)
-          })
+          ctx.fillText(item.description, MAP_X + MAP_W / 2, ry + 36)
+          ry += ITEM_CARD_H + 16
         }
+      }
 
-        // Auto-advance after 2s
-        if (rewardStartTime && timestamp - rewardStartTime > 2000) {
-          applyReward()
-          if (cell.npcState === 'active') {
-            const state = context.getDungeonState()
-            const updatedCell = { ...cell, npcState: 'completed' as const }
-            const updatedGrid = state.grid.cells.map(row =>
-              row.map(c => c === cell ? updatedCell : c)
-            )
-            context.setDungeonState({ ...state, grid: { ...state.grid, cells: updatedGrid } })
-          }
-          signalComplete('completed')
-        }
-      } else {
-        // No reward, just terminal
+      if (reward?.hint) {
+        ctx.font = 'italic 14px monospace'
+        ctx.fillStyle = colors.textMuted
+        wrapText(ctx, reward.hint, CONTENT_W).forEach((line, i) => {
+          ctx.fillText(line, MAP_X + MAP_W / 2, ry + i * 20)
+        })
+      }
+
+      if (rewardStartTime && timestamp - rewardStartTime > 2000) {
         applyReward()
-        if (cell.npcState === 'active') {
-          const state = context.getDungeonState()
-          const updatedCell = { ...cell, npcState: 'completed' as const }
-          const updatedGrid = state.grid.cells.map(row =>
-            row.map(c => c === cell ? updatedCell : c)
-          )
-          context.setDungeonState({ ...state, grid: { ...state.grid, cells: updatedGrid } })
-        }
+        markCompleted()
         signalComplete('completed')
       }
     } else {
-      // Dialogue phase
+      // Dialogue
       const node = getCurrentNode()
 
       ctx.font = '16px monospace'
       ctx.fillStyle = colors.textPrimary
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
-      const lines = wrapText(ctx, node.npcLine, LOGICAL_W - 32)
-      lines.forEach((line, idx) => {
-        ctx.fillText(line, 16, DIALOGUE_TOP + idx * 20)
+      const textW = CONTENT_W - PORTRAIT_R * 2 - 8    // leave room for portrait at top
+      wrapText(ctx, node.npcLine, textW).slice(0, 2).forEach((line, i) => {
+        ctx.fillText(line, CONTENT_LEFT, DIALOGUE_TOP + i * 22)
       })
 
-      // Response buttons
+      // Response buttons — full width, vertically stacked
       const maxResponses = Math.min(3, node.responses.length)
       node.responses.slice(0, maxResponses).forEach((response, idx) => {
-        const y = BUTTON_TOP + idx * (BUTTON_H + BUTTON_GAP)
+        const by = BUTTON_TOP + idx * (BUTTON_H + BUTTON_GAP)
         const hovered = hoveredButton === idx
-        const isCheckGated = !!response.check
 
-        ctx.fillStyle = hovered ? 'rgba(200, 180, 150, 0.2)' : 'rgba(200, 180, 150, 0.1)'
-        ctx.fillRect(BUTTON_X, y, BUTTON_W, BUTTON_H)
-        ctx.strokeStyle = hovered ? colors.textPrimary : 'rgba(200, 180, 150, 0.3)'
+        ctx.fillStyle = hovered ? 'rgba(200,180,150,0.18)' : 'rgba(200,180,150,0.08)'
+        ctx.fillRect(CONTENT_LEFT, by, CONTENT_W, BUTTON_H)
+        ctx.strokeStyle = hovered ? colors.textPrimary : 'rgba(200,180,150,0.25)'
         ctx.lineWidth = 1
-        ctx.strokeRect(BUTTON_X, y, BUTTON_W, BUTTON_H)
+        ctx.strokeRect(CONTENT_LEFT, by, CONTENT_W, BUTTON_H)
+
+        const isCheckGated = !!response.check
+        const glyphs: Record<string, string> = { red: '🔴', blue: '🔵', green: '🟢', yellow: '🟡' }
+        const label = isCheckGated
+          ? `${glyphs[response.check!.approaches[0]] ?? ''} ${response.label}`
+          : response.label
 
         ctx.font = '16px monospace'
         ctx.fillStyle = response.isLeave ? colors.textMuted : colors.textPrimary
         ctx.textAlign = 'left'
         ctx.textBaseline = 'middle'
-
-        const label = isCheckGated
-          ? `${response.check!.approaches[0] === 'red' ? '🔴' : response.check!.approaches[0] === 'blue' ? '🔵' : response.check!.approaches[0] === 'green' ? '🟢' : '🟡'} ${response.label}`
-          : response.label
-
-        ctx.fillText(label, BUTTON_X + 16, y + BUTTON_H / 2)
+        ctx.fillText(label, CONTENT_LEFT + 14, by + BUTTON_H / 2)
       })
     }
+
+    // Portrait drawn last — always on top, straddles the boundary
+    drawPortrait(ctx, script.archetypeId)
 
     ctx.restore()
   }
 
-  function drawMapOverlay(ctx: CanvasRenderingContext2D): void {
-    // Optional: draw NPC silhouette in map zone
+  function drawMapOverlay(_ctx: CanvasRenderingContext2D): void {
+    // reserved for future map-zone NPC indicators
   }
 
   function handleClick(x: number, y: number): void {
     if (phase === 'dialogue') {
       const node = getCurrentNode()
       const maxResponses = Math.min(3, node.responses.length)
-
       for (let idx = 0; idx < maxResponses; idx++) {
-        const buttonY = BUTTON_TOP + idx * (BUTTON_H + BUTTON_GAP)
-        if (y >= buttonY && y <= buttonY + BUTTON_H && x >= BUTTON_X && x <= BUTTON_X + BUTTON_W) {
+        const by = BUTTON_TOP + idx * (BUTTON_H + BUTTON_GAP)
+        if (x >= CONTENT_LEFT && x <= CONTENT_LEFT + CONTENT_W && y >= by && y <= by + BUTTON_H) {
           handleResponseClick(idx)
           return
         }
@@ -373,13 +360,12 @@ export function createNpcEncounterPanel(
 
   function handlePointerMove(x: number, y: number): void {
     if (phase === 'dialogue') {
+      hoveredButton = null
       const node = getCurrentNode()
       const maxResponses = Math.min(3, node.responses.length)
-
-      hoveredButton = null
       for (let idx = 0; idx < maxResponses; idx++) {
-        const buttonY = BUTTON_TOP + idx * (BUTTON_H + BUTTON_GAP)
-        if (y >= buttonY && y <= buttonY + BUTTON_H && x >= BUTTON_X && x <= BUTTON_X + BUTTON_W) {
+        const by = BUTTON_TOP + idx * (BUTTON_H + BUTTON_GAP)
+        if (x >= CONTENT_LEFT && x <= CONTENT_LEFT + CONTENT_W && y >= by && y <= by + BUTTON_H) {
           hoveredButton = idx
           break
         }
@@ -389,32 +375,18 @@ export function createNpcEncounterPanel(
     }
   }
 
-  return {
-    draw,
-    drawMapOverlay,
-    handleClick,
-    handlePointerMove,
-    mapView,
-    snapCamera: true,
-  }
+  return { draw, drawMapOverlay, handleClick, handlePointerMove, mapView, snapCamera: true }
 }
 
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
   const words = text.split(' ')
   const lines: string[] = []
-  let currentLine = ''
-
+  let current = ''
   for (const word of words) {
-    const testLine = currentLine ? currentLine + ' ' + word : word
-    const metrics = ctx.measureText(testLine)
-    if (metrics.width > maxWidth && currentLine) {
-      lines.push(currentLine)
-      currentLine = word
-    } else {
-      currentLine = testLine
-    }
+    const test = current ? current + ' ' + word : word
+    if (ctx.measureText(test).width > maxWidth && current) { lines.push(current); current = word }
+    else current = test
   }
-
-  if (currentLine) lines.push(currentLine)
+  if (current) lines.push(current)
   return lines
 }
