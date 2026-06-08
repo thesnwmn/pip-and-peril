@@ -33,6 +33,9 @@ export interface DungeonState {
   stepCount: number
   roomsEntered: number
   enemiesDefeated: number
+  goldEarned: number
+  killedBy: string | null
+  killedByFloor: number | null
 }
 
 const GRID_W = 13
@@ -72,6 +75,9 @@ export function initDungeon(): DungeonState {
     stepCount: 0,
     roomsEntered: 0,
     enemiesDefeated: 0,
+    goldEarned: 0,
+    killedBy: null,
+    killedByFloor: null,
   }
 }
 

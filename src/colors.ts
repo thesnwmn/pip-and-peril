@@ -91,6 +91,10 @@ export const colors = {
   satchelInk: '#1a0f08',
   itemCursed: '#8a2020',
 
+  // Parchment screen
+  surfaceParchment: '#201810',
+  parchmentRule: '#5a3e28',
+
   // Spent trap tile overlay
   trapSpent: '#1a1a2a',
 

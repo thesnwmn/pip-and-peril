@@ -219,6 +219,13 @@ export function createCombatEncounterPanel(
       fleePending = false
 
       if (defeat) {
+        // Record defeat information before transition
+        const dungeonState = ctx.getDungeonState()
+        ctx.setDungeonState({
+          ...dungeonState,
+          killedBy: combat.enemy.name,
+          killedByFloor: dungeonState.floor,
+        })
         bannerStartTime = performance.now()
         return
       }
@@ -401,6 +408,12 @@ export function createCombatEncounterPanel(
     const result = applyFlee(combat, ctx.getPipHp())
     ctx.setPipHp(result.pipHp)
     if (result.defeat) {
+      const dungeonState = ctx.getDungeonState()
+      ctx.setDungeonState({
+        ...dungeonState,
+        killedBy: combat.enemy.name,
+        killedByFloor: dungeonState.floor,
+      })
       combat = { ...combat, phase: 'defeat' }
       bannerStartTime = performance.now()
     } else {
@@ -436,6 +449,12 @@ export function createCombatEncounterPanel(
       if (survivedHp <= 0) {
         ctx.setPipHp(survivedHp)
         ctx.setInventory(postDeathInv)
+        const dungeonState = ctx.getDungeonState()
+        ctx.setDungeonState({
+          ...dungeonState,
+          killedBy: combat.enemy.name,
+          killedByFloor: dungeonState.floor,
+        })
         combat = { ...combat, phase: 'defeat' }
         bannerStartTime = performance.now()
         return

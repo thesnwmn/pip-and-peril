@@ -22,6 +22,7 @@ import { createShopEncounterPanel } from '../encounter/shop-panel'
 import { createTrapEncounterPanel, TRAP_FLAVOURS } from '../encounter/trap-panel'
 import { createChestEncounterPanel } from '../encounter/chest-panel'
 import { ITEM_CONFIG } from '../encounter/config'
+import type { RunSummary } from './types'
 import {
   LOGICAL_W,
   LOGICAL_H,
@@ -29,7 +30,7 @@ import {
   VIEWPORT_ROWS,
 } from './game-layout'
 
-export function createGame(transitionTo: (screen: string) => void): ScreenController {
+export function createGame(transitionTo: (screen: string, summary?: RunSummary) => void): ScreenController {
   let state: DungeonState = initDungeon()
   let hoveredElement: string | null = null
   let isMouseDevice = false
@@ -93,6 +94,25 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     satchelOverlay.close()
   }
 
+  function updateInventoryWithGoldTracking(newInventory: Inventory): void {
+    const goldDelta = newInventory.gold - inventory.gold
+    if (goldDelta > 0) {
+      state = { ...state, goldEarned: state.goldEarned + goldDelta }
+    }
+    inventory = newInventory
+  }
+
+  function buildRunSummary(outcome: 'victory' | 'defeat'): RunSummary {
+    return {
+      outcome,
+      floorReached: state.floor,
+      enemiesDefeated: state.enemiesDefeated,
+      goldEarned: state.goldEarned,
+      killedBy: state.killedBy,
+      killedByFloor: state.killedByFloor,
+    }
+  }
+
   const menuModal = createMenuModal('game', (screen) => {
     resetRunState()
     transitionTo(screen)
@@ -123,7 +143,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
           const cell = state.grid.cells[state.pip.row][state.pip.col]
           // Stolen Idol gold bonus: +2 per room entered (not corridor)
           if (cell && cell.roomType !== 'corridor' && inventory.items.some(i => i.id === 'stolen-idol')) {
-            inventory = { ...inventory, gold: inventory.gold + 2 }
+            updateInventoryWithGoldTracking({ ...inventory, gold: inventory.gold + 2 })
           }
           if (cell) triggerWhisper(cell.roomType)
           checkEncounterTrigger()
@@ -147,7 +167,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
           const cell = state.grid.cells[state.pip.row][state.pip.col]
           // Stolen Idol gold bonus: +2 per room entered (not corridor)
           if (cell && cell.roomType !== 'corridor' && inventory.items.some(i => i.id === 'stolen-idol')) {
-            inventory = { ...inventory, gold: inventory.gold + 2 }
+            updateInventoryWithGoldTracking({ ...inventory, gold: inventory.gold + 2 })
           }
           if (cell) triggerWhisper(cell.roomType)
           checkEncounterTrigger()
@@ -185,7 +205,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
           getPipHp: () => pipHp,
           setPipHp: (hp) => { pipHp = hp },
           getInventory: () => inventory,
-          setInventory: (inv) => { inventory = inv },
+          setInventory: (inv) => { updateInventoryWithGoldTracking(inv) },
           getDungeonState: () => state,
           setDungeonState: (s) => { state = s },
         },
@@ -197,8 +217,9 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         navPanel.clearWhisper()
       },
       defeat: () => {
+        const summary = buildRunSummary('defeat')
         resetRunState()
-        transitionTo('home')
+        transitionTo('run-summary', summary)
       },
     },
   })
@@ -216,7 +237,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         { zoom: ITEM_CONFIG.cameraZoom, pipTargetX: pipNatX, pipTargetY: pipNatY },
         {
           getInventory: () => inventory,
-          setInventory: (inv) => { inventory = inv },
+          setInventory: (inv) => { updateInventoryWithGoldTracking(inv) },
           getDungeonState: () => state,
           setDungeonState: (s) => { state = s },
         },
@@ -245,7 +266,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         { zoom: 1.2, pipTargetX: pipNatX, pipTargetY: pipNatY },
         {
           getInventory: () => inventory,
-          setInventory: (inv) => { inventory = inv },
+          setInventory: (inv) => { updateInventoryWithGoldTracking(inv) },
           getDungeonState: () => state,
           setDungeonState: (s) => { state = s },
         },
@@ -271,7 +292,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         { zoom: 1.2, pipTargetX: pipNatX, pipTargetY: pipNatY },
         {
           getInventory: () => inventory,
-          setInventory: (inv) => { inventory = inv },
+          setInventory: (inv) => { updateInventoryWithGoldTracking(inv) },
           getDungeonState: () => state,
           setDungeonState: (s) => { state = s },
         },
@@ -300,7 +321,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
           getPipHp: () => pipHp,
           setPipHp: (hp) => { pipHp = hp },
           getInventory: () => inventory,
-          setInventory: (inv) => { inventory = inv },
+          setInventory: (inv) => { updateInventoryWithGoldTracking(inv) },
           getDungeonState: () => state,
           setDungeonState: (s) => { state = s },
         },
@@ -342,8 +363,9 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         navPanel.clearWhisper()
       },
       defeat: () => {
+        const summary = buildRunSummary('defeat')
         resetRunState()
-        transitionTo('home')
+        transitionTo('run-summary', summary)
       },
       fled: () => {
         // Retreat Pip to the tile she entered from.
@@ -370,7 +392,7 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
           setPipHp: (hp) => { pipHp = hp },
           getPipMaxHp: () => pipMaxHp,
           getInventory: () => inventory,
-          setInventory: (inv) => { inventory = inv },
+          setInventory: (inv) => { updateInventoryWithGoldTracking(inv) },
           getDungeonState: () => state,
           setDungeonState: (s) => { state = s },
         },
@@ -385,12 +407,14 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
     },
     handlers: {
       'run-complete': () => {
+        const summary = buildRunSummary('victory')
         resetRunState()
-        transitionTo('home')
+        transitionTo('run-summary', summary)
       },
       defeat: () => {
+        const summary = buildRunSummary('defeat')
         resetRunState()
-        transitionTo('home')
+        transitionTo('run-summary', summary)
       },
     },
   })
