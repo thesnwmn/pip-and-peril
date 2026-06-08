@@ -57,7 +57,16 @@ export function drawCombatOverlay(
   ctx.fillStyle = grad
   ctx.fillRect(MAP_X, MAP_BOTTOM - SCRIM_H, MAP_W, SCRIM_H)
 
-  // ── Row A: intent telegraph (enemy side, right-aligned) ───────────────────
+  // ── Row A: intent telegraph (enemy side, right-aligned) + berserk status (pip side, left-aligned) ───────────────────
+  // Berserk status (Pip side, left-aligned)
+  if (combat.berserkTurnsLeft > 0) {
+    ctx.font = 'bold 11px monospace'
+    ctx.fillStyle = '#ff6060'  // bright red
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(`🔥${combat.berserkTurnsLeft}`, PIP_COL_X, INTENT_ROW_Y)
+  }
+
   function getIntentIcon(kind: string): string {
     const icons: Record<string, string> = {
       'attack': '⚔️', 'guard': '🛡', 'empower': '💢',

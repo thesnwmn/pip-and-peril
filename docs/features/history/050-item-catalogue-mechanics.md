@@ -378,4 +378,44 @@ None. This item is **READY**.
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-08 · **PR:** TBD
+
+### What was built
+
+All six mechanic groups wired into live game:
+
+- **Charged item display:** Bandage Roll (3c) and Smoke Canister (2c) show remaining charges via `Nc` badge (gold, 10px monospace) in both Satchel Pouch and ITEM overlay.
+- **Tenacity window gate:** Grit Stone, Second Wind Vial, Bitter Root Brew visible but greyed (opacity 0.38) and unclickable until pips spent this turn; greying clears after pip spend and before item use.
+- **Padded Coat Green penalty:** On every roll in combat, total Green pips reduced by 1 (minimum 0) before allocation; reroll from Tenacity also applies penalty.
+- **Berserker Draught status:** 3-turn active status; Strike/Heavy damage doubled while active (Strike: 2→4, Heavy: 4→8); Reserve (dodge) blocked while active; status clears at combat end; status strip rendered at top of combat panel showing "BERSERK · N turns left" with reminder.
+- **Tainted Mushroom bonus pips:** 2 self-damage on use, triggers death prevention if available; 3 freely-assignable bonus pips available via color button taps in dedicated assignment mode; all other actions disabled while assigning; item consumed after use.
+- **Stolen Idol passive gold and enemy damage:** +2 gold per room entered (not corridor); enemy attack/lunge intents gain +1 damage value before passive armour applied; cursed item (red border, ⚠ indicator) in Satchel; cannot be un-equipped or discarded.
+- **Passive armour:** Enemy damage reduced before HP apply (Leather Jerkin −1, Padded Coat −2, Saint's Acorn/Nine Lives Token zero armour but death prevention); blocked amount logged.
+- **Death prevention:** When enemy damage would reduce pipHp ≤ 0, Saint's Acorn or Nine Lives Token consumed; Pip survives at 1 HP; 2.5-second notification card shown with item name, description, and result.
+
+### Test coverage
+
+All 461 existing unit tests pass; new mechanics tested via:
+- `CombatState.bonusPipsRemaining` field initialization and cleanup
+- Enemy turn pipeline applies passive armour, death prevention, Stolen Idol bonus in correct order
+- Berserk damage doubling applied after base strike resolves
+- Tenacity gate blocks item use until pips spent; clears gate correctly
+- Padded Coat penalty applied per roll, not below 0
+- Charged item consumption via `consumeItem()` (Bandage Roll charges decrement, item removed at 0)
+- Bonus pip assignment: color buttons work; assignment mode blocks ROLL button; pips reset on phase transition
+
+### Verification play-test steps
+
+1. **Charged items:** Start with Bandage Roll (3c). Use once in navigation (charge decrements to 2c). Use again in combat (2c → 1c). Note display in Satchel and ITEM overlay.
+
+2. **Tenacity window:** Find Grit Stone. In combat, button is greyed. Spend Red pips on Strike. Button becomes active. Tap Grit Stone → dice reroll, full spend phase again. End turn normally.
+
+3. **Padded Coat Green penalty:** Equip Padded Coat (if available). Roll dice in combat, note Green total. Roll again without action. Green total reduced by 1 each roll (min 0).
+
+4. **Berserker Draught:** Find Berserker Draught. Use in combat → status strip appears "BERSERK · 3 turns left". Strike damage doubled (2 base → 4). Reserve button greyed. Next turn starts, strip updates to "2 turns left". After 3 turns, status clears, Strike returns to normal damage.
+
+5. **Tainted Mushroom:** Find Tainted Mushroom. Use in combat → lose 2 HP immediately. If surviving, bonus pip assignment mode: color buttons show `+🔴 +🟢 +🔵 +🟡`. Tap Red: +1 Red pip, 2 bonus pips remain. Tap Green twice: assignment completes, normal combat resumes.
+
+6. **Stolen Idol:** Find or spawn Stolen Idol. Navigate rooms (not corridors) → gold +2 per room entry. In combat with Stolen Idol, enemy attack damage increases by 1. Item shown in Satchel with WORN badge and red ⚠ indicator; cannot be discarded.
+
+7. **Passive armour & death prevention:** Equip Leather Jerkin (−1). Get hit by enemy for 3 damage → −2 applied (1 blocked). Pick up Saint's Acorn. Ensure HP = 2. Get hit for 3 damage → 2 blocked (1 armour − 1 prevented), survive at 1 HP, notification shown 2.5s, then dismissed.

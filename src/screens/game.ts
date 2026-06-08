@@ -13,7 +13,7 @@ import { resetPool, starterPool } from '../dice/pool'
 import { createMenuModal, drawMenuButton, isInMenuButton } from '../menu/modal'
 import { createSatchelOverlay, drawSatchelButton, isInSatchelButton } from '../satchel/overlay'
 import type { Inventory } from '../satchel/types'
-import { applyItemEffect } from '../satchel/items'
+import { applyItemEffect, consumeItem } from '../satchel/items'
 import { createEncounterRegistry } from '../encounter/registry'
 import { createCombatEncounterPanel } from '../combat/combat-panel'
 import { getEnemySpec } from '../combat/roster'
@@ -78,16 +78,8 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
         state = result.dungeonStateAfter
       }
 
-      // Decrement item quantity
-      const itemIndex = inventory.items.findIndex(i => i.id === item.id)
-      if (itemIndex >= 0) {
-        const updated = [...inventory.items]
-        updated[itemIndex] = { ...updated[itemIndex], quantity: updated[itemIndex].quantity - 1 }
-        if (updated[itemIndex].quantity <= 0) {
-          updated.splice(itemIndex, 1)
-        }
-        inventory = { ...inventory, items: updated }
-      }
+      // Consume item (handles charges or quantity)
+      inventory = consumeItem(inventory, item.id)
     },
   })
 
@@ -129,6 +121,10 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
           state = { ...state, roomsEntered: state.roomsEntered + 1 }
           navPanel.clearTeases()
           const cell = state.grid.cells[state.pip.row][state.pip.col]
+          // Stolen Idol gold bonus: +2 per room entered (not corridor)
+          if (cell && cell.roomType !== 'corridor' && inventory.items.some(i => i.id === 'stolen-idol')) {
+            inventory = { ...inventory, gold: inventory.gold + 2 }
+          }
           if (cell) triggerWhisper(cell.roomType)
           checkEncounterTrigger()
         }
@@ -149,6 +145,10 @@ export function createGame(transitionTo: (screen: string) => void): ScreenContro
           state = movePip(state, dir)
           state = { ...state, roomsEntered: state.roomsEntered + 1 }
           const cell = state.grid.cells[state.pip.row][state.pip.col]
+          // Stolen Idol gold bonus: +2 per room entered (not corridor)
+          if (cell && cell.roomType !== 'corridor' && inventory.items.some(i => i.id === 'stolen-idol')) {
+            inventory = { ...inventory, gold: inventory.gold + 2 }
+          }
           if (cell) triggerWhisper(cell.roomType)
           checkEncounterTrigger()
         }

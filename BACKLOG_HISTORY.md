@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 050 · Item Catalogue — Mechanics Integration
+
+**Shipped:** 2026-06-08 · **PR:** TBD · **Spec:** [docs/features/history/050-item-catalogue-mechanics.md](docs/features/history/050-item-catalogue-mechanics.md)
+
+Wire the UI rendering and combat integration for the mechanics shipped-but-unhooked in feature 049: charged item display (Nc badge), Tenacity reroll gate, Padded Coat Green penalty, Berserker Draught 3-turn status (2× Strike, no dodge), Tainted Mushroom self-damage + bonus pip assignment, Stolen Idol passive gold + enemy damage — plus passive armour (`applyPassiveArmour`) and death prevention (`applyDeathPrevention`), both tested but not yet called inside the combat loop.
+
+---
+
 ### 049 · Item Catalogue
 
 **Shipped:** 2026-06-07 · **PR:** `claude/item-catalogue-AzdfS` · **Spec:** [docs/features/history/049-item-catalogue.md](docs/features/history/049-item-catalogue.md)

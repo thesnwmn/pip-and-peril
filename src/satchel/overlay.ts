@@ -235,12 +235,16 @@ function drawItemCell(
   isHovered: boolean = false,
 ): void {
   const isCombatOnly = item.usableInCombat && !item.usableInNav
+  const isPassiveItem = item.passiveArmour !== undefined || item.deathPrevention === true
+
+  // Border color for cursed items
+  const borderColor = item.cursed && isPassiveItem ? colors.itemCursed : colors.satchelBrass
 
   drawRR(ctx, x, y, ITEM_CELL, ITEM_CELL, 4)
-  ctx.globalAlpha = isCombatOnly ? 0.4 : 1
+  ctx.globalAlpha = isCombatOnly && !isPassiveItem ? 0.4 : 1
   ctx.fillStyle = isHovered && !isCombatOnly ? '#c9a070' : '#b89060'
   ctx.fill()
-  ctx.strokeStyle = isHovered && !isCombatOnly ? colors.gold : colors.satchelBrass
+  ctx.strokeStyle = isHovered && !isCombatOnly ? colors.gold : borderColor
   ctx.lineWidth = isHovered && !isCombatOnly ? 2 : 1.5
   ctx.stroke()
 
@@ -253,8 +257,22 @@ function drawItemCell(
   ctx.textBaseline = 'middle'
   ctx.fillText(iconGlyph(item.iconType), cx, cy)
 
-  // Quantity badge (only if > 1)
-  if (item.quantity > 1) {
+  // Charged badge or quantity badge
+  if (item.charges !== undefined) {
+    // Charged item — show Nc badge
+    const bx = x + ITEM_CELL - 14
+    const by = y + ITEM_CELL - 14
+    ctx.fillStyle = colors.satchelLeather
+    ctx.beginPath()
+    ctx.arc(bx + 7, by + 7, 9, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.font = 'bold 10px monospace'
+    ctx.fillStyle = colors.gold
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(`${item.charges}c`, bx + 7, by + 7)
+  } else if (item.quantity > 1) {
+    // Quantity badge
     const bx = x + ITEM_CELL - 14
     const by = y + ITEM_CELL - 14
     ctx.fillStyle = colors.satchelLeather
@@ -265,11 +283,40 @@ function drawItemCell(
     ctx.fillStyle = colors.satchelBrass
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(String(item.quantity), bx + 7, by + 7)
+    ctx.fillText(`×${item.quantity}`, bx + 7, by + 7)
+  }
+
+  // Armour value for passive items
+  if (item.passiveArmour !== undefined && item.passiveArmour > 0) {
+    ctx.font = 'bold 10px monospace'
+    ctx.fillStyle = colors.gold
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+    ctx.fillText(`−${item.passiveArmour}`, cx, y + 4)
+  }
+
+  // WORN badge for passive items
+  if (isPassiveItem) {
+    ctx.globalAlpha = 1
+    ctx.font = '9px monospace'
+    ctx.fillStyle = colors.textMuted
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'bottom'
+    ctx.fillText('WORN', cx, y + ITEM_CELL - 2)
+  }
+
+  // Cursed indicator (⚠ in top-left)
+  if (item.cursed && isPassiveItem) {
+    ctx.globalAlpha = 1
+    ctx.font = '14px monospace'
+    ctx.fillStyle = colors.itemCursed
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    ctx.fillText('⚠', x + 4, y + 2)
   }
 
   // Combat-only label
-  if (isCombatOnly) {
+  if (isCombatOnly && !isPassiveItem) {
     ctx.globalAlpha = 0.8
     ctx.font = '9px monospace'
     ctx.fillStyle = colors.textMuted

@@ -85,4 +85,5 @@ export interface CombatState {
   identified: boolean                      // set by Identify (exact HP shown)
   pipPoison: PipState['poison']
   berserkTurnsLeft: number                 // Berserker Draught status; 0 = inactive
+  bonusPipsRemaining: number               // Tainted Mushroom bonus pip assignment; 0 = inactive
 }

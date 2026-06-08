@@ -89,6 +89,7 @@ export const colors = {
   satchelBrass: '#a07828',
   satchelStitch: '#6b4f2a',
   satchelInk: '#1a0f08',
+  itemCursed: '#8a2020',
 
   // Spent trap tile overlay
   trapSpent: '#1a1a2a',
