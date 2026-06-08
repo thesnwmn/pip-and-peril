@@ -147,6 +147,18 @@ function selectShopStock(): string[] {
   return shuffled.slice(0, 3).map(item => item.id)
 }
 
+function selectNpcArchetype(): 'rat-scavenger' | 'frightened-mouse' | 'old-hermit' {
+  const weights = DUNGEON_TUNING.npcArchetypeWeights
+  const archetypes: ('rat-scavenger' | 'frightened-mouse' | 'old-hermit')[] = ['rat-scavenger', 'frightened-mouse', 'old-hermit']
+  const totalWeight = weights['rat-scavenger'] + weights['frightened-mouse'] + weights['old-hermit']
+  let rand = Math.random() * totalWeight
+  for (const archetype of archetypes) {
+    rand -= weights[archetype]
+    if (rand <= 0) return archetype
+  }
+  return 'rat-scavenger'
+}
+
 export function placeRoom(
   state: DungeonState,
   offering: RoomOffering,
@@ -178,6 +190,11 @@ export function placeRoom(
     const merchant = selectShopMerchant()
     cell.shopMerchant = merchant.name
     cell.shopStock = selectShopStock()
+  }
+
+  if (offering.roomType === 'npc') {
+    cell.npcType = selectNpcArchetype()
+    cell.npcState = 'active'
   }
 
   if (offering.roomType === 'chest') {
