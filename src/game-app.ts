@@ -3,11 +3,13 @@ import { BUILD_ID } from './build-id'
 import { createMainMenu, type ScreenController } from './screens/main-menu'
 import { createHome } from './screens/home'
 import { createGame } from './screens/game'
+import { createRunSummary } from './screens/run-summary'
+import type { RunSummary } from './screens/types'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
 
-type Screen = 'main-menu' | 'home' | 'game'
+type Screen = 'main-menu' | 'home' | 'game' | 'run-summary'
 
 export class GameApp {
   private currentScreen: Screen = 'main-menu'
@@ -15,6 +17,7 @@ export class GameApp {
   private ctx: CanvasRenderingContext2D
   private screens: Record<Screen, ScreenController>
   private dpr: number
+  private pendingRunSummary: RunSummary | null = null
 
   constructor() {
     console.log(`GameApp constructor called`)
@@ -44,10 +47,23 @@ export class GameApp {
     document.body.style.backgroundColor = colors.bg
     document.body.appendChild(this.canvas)
 
+    const defaultRunSummary: RunSummary = {
+      outcome: 'defeat',
+      floorReached: 1,
+      enemiesDefeated: 0,
+      goldEarned: 0,
+      killedBy: null,
+      killedByFloor: null,
+    }
+
     this.screens = {
       'main-menu': createMainMenu((screen) => this.transitionTo(screen as Screen)),
       'home': createHome((screen) => this.transitionTo(screen as Screen)),
-      'game': createGame((screen) => this.transitionTo(screen as Screen)),
+      'game': createGame((screen, summary) => this.transitionTo(screen as Screen, summary)),
+      'run-summary': createRunSummary(
+        (screen) => this.transitionTo(screen as Screen),
+        defaultRunSummary,
+      ),
     }
 
     this.setupEventListeners()
@@ -72,8 +88,15 @@ export class GameApp {
     return { x, y }
   }
 
-  private transitionTo(next: Screen): void {
+  private transitionTo(next: Screen, summary?: RunSummary): void {
     if (next === this.currentScreen) return
+    if (next === 'run-summary' && summary) {
+      this.pendingRunSummary = summary
+      this.screens['run-summary'] = createRunSummary(
+        (screen) => this.transitionTo(screen as Screen),
+        summary,
+      )
+    }
     this.currentScreen = next
   }
 

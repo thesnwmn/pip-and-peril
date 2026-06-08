@@ -21,7 +21,7 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 ---
 
 
-### 024 · Run Summary Screen
+### 024 · Run Summary Screen [IN PROGRESS]
 
 A full-screen parchment retrospective at the end of every run — reached by boss victory (after
 the 023 banner) or Pip's death. Its hero element is a hand-drawn **dungeon sketch** of the run just
