@@ -20,19 +20,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-### 028 · NPC Encounter [IN PROGRESS]
-
-The blue **NPC**: dialogue-first, the inverse of combat — text and choices primary, with branching
-choices and a dice check appearing *inside* the dialogue when a response calls for one (check-gated
-responses with rewards/consequences). Delivers hints, small rewards, and world voice; completes the
-encounter-type set. Introduces the **unified check panel** (one roll, approach colour, three-band
-fail-forward) as a reusable module; folds in Ideas 070 and 071.
-**Depends on:** 005 (dice for checks), 004 (entry trigger), 030 (encounter panel), 034 (encounter
-registry), 048 (Luck interrupt on failed checks).
-See `docs/features/028-npc-encounter.md` for the full spec.
-
----
-
 ## NEEDS SPEC
 
 > **Planner note (2026-06-07):** Three principles govern the sequence below.
