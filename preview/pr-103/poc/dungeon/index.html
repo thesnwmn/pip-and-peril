@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390, initial-scale=1.0, user-scalable=no">
+  <title>POC 3 — Dungeon Generator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d0d1a;
+      color: #e8d5b0;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 12px;
+      gap: 10px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 360px;
+    }
+    header h2 { font-size: 13px; opacity: 0.55; letter-spacing: 2px; text-transform: uppercase; }
+    header a   { color: #c8941e; text-decoration: none; font-size: 12px; opacity: 0.7; }
+    canvas { display: block; border: 2px solid #2a1f15; image-rendering: pixelated; }
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      width: 360px;
+      justify-content: space-between;
+    }
+    #status { font-size: 12px; color: #8b7355; flex: 1; }
+    #status span { color: #c8941e; }
+    .btn {
+      padding: 8px 18px;
+      background: #c8941e;
+      color: #0d0d1a;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.12s;
+      font-family: monospace;
+      letter-spacing: 0.05em;
+    }
+    .btn:hover { background: #e0a830; }
+    .hint { font-size: 11px; opacity: 0.35; }
+    #win-banner {
+      display: none;
+      padding: 12px 24px;
+      background: #1a2a0a;
+      border: 2px solid #60c040;
+      border-radius: 10px;
+      color: #90e060;
+      font-size: 14px;
+      text-align: center;
+      width: 360px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="../../">← Back</a>
+    <h2>POC 3 — Dungeon Gen</h2>
+    <span></span>
+  </header>
+  <canvas id="c"></canvas>
+  <div class="controls">
+    <div id="status">Rooms: <span id="room-count">0</span> · Steps: <span id="steps">0</span></div>
+    <button class="btn" id="gen-btn">New Dungeon</button>
+  </div>
+  <div id="win-banner">🐾 Pip found the exit! Press New Dungeon to go deeper.</div>
+  <div class="hint">WASD / Arrows · Reach the golden exit ✦</div>
+
+  <script>
+    // --- Constants (tile colour palette consistent with POC 1) ---
+    const TILE = { WALL: 1, FLOOR: 2, CORRIDOR: 3, START: 4, EXIT: 5 };
+    const FOG  = { HIDDEN: 0, SEEN: 1, VISIBLE: 2 };
+    const TS   = 18;
+    const MW   = 20, MH = 28;
+    const MIN_P     = 4;   // minimum BSP partition side length
+    const MAX_DEPTH = 5;
+
+    const C = {
+      bg:           '#0d0d1a',
+      wall:         '#3d2b1f',
+      wallBevel:    '#4e3628',
+      floor:        '#5a4835',
+      floorLine:    '#6b5843',
+      corridor:     '#503d2a',
+      startGlow:    '#2a5a3a',
+      startMark:    '#60c080',
+      exitGlow:     '#5a4a00',
+      exitMark:     '#f0c030',
+      seenOverlay:  'rgba(13,13,26,0.62)',
+      pip:          '#f5e6c8',
+      pipEar:       '#e0c8a0',
+      pipEye:       '#3d2b1f',
+      pipNose:      '#c87060',
+    };
+
+    let map = [];
+    let fog = [];
+    let rooms = [];
+    let px = 0, py = 0;
+    let steps = 0;
+    let won = false;
+
+    const canvas = document.getElementById('c');
+    const ctx    = canvas.getContext('2d');
+    canvas.width  = MW * TS;
+    canvas.height = MH * TS;
+
+    // --- BSP dungeon generation ---
+    function makeNode(x, y, w, h) {
+      return { x, y, w, h, left: null, right: null, room: null };
+    }
+
+    function bspSplit(node, depth) {
+      if (depth >= MAX_DEPTH) return;
+      const canH = node.h >= MIN_P * 2 + 1;
+      const canV = node.w >= MIN_P * 2 + 1;
+      if (!canH && !canV) return;
+
+      // Prefer splitting the longer axis to keep rooms squarish
+      let splitH;
+      if (canH && canV) {
+        splitH = node.h > node.w * 1.25 || (!(node.w > node.h * 1.25) && Math.random() < 0.5);
+      } else {
+        splitH = canH;
+      }
+
+      if (splitH) {
+        const pos = MIN_P + Math.floor(Math.random() * (node.h - MIN_P * 2));
+        node.left  = makeNode(node.x, node.y,       node.w, pos);
+        node.right = makeNode(node.x, node.y + pos, node.w, node.h - pos);
+      } else {
+        const pos = MIN_P + Math.floor(Math.random() * (node.w - MIN_P * 2));
+        node.left  = makeNode(node.x,       node.y, pos,           node.h);
+        node.right = makeNode(node.x + pos, node.y, node.w - pos,  node.h);
+      }
+
+      bspSplit(node.left,  depth + 1);
+      bspSplit(node.right, depth + 1);
+    }
+
+    function bspRooms(node) {
+      if (node.left || node.right) {
+        if (node.left)  bspRooms(node.left);
+        if (node.right) bspRooms(node.right);
+        const r1 = getAnyRoom(node.left);
+        const r2 = getAnyRoom(node.right);
+        if (r1 && r2) connectRooms(r1, r2);
+      } else {
+        const pad  = 1;
+        const maxW = Math.max(3, node.w - pad * 2);
+        const maxH = Math.max(3, node.h - pad * 2);
+        const rw   = 3 + Math.floor(Math.random() * Math.max(1, maxW - 2));
+        const rh   = 3 + Math.floor(Math.random() * Math.max(1, maxH - 2));
+        const rx   = node.x + pad + Math.floor(Math.random() * Math.max(1, maxW - rw + 1));
+        const ry   = node.y + pad + Math.floor(Math.random() * Math.max(1, maxH - rh + 1));
+
+        const room = {
+          x: rx, y: ry, w: rw, h: rh,
+          cx: Math.floor(rx + rw / 2),
+          cy: Math.floor(ry + rh / 2),
+        };
+        node.room = room;
+        rooms.push(room);
+
+        for (let y = ry; y < ry + rh; y++)
+          for (let x = rx; x < rx + rw; x++)
+            if (x > 0 && x < MW - 1 && y > 0 && y < MH - 1)
+              map[y][x] = TILE.FLOOR;
+      }
+    }
+
+    function getAnyRoom(node) {
+      if (!node) return null;
+      if (node.room) return node.room;
+      return getAnyRoom(node.left) || getAnyRoom(node.right);
+    }
+
+    function connectRooms(r1, r2) {
+      if (Math.random() < 0.5) {
+        carve(r1.cx, r1.cy, r2.cx, r1.cy);
+        carve(r2.cx, r1.cy, r2.cx, r2.cy);
+      } else {
+        carve(r1.cx, r1.cy, r1.cx, r2.cy);
+        carve(r1.cx, r2.cy, r2.cx, r2.cy);
+      }
+    }
+
+    function carve(x1, y1, x2, y2) {
+      const dx = Math.sign(x2 - x1), dy = Math.sign(y2 - y1);
+      let x = x1, y = y1;
+      while (true) {
+        if (x >= 0 && x < MW && y >= 0 && y < MH)
+          if (map[y][x] === TILE.WALL) map[y][x] = TILE.CORRIDOR;
+        if (x === x2 && y === y2) break;
+        if (x !== x2) x += dx; else y += dy;
+      }
+    }
+
+    function generate() {
+      map   = Array.from({ length: MH }, () => Array(MW).fill(TILE.WALL));
+      fog   = Array.from({ length: MH }, () => Array(MW).fill(FOG.HIDDEN));
+      rooms = [];
+      won   = false;
+      steps = 0;
+
+      document.getElementById('win-banner').style.display = 'none';
+
+      const root = makeNode(1, 1, MW - 2, MH - 2);
+      bspSplit(root, 0);
+      bspRooms(root);
+
+      // Pick start (leftmost room) and exit (rightmost room)
+      rooms.sort((a, b) => a.cx - b.cx);
+      const startRoom = rooms[0];
+      const exitRoom  = rooms[rooms.length - 1];
+
+      map[startRoom.cy][startRoom.cx] = TILE.START;
+      map[exitRoom.cy][exitRoom.cx]   = TILE.EXIT;
+
+      px = startRoom.cx;
+      py = startRoom.cy;
+
+      document.getElementById('room-count').textContent = rooms.length;
+      updateFog();
+      render();
+      updateStatus();
+    }
+
+    // --- Fog of war ---
+    function updateFog() {
+      for (let y = 0; y < MH; y++)
+        for (let x = 0; x < MW; x++)
+          if (fog[y][x] === FOG.VISIBLE) fog[y][x] = FOG.SEEN;
+
+      const R = 4;
+      for (let dy = -R; dy <= R; dy++) {
+        for (let dx = -R; dx <= R; dx++) {
+          if (dx * dx + dy * dy <= R * R) {
+            const nx = px + dx, ny = py + dy;
+            if (nx >= 0 && nx < MW && ny >= 0 && ny < MH)
+              fog[ny][nx] = FOG.VISIBLE;
+          }
+        }
+      }
+    }
+
+    // --- Rendering (same style as POC 1) ---
+    function drawTile(x, y) {
+      const tile  = map[y][x];
+      const state = fog[y][x];
+      const sx    = x * TS, sy = y * TS;
+
+      if (state === FOG.HIDDEN) {
+        ctx.fillStyle = C.bg;
+        ctx.fillRect(sx, sy, TS, TS);
+        return;
+      }
+
+      switch (tile) {
+        case TILE.WALL:
+          ctx.fillStyle = C.wall;
+          ctx.fillRect(sx, sy, TS, TS);
+          ctx.fillStyle = C.wallBevel;
+          ctx.fillRect(sx, sy, TS, 2);
+          ctx.fillRect(sx, sy, 2, TS);
+          break;
+        case TILE.FLOOR:
+        case TILE.CORRIDOR:
+          ctx.fillStyle = tile === TILE.CORRIDOR ? C.corridor : C.floor;
+          ctx.fillRect(sx, sy, TS, TS);
+          ctx.strokeStyle = C.floorLine;
+          ctx.lineWidth = 0.4;
+          ctx.strokeRect(sx + 0.5, sy + 0.5, TS - 1, TS - 1);
+          break;
+        case TILE.START:
+          ctx.fillStyle = C.startGlow;
+          ctx.fillRect(sx, sy, TS, TS);
+          ctx.fillStyle = C.startMark;
+          ctx.font = `${TS - 4}px serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('▼', sx + TS / 2, sy + TS / 2 + 1);
+          break;
+        case TILE.EXIT:
+          ctx.fillStyle = C.exitGlow;
+          ctx.fillRect(sx, sy, TS, TS);
+          ctx.fillStyle = C.exitMark;
+          ctx.font = `${TS - 4}px serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('✦', sx + TS / 2, sy + TS / 2 + 1);
+          break;
+      }
+
+      if (state === FOG.SEEN) {
+        ctx.fillStyle = C.seenOverlay;
+        ctx.fillRect(sx, sy, TS, TS);
+      }
+    }
+
+    function drawPip() {
+      const cx = px * TS + TS / 2;
+      const cy = py * TS + TS / 2;
+      const r  = TS / 2 - 2;
+
+      ctx.fillStyle = C.pip;
+      ctx.beginPath(); ctx.arc(cx, cy + 1, r, 0, Math.PI * 2); ctx.fill();
+
+      ctx.fillStyle = C.pipEar;
+      ctx.beginPath(); ctx.arc(cx - 3.5, cy - r + 1, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + 3.5, cy - r + 1, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#e0808060';
+      ctx.beginPath(); ctx.arc(cx - 3.5, cy - r + 1, 1.8, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + 3.5, cy - r + 1, 1.8, 0, Math.PI * 2); ctx.fill();
+
+      ctx.fillStyle = C.pipEye;
+      ctx.beginPath(); ctx.arc(cx + 2, cy - 0.5, 1.2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = C.pipNose;
+      ctx.beginPath(); ctx.arc(cx + 3.5, cy + 2, 1, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function render() {
+      for (let y = 0; y < MH; y++)
+        for (let x = 0; x < MW; x++)
+          drawTile(x, y);
+      if (fog[py][px] === FOG.VISIBLE) drawPip();
+    }
+
+    function updateStatus() {
+      document.getElementById('steps').textContent = steps;
+    }
+
+    // --- Movement ---
+    function tryMove(dx, dy) {
+      if (won) return;
+      const nx = px + dx, ny = py + dy;
+      if (nx < 0 || nx >= MW || ny < 0 || ny >= MH) return;
+      if (map[ny][nx] === TILE.WALL) return;
+      px = nx; py = ny;
+      steps++;
+      updateFog();
+      render();
+      updateStatus();
+
+      if (map[py][px] === TILE.EXIT) {
+        won = true;
+        document.getElementById('win-banner').style.display = 'block';
+      }
+    }
+
+    document.addEventListener('keydown', e => {
+      const moves = {
+        ArrowUp:[0,-1], w:[0,-1], W:[0,-1],
+        ArrowDown:[0,1], s:[0,1], S:[0,1],
+        ArrowLeft:[-1,0], a:[-1,0], A:[-1,0],
+        ArrowRight:[1,0], d:[1,0], D:[1,0],
+      };
+      if (moves[e.key]) { e.preventDefault(); tryMove(...moves[e.key]); }
+    });
+
+    canvas.addEventListener('click', e => {
+      const rect  = canvas.getBoundingClientRect();
+      const scale = canvas.width / rect.width;
+      const tx    = Math.floor((e.clientX - rect.left) * scale / TS);
+      const ty    = Math.floor((e.clientY - rect.top)  * scale / TS);
+      const adx   = Math.abs(tx - px), ady = Math.abs(ty - py);
+      if (adx === 0 && ady === 0) return;
+      if (adx >= ady) tryMove(Math.sign(tx - px), 0);
+      else            tryMove(0, Math.sign(ty - py));
+    });
+
+    document.getElementById('gen-btn').addEventListener('click', generate);
+
+    // --- Init ---
+    generate();
+  </script>
+</body>
+</html>
