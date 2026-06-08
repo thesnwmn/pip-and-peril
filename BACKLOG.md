@@ -20,19 +20,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-
-### 024 · Run Summary Screen [IN PROGRESS]
-
-A full-screen parchment retrospective at the end of every run — reached by boss victory (after
-the 023 banner) or Pip's death. Its hero element is a hand-drawn **dungeon sketch** of the run just
-played (Idea 014), framed by the record: floor reached, enemies defeated, total gold found, and on
-defeat what felled Pip. Same screen serves both outcomes with different header tone. Introduces
-`RunState` counters (`enemiesDefeated`, `goldEarned`, `killedBy`).
-**Depends on:** 023 (run-complete trigger and banner), 006 (defeat signal routing), 034 (encounter registry).
-See `docs/features/024-run-summary-screen.md` for the full spec.
-
----
-
 ### 028 · NPC Encounter
 
 The blue **NPC**: dialogue-first, the inverse of combat — text and choices primary, with branching
