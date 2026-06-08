@@ -53,7 +53,7 @@ reconciliation is a future pass.
 6. Tapping a **plain** (non-check) response advances the conversation to the next node immediately.
    The NPC's next line replaces the previous; new response buttons appear.
 
-7. Tapping a **check-gated** response transitions the panel to **stakes state** (see criteria 8–16).
+7. Tapping a **check-gated** response transitions the panel to **stakes state** (see criteria 10–17).
 
 8. Once a conversation path reaches a terminal node — any node with `isTerminal: true` — the
    reward (if any) is shown in the panel, then after ~2 s the panel auto-descends, the camera
@@ -74,7 +74,12 @@ reconciliation is a future pass.
       `✓ [success outcome]`, `◑ [cost outcome]`, `✗ [failure outcome]`.
     - Approach buttons (2–3): each labelled `[die-glyph  Approach]` (e.g. `🔵 Reason`,
       `🟡 Charm`), styled with the die colour's border; arranged side-by-side.
-    - A **[← Back]** button that returns to the previous dialogue node with no state change.
+
+    There is **no Back button** in the NPC encounter's stakes state. The player has already
+    spoken the dialogue choice aloud — the NPC heard it; there is no undo. The check panel
+    module supports a caller-supplied `allowBack` flag for contexts where declining *after*
+    seeing stakes is a meaningful, consequential choice (e.g. a gate the player voluntarily
+    approaches and can choose to skip). The NPC encounter always sets `allowBack: false`.
 
 11. If Pip has zero dice of an approach colour, that approach button is shown but **disabled**
     (greyed, not tappable). Since every check offers 2–3 approaches and Pip's starting pool
@@ -316,6 +321,10 @@ NpcResponse {
 CheckSpec {
   approaches:   ApproachColour[]    // 2–3 of 'red' | 'green' | 'blue' | 'yellow'
   difficulty:   number              // pip threshold (before floor scaling)
+  allowBack?:   boolean             // default false — show [← Back] in stakes state only
+                                    // when the caller can meaningfully let the player
+                                    // decline after seeing stakes (e.g. gate approach,
+                                    // shop haggle). Never true for mid-dialogue checks.
   stakeSuccess: string              // ✓ line shown in stakes state
   stakeCost:    string              // ◑ line
   stakeFail:    string              // ✗ line
@@ -346,7 +355,8 @@ response is tapped. Future features provide their own `CheckSpec` to the same mo
   STAKES STATE
   ─────────────────────────────────────────────────────────────────
   Shows: stakes summary (✓ / ◑ / ✗ lines) + approach buttons (2–3)
-  [← Back] returns to preceding dialogue node; no state change.
+  If allowBack: true → [← Back] returns to caller; no state change.
+  If allowBack: false (NPC encounter) → no back option; player must choose an approach.
   Player taps approach button
          │
          ▼
@@ -475,7 +485,7 @@ parchment-warm like the shop — this is a creature in a dungeon, not a merchant
 
 ---
 
-**Layout — check: stakes state:**
+**Layout — check: stakes state (NPC encounter — no Back):**
 
 ```
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
@@ -487,9 +497,12 @@ parchment-warm like the shop — this is a creature in a dungeon, not a merchant
 │  Choose approach:        │  ← 13px, --text-muted label
 │ [🔵 Reason] [🟡 Charm]   │  ← approach buttons; coloured outline border per die colour
 │                          │     disabled approaches: greyed border, not tappable
-│ [← Back              ]  │  ← secondary; returns to dialogue node; --text-muted
-└──────────────────────────┘
+└──────────────────────────┘     no Back button — choice already spoken
 ```
+
+*(When `allowBack: true` — future callers only — a `[← Back]` button appears in the thumb zone
+below the approach buttons, styled `--text-muted`. Tapping it fires the caller's back callback
+with no state change.)*
 
 ---
 
