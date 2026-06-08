@@ -22,7 +22,7 @@ import { drawCombatBanner, drawCombatPanel, getCombatUsableItems, hitTest, type 
 import { drawCombatOverlay } from './overlay'
 import type { Inventory, Item } from '../satchel/types'
 import type { DungeonState } from '../navigation/dungeon-state'
-import { applyItemEffect } from '../satchel/items'
+import { applyItemEffect, consumeItem, applyDeathPrevention, applyPassiveArmour } from '../satchel/items'
 import { COMBAT_CONFIG } from '../encounter/config'
 import { PANEL_TOP, COMBAT_MAP_CENTER_X, COMBAT_MAP_CENTER_Y } from '../screens/game-layout'
 
@@ -82,6 +82,7 @@ export function createCombatEncounterPanel(
     identified: false,
     pipPoison: null,
     berserkTurnsLeft: 0,
+    bonusPipsRemaining: 0,
   }
 
   let lastEnemyHeadline = ''
@@ -103,6 +104,8 @@ export function createCombatEncounterPanel(
   let hoveredElement: string | null = null
   let flashingElement: string | null = null
   let flashEndTime: number | null = null
+  let paddedCoatLoggedThisCombat = false
+  let deathPreventionNotificationEndTime: number | null = null
 
   // ── Roll animation ────────────────────────────────────────────────────────
 
@@ -125,7 +128,15 @@ export function createCombatEncounterPanel(
   }
 
   function startRoll(): void {
-    const rolled = rollPool(ctx.getPool())
+    let rolled = rollPool(ctx.getPool())
+    const inventory = ctx.getInventory()
+    const totalPenalty = inventory.items.reduce((sum, i) => sum + (i.greenPenalty ?? 0), 0)
+    if (totalPenalty > 0) {
+      rolled = { ...rolled, totals: { ...rolled.totals, green: Math.max(0, rolled.totals.green - totalPenalty) } }
+      if (!paddedCoatLoggedThisCombat) {
+        paddedCoatLoggedThisCombat = true
+      }
+    }
     ctx.setPool(rolled)
     anim.startTime = performance.now()
     anim.lastTick = 0
@@ -162,23 +173,52 @@ export function createCombatEncounterPanel(
 
     if (combat.phase === 'awaiting-roll') {
       // First roll: start player turn.
+      if (combat.berserkTurnsLeft > 0) combat.berserkTurnsLeft -= 1
       combat = { ...combat, phase: 'player-turn', itemUsedThisTurn: false, pipsSpentThisTurn: false, analysedThisTurn: false }
       startRoll()
       return
     }
 
     if (combat.phase === 'player-turn') {
-      // End turn: fire enemy intent, reset, then await next roll.
+      // End turn: fire enemy intent with damage mitigation, reset, then await next roll.
       const firedIntent = combat.intent  // capture before applyEnemyTurn swaps to next intent
       const prevHp = ctx.getPipHp()
-      const result = applyEnemyTurn(combat, prevHp)
-      ctx.setPipHp(result.pipHp)
+      let inventory = ctx.getInventory()
+
+      // Apply Stolen Idol damage bonus before damage calculation
+      let modifiedCombat = combat
+      if ((firedIntent.kind === 'attack' || firedIntent.kind === 'lunge') &&
+          inventory.items.some(i => i.id === 'stolen-idol')) {
+        const modifiedIntent = { ...firedIntent, value: firedIntent.value + 1 }
+        modifiedCombat = { ...combat, intent: modifiedIntent }
+      }
+
+      // Get raw enemy turn result
+      const result = applyEnemyTurn(modifiedCombat, prevHp)
+      const rawDamage = result.damage
+
+      // Apply passive armour to reduce damage
+      const actualDamage = applyPassiveArmour(rawDamage, inventory)
+
+      // Calculate new HP and check for death prevention
+      const newPipHp = Math.max(0, prevHp - actualDamage)
+      const { pipHp: finalHp, inventory: finalInventory } = applyDeathPrevention(newPipHp, inventory)
+      const defeat = finalHp <= 0
+
+      ctx.setPipHp(finalHp)
+      ctx.setInventory(finalInventory)
+
+      // Handle death prevention notification
+      if (newPipHp <= 0 && finalHp === 1) {
+        deathPreventionNotificationEndTime = performance.now() + 2500
+      }
+
       // Return to awaiting-roll so the player sees the new intent before rolling again.
-      combat = { ...result.combat, phase: result.defeat ? 'defeat' : 'awaiting-roll', itemUsedThisTurn: false, pipsSpentThisTurn: false, analysedThisTurn: false }
+      combat = { ...result.combat, phase: defeat ? 'defeat' : 'awaiting-roll', itemUsedThisTurn: false, pipsSpentThisTurn: false, analysedThisTurn: false, bonusPipsRemaining: 0 }
       openCategory = null
       fleePending = false
 
-      if (result.defeat) {
+      if (defeat) {
         bannerStartTime = performance.now()
         return
       }
@@ -220,7 +260,12 @@ export function createCombatEncounterPanel(
           actionLine = personality.statusLine || 'strikes'
         }
         lastEnemyHeadline = `The ${combat.enemy.name} ${actionLine}`
-        lastEnemyDetail = `−${result.damage} HP  (${prevHp} → ${ctx.getPipHp()})`
+        const blocked = rawDamage - actualDamage
+        if (blocked > 0) {
+          lastEnemyDetail = `−${actualDamage} HP (${blocked} blocked)  (${prevHp} → ${finalHp})`
+        } else {
+          lastEnemyDetail = `−${actualDamage} HP  (${prevHp} → ${finalHp})`
+        }
       }
 
       // Reset dice to idle; player must roll to start their next turn.
@@ -234,9 +279,28 @@ export function createCombatEncounterPanel(
     const { pool: updated } = spendPips(ctx.getPool(), cost)
     ctx.setPool(updated)
     const prevEnemyHp = combat.enemy.hp
-    const result = heavy ? applyHeavyStrike(combat) : applyStrike(combat)
-    combat = { ...result.combat, pipsSpentThisTurn: true }
-    if (result.victory) {
+    let result = heavy ? applyHeavyStrike(combat) : applyStrike(combat)
+    let finalCombat = result.combat
+    let finalVictory = result.victory
+
+    // Apply berserk damage doubling
+    if (combat.berserkTurnsLeft > 0) {
+      const berserkBonus = heavy ? 4 : 2  // Strike: 2→4, Heavy: 4→8
+      const newEnemyHp = Math.max(0, finalCombat.enemy.hp - berserkBonus)
+      const newVictory = newEnemyHp <= 0
+      let newEnemy = { ...finalCombat.enemy, hp: newEnemyHp }
+      if (!newVictory && newEnemyHp > 0 && !finalCombat.enemy.enraged) {
+        // Check for enrage with the reduced HP
+        if (newEnemy.enrageThreshold !== undefined && newEnemyHp <= newEnemy.enrageThreshold && newEnemy.enragedCycle) {
+          newEnemy = { ...newEnemy, enraged: true }
+        }
+      }
+      finalCombat = { ...finalCombat, enemy: newEnemy, phase: newVictory ? 'victory' : finalCombat.phase }
+      finalVictory = newVictory
+    }
+
+    combat = { ...finalCombat, pipsSpentThisTurn: true }
+    if (finalVictory) {
       const goldEarned = rollGoldReward(combat.enemy)
       ctx.setInventory({ ...ctx.getInventory(), gold: ctx.getInventory().gold + goldEarned })
       combat = { ...combat, goldAwarded: goldEarned }
@@ -247,6 +311,7 @@ export function createCombatEncounterPanel(
   }
 
   function handleReserve(): void {
+    if (combat.berserkTurnsLeft > 0) { flash('sub-reserve'); return }
     if (!canAfford(ctx.getPool(), { green: 1 })) { flash('sub-reserve'); return }
     const { pool: updated } = spendPips(ctx.getPool(), { green: 1 })
     ctx.setPool(updated)
@@ -349,11 +414,60 @@ export function createCombatEncounterPanel(
   function handleItem(item: Item): void {
     if (combat.itemUsedThisTurn) return
     if (item.luckyClass && combat.pipsSpentThisTurn) return
-    const inventory = ctx.getInventory()
-    const prevHp = ctx.getPipHp()
+
+    // Tenacity gate: item only usable after pips spent this turn
+    if (item.window === 'post-spend-tenacity' && !combat.pipsSpentThisTurn) {
+      const usableItems = ctx.getInventory().items.filter(i => i.usableInCombat)
+      const itemIdx = usableItems.findIndex(i => i.id === item.id)
+      flash('item-' + itemIdx)
+      return
+    }
+
+    let inventory = ctx.getInventory()
+    let pipHp = ctx.getPipHp()
+    const pipMaxHp = ctx.getPipMaxHp()
+
+    // Handle bonus-pips effect (Tainted Mushroom)
+    if (item.effect.type === 'bonus-pips') {
+      const selfDamage = item.effect.selfDamage
+      const newHp = Math.max(0, pipHp - selfDamage)
+      const { pipHp: survivedHp, inventory: postDeathInv } = applyDeathPrevention(newHp, inventory)
+
+      if (survivedHp <= 0) {
+        ctx.setPipHp(survivedHp)
+        ctx.setInventory(postDeathInv)
+        combat = { ...combat, phase: 'defeat' }
+        bannerStartTime = performance.now()
+        return
+      }
+
+      if (newHp <= 0 && survivedHp === 1) {
+        // Death prevented: show notification
+        deathPreventionNotificationEndTime = performance.now() + 2500
+      }
+
+      ctx.setPipHp(survivedHp)
+      ctx.setInventory(postDeathInv)
+      inventory = consumeItem(postDeathInv, item.id)
+      ctx.setInventory(inventory)
+      combat = { ...combat, bonusPipsRemaining: item.effect.amount, itemUsedThisTurn: true }
+      openCategory = null
+      return
+    }
+
+    // Handle berserk effect (Berserker Draught)
+    if (item.effect.type === 'berserk') {
+      combat = { ...combat, berserkTurnsLeft: item.effect.turnsLeft, itemUsedThisTurn: true }
+      inventory = consumeItem(inventory, item.id)
+      ctx.setInventory(inventory)
+      openCategory = null
+      return
+    }
+
+    // Standard item effects
     const ds = ctx.getDungeonState()
     const result = applyItemEffect(
-      { pipHp: prevHp, pipMaxHp: ctx.getPipMaxHp(), pool: ctx.getPool(), dungeonState: ds,
+      { pipHp, pipMaxHp, pool: ctx.getPool(), dungeonState: ds,
         tileRow: ds.pip.row, tileCol: ds.pip.col },
       item.effect,
     )
@@ -374,15 +488,8 @@ export function createCombatEncounterPanel(
       }
     }
 
-    // Decrement quantity.
-    const idx = inventory.items.findIndex(i => i.id === item.id)
-    if (idx >= 0) {
-      const updated = [...inventory.items]
-      updated[idx] = { ...updated[idx], quantity: updated[idx].quantity - 1 }
-      if (updated[idx].quantity <= 0) updated.splice(idx, 1)
-      ctx.setInventory({ ...inventory, items: updated })
-    }
-
+    inventory = consumeItem(inventory, item.id)
+    ctx.setInventory(inventory)
     combat = { ...combat, itemUsedThisTurn: true }
     openCategory = null
   }
@@ -452,6 +559,7 @@ export function createCombatEncounterPanel(
       animScramble: anim.scramble,
       inventory: ctx.getInventory(),
       timestamp,
+      deathPreventionNotificationEndTime,
     })
   }
 
@@ -522,7 +630,37 @@ export function createCombatEncounterPanel(
 
     if (id === 'roll') { handleRoll(); return }
 
-    // Category toggles
+    // Bonus pip assignment mode
+    if (combat.bonusPipsRemaining > 0) {
+      if (id === 'cat-red') {
+        const pool = ctx.getPool()
+        ctx.setPool({ ...pool, totals: { ...pool.totals, red: pool.totals.red + 1 } })
+        combat = { ...combat, bonusPipsRemaining: combat.bonusPipsRemaining - 1 }
+        return
+      }
+      if (id === 'cat-green') {
+        const pool = ctx.getPool()
+        ctx.setPool({ ...pool, totals: { ...pool.totals, green: pool.totals.green + 1 } })
+        combat = { ...combat, bonusPipsRemaining: combat.bonusPipsRemaining - 1 }
+        return
+      }
+      if (id === 'cat-blue') {
+        const pool = ctx.getPool()
+        ctx.setPool({ ...pool, totals: { ...pool.totals, blue: pool.totals.blue + 1 } })
+        combat = { ...combat, bonusPipsRemaining: combat.bonusPipsRemaining - 1 }
+        return
+      }
+      if (id === 'cat-yellow') {
+        const pool = ctx.getPool()
+        ctx.setPool({ ...pool, totals: { ...pool.totals, yellow: pool.totals.yellow + 1 } })
+        combat = { ...combat, bonusPipsRemaining: combat.bonusPipsRemaining - 1 }
+        return
+      }
+      // All other actions disabled while bonus pip assignment is active
+      return
+    }
+
+    // Category toggles (normal mode)
     if (id === 'cat-red') {
       if (!canAfford(pool, { red: 2 })) { flash('cat-red'); return }
       openCategory = openCategory === 'red' ? null : 'red'

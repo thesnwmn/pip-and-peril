@@ -20,13 +20,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-### 050 · Item Catalogue — Mechanics Integration
-
-Wire the UI rendering and combat integration for the mechanics shipped-but-unhooked in feature 049: charged item display (Nc badge), Tenacity reroll gate, Padded Coat Green penalty, Berserker Draught 3-turn status (2× Strike, no dodge), Tainted Mushroom self-damage + bonus pip assignment, Stolen Idol passive gold + enemy damage — plus passive armour (`applyPassiveArmour`) and death prevention (`applyDeathPrevention`), both tested but not yet called inside the combat loop.
-**Depends on:** 049 (Item Catalogue — shipped), 037 (Combat Overhaul — logic framework).
-See `docs/features/050-item-catalogue-mechanics.md` for the full spec.
-
----
 
 ### 024 · Run Summary Screen
 

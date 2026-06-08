@@ -473,6 +473,7 @@ export interface CombatPanelDrawState {
   animScramble: number[]
   inventory: Inventory
   timestamp: DOMHighResTimeStamp
+  deathPreventionNotificationEndTime: number | null
 }
 
 // Items that are currently usable in combat, respecting the Luck window gate.
@@ -497,6 +498,22 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
   ctx.lineTo(MAP_X + MAP_W, PANEL_TOP)
   ctx.stroke()
 
+  // ── Berserk status strip ──
+  if (combat.berserkTurnsLeft > 0) {
+    const stripH = 36
+    roundRect(ctx, MAP_X + 8, PANEL_TOP + 8, MAP_W - 16, stripH, 6)
+    ctx.fillStyle = colors.roomEnemy
+    ctx.fill()
+    ctx.font = 'bold 13px monospace'
+    ctx.fillStyle = colors.textPrimary
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    ctx.fillText(`🔥 BERSERK · ${combat.berserkTurnsLeft} turn${combat.berserkTurnsLeft !== 1 ? 's' : ''} left`, MAP_X + 16, PANEL_TOP + 12)
+    ctx.font = '11px monospace'
+    ctx.fillStyle = colors.textMuted
+    ctx.fillText('2× Strike · No dodge', MAP_X + 20, PANEL_TOP + 24)
+  }
+
   // ── Dice faces ──
   const centres = dieCentres(pool.dice.length)
   for (let i = 0; i < pool.dice.length; i++) {
@@ -508,13 +525,23 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     drawDieFace(ctx, centres[i], die.color, die.sides, roll?.value ?? null, scramble)
   }
 
-  // Colour labels
+  // Colour labels and bonus pip prompt
   ctx.font = '10px monospace'
   ctx.fillStyle = colors.textMuted
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
   for (let i = 0; i < pool.dice.length; i++) {
     ctx.fillText(COLOR_LABEL[pool.dice[i].color], centres[i] + DIE_SIZE / 2, LABEL_Y)
+  }
+
+  // Bonus pip assignment prompt
+  if (combat.bonusPipsRemaining > 0) {
+    ctx.font = '11px monospace'
+    ctx.fillStyle = colors.gold
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'bottom'
+    const promptText = `Assign ${combat.bonusPipsRemaining} bonus pip${combat.bonusPipsRemaining !== 1 ? 's' : ''}:`
+    ctx.fillText(promptText, MAP_X + MAP_W / 2, PIP_BTN_Y - 4)
   }
 
   // ── Pip buttons (only during player turn) ──
@@ -640,7 +667,7 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     }
 
     if (openCategory === 'item') {
-      drawItemList(ctx, inventory, combat.pipsSpentThisTurn, s.hoveredElement, SUBMENU_Y)
+      drawItemList(ctx, inventory, combat, s.hoveredElement, SUBMENU_Y)
     }
   }
 
@@ -683,7 +710,7 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
 
   // ── Bottom button row (Flee | ROLL/END TURN | Item) ──
   const fleeDisabled = !inPlayerTurn || combat.enemy.isBoss
-  const rollDisabled = pool.state === 'rolling'
+  const rollDisabled = pool.state === 'rolling' || combat.bonusPipsRemaining > 0
   const hasUsableItems = getCombatUsableItems(inventory, combat.pipsSpentThisTurn).length > 0
   const itemUsed = combat.itemUsedThisTurn
   const itemDisabled = !hasUsableItems || itemUsed
@@ -722,12 +749,17 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
     false,
   )
 
+  // Death prevention notification
+  if (s.deathPreventionNotificationEndTime !== null && timestamp < s.deathPreventionNotificationEndTime) {
+    drawDeathPreventionNotification(ctx, s.inventory)
+  }
+
 }
 
 function drawItemList(
   ctx: CanvasRenderingContext2D,
   inventory: Inventory,
-  pipsSpentThisTurn: boolean,
+  combat: CombatState,
   hovered: string | null,
   startY: number,
 ): void {
@@ -743,9 +775,16 @@ function drawItemList(
 
   // Two-column layout (max 4 items = 2 rows × 2 columns).
   // Luck-class items are greyed and untappable once pips have been spent this turn.
+  // Tenacity items are greyed until pips are spent and no item used this turn.
+  // Berserk Draught is greyed while berserk is active.
   for (let i = 0; i < Math.min(items.length, 4); i++) {
     const item = items[i]
-    const locked = item.luckyClass && pipsSpentThisTurn
+    const isTenacity = item.window === 'post-spend-tenacity'
+    const isBerserk = item.effect.type === 'berserk'
+    const luckyLocked = item.luckyClass && combat.pipsSpentThisTurn
+    const tenacityLocked = isTenacity && !combat.pipsSpentThisTurn
+    const berserkLocked = isBerserk && combat.berserkTurnsLeft > 0
+    const locked = luckyLocked || tenacityLocked || berserkLocked || combat.itemUsedThisTurn
     const col = i % 2
     const row = Math.floor(i / 2)
     const x = subBtnX(col)
@@ -768,7 +807,11 @@ function drawItemList(
     ctx.fillText(item.name, x + SUBMENU_BTN_W / 2, y + SUBMENU_BTN_H / 2 - 8)
     ctx.font = '9px monospace'
     ctx.fillStyle = locked ? colors.textMuted : colors.gold
-    ctx.fillText(`×${item.quantity}`, x + SUBMENU_BTN_W / 2, y + SUBMENU_BTN_H / 2 + 8)
+    if (item.charges !== undefined) {
+      ctx.fillText(`${item.charges}c`, x + SUBMENU_BTN_W / 2, y + SUBMENU_BTN_H / 2 + 8)
+    } else {
+      ctx.fillText(`×${item.quantity}`, x + SUBMENU_BTN_W / 2, y + SUBMENU_BTN_H / 2 + 8)
+    }
 
     ctx.globalAlpha = 1
   }
@@ -849,6 +892,54 @@ export function buildHitRects(
 
   void fleePending
   return rects
+}
+
+function drawDeathPreventionNotification(
+  ctx: CanvasRenderingContext2D,
+  inventory: Inventory,
+): void {
+  const preventionItem = inventory.items.find(i => i.deathPrevention === true)
+  if (!preventionItem) return
+
+  const notifW = 240
+  const notifH = 120
+  const notifX = (MAP_X + MAP_W / 2) - notifW / 2
+  const notifY = (PANEL_TOP + (LOGICAL_H - PANEL_TOP) / 2) - notifH / 2
+
+  // Background
+  roundRect(ctx, notifX, notifY, notifW, notifH, 6)
+  ctx.fillStyle = colors.surface
+  ctx.fill()
+  ctx.strokeStyle = colors.gold
+  ctx.lineWidth = 2
+  ctx.stroke()
+
+  let y = notifY + 10
+  ctx.font = 'bold 16px monospace'
+  ctx.fillStyle = colors.gold
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'top'
+  ctx.fillText(preventionItem.name, notifX + notifW / 2, y)
+
+  y += 22
+  ctx.font = '11px monospace'
+  ctx.fillStyle = colors.textMuted
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'top'
+  const description = preventionItem.description
+  const lines = description.split('\n')
+  const lineHeight = 12
+  for (const line of lines) {
+    ctx.fillText(line, notifX + notifW / 2, y)
+    y += lineHeight
+  }
+
+  y += 4
+  ctx.font = 'bold 14px monospace'
+  ctx.fillStyle = colors.gold
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'top'
+  ctx.fillText('Pip survives at 1 HP', notifX + notifW / 2, y)
 }
 
 export function hitTest(

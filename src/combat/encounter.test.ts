@@ -37,6 +37,7 @@ function makeCombat(overrides: Partial<CombatState> = {}): CombatState {
     identified: false,
     pipPoison: null,
     berserkTurnsLeft: 0,
+    bonusPipsRemaining: 0,
     ...overrides,
   }
 }
