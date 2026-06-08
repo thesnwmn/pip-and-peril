@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 024 · Run Summary Screen
+
+**Shipped:** 2026-06-08 · **PR:** #101 · **Spec:** [docs/features/history/024-run-summary-screen.md](docs/features/history/024-run-summary-screen.md)
+
+A full-screen parchment retrospective at the end of every run — reached by boss victory (after the 023 banner) or Pip's death. Its hero element is a hand-drawn **dungeon sketch** of the run just played (Idea 014), framed by the record: floor reached, enemies defeated, total gold found, and on defeat what felled Pip. Same screen serves both outcomes with different header tone. Introduces `RunState` counters (`enemiesDefeated`, `goldEarned`, `killedBy`).
+
+---
+
 ### 050 · Item Catalogue — Mechanics Integration
 
 **Shipped:** 2026-06-08 · **PR:** TBD · **Spec:** [docs/features/history/050-item-catalogue-mechanics.md](docs/features/history/050-item-catalogue-mechanics.md)

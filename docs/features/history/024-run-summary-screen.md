@@ -310,10 +310,23 @@ None. All design choices are settled.
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-08 · **PR:** #101
 
 ### What was built
 
+Complete Run Summary screen shipped with full routing, run-state tracking, and screen layout. Victory and defeat paths both route correctly through the encounter registry. RunState module tracks enemiesDefeated, goldEarned, killedBy, and killedByFloor throughout the run. Stats count-up animation displays on screen entry; "Begin Again" button routes back to Home with fade transition.
+
 ### Evidence
 
+- RunState module integrated into game state; counters incremented on combat victory and gold acquisition
+- RunSummary screen renders victory and defeat variants with correct typography, colours, and layout per spec
+- Routing wired: boss victory path → 023 banner → Run Summary (victory); combat defeat → Run Summary (defeat)
+- Fade transitions (~600ms in, ~300ms out) implemented correctly
+- Stats card with borders, labels, and count-up animations displaying floor reached, enemies defeated, gold found
+- Defeat variant includes "FELLED BY" row with enemy name and floor
+- Button styling and fade-in timing (0.5s) matches spec; responsive to 360–430px portrait widths
+- All acceptance criteria passed; tests, typecheck, and build all pass
+
 ### Play-test
+
+Victory path: defeat the Rat King on Floor 3, see "RUN COMPLETE" header, observe stats count up from 0 (enemies defeated: 12, gold found: 47), tap "Begin Again" and fade to Home. Defeat path: die to an enemy before floor 3, see "THE RUN ENDS" header, observe "FELLED BY Goblin Guard · Floor 2", tap "Begin Again" and return to Home.
