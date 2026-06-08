@@ -498,22 +498,6 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
   ctx.lineTo(MAP_X + MAP_W, PANEL_TOP)
   ctx.stroke()
 
-  // ── Berserk status strip ──
-  if (combat.berserkTurnsLeft > 0) {
-    const stripH = 36
-    roundRect(ctx, MAP_X + 8, PANEL_TOP + 8, MAP_W - 16, stripH, 6)
-    ctx.fillStyle = colors.roomEnemy
-    ctx.fill()
-    ctx.font = 'bold 13px monospace'
-    ctx.fillStyle = colors.textPrimary
-    ctx.textAlign = 'left'
-    ctx.textBaseline = 'top'
-    ctx.fillText(`🔥 BERSERK · ${combat.berserkTurnsLeft} turn${combat.berserkTurnsLeft !== 1 ? 's' : ''} left`, MAP_X + 16, PANEL_TOP + 12)
-    ctx.font = '11px monospace'
-    ctx.fillStyle = colors.textMuted
-    ctx.fillText('2× Strike · No dodge', MAP_X + 20, PANEL_TOP + 24)
-  }
-
   // ── Dice faces ──
   const centres = dieCentres(pool.dice.length)
   for (let i = 0; i < pool.dice.length; i++) {
