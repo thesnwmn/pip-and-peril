@@ -20,7 +20,7 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-### 028 · NPC Encounter
+### 028 · NPC Encounter [IN PROGRESS]
 
 The blue **NPC**: dialogue-first, the inverse of combat — text and choices primary, with branching
 choices and a dice check appearing *inside* the dialogue when a response calls for one (check-gated
