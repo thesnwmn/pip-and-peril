@@ -23,6 +23,8 @@ interface CampState {
   selectedWeaponId: string
   hoveredElement: string | null
   isMouseDevice: boolean
+  stubPanelOpen: string | null
+  stubPanelStartTime: number | null
 }
 
 const WEAPON_GRID_COLS = 2
@@ -45,6 +47,8 @@ export function createCamp(
     selectedWeaponId: loadMetaState().activeWeaponId,
     hoveredElement: null,
     isMouseDevice: false,
+    stubPanelOpen: null,
+    stubPanelStartTime: null,
   }
 
   function isInDescendButton(x: number, y: number): boolean {
@@ -144,6 +148,26 @@ export function createCamp(
     }
   }
 
+  function isInWeaponRack(x: number, y: number): boolean {
+    const rackX = LOGICAL_W - 120
+    const rackY = 180
+    return x >= rackX - 20 && x <= LOGICAL_W - 40 && y >= rackY && y <= rackY + 110
+  }
+
+  function isInWorkbench(x: number, y: number): boolean {
+    const benchX = 20
+    const benchY = 200
+    return x >= benchX && x <= benchX + 150 && y >= benchY && y <= benchY + 120
+  }
+
+  function isInScrollWall(x: number, y: number): boolean {
+    return x >= 0 && x <= LOGICAL_W && y >= 40 && y <= 120
+  }
+
+  function isInDescentRecord(x: number, y: number): boolean {
+    return x >= LOGICAL_W - 80 && x <= LOGICAL_W - 20 && y >= 10 && y <= 50
+  }
+
   function drawWeaponRack(ctx: CanvasRenderingContext2D): void {
     const rackX = LOGICAL_W - 120
     const rackY = 180
@@ -202,6 +226,31 @@ export function createCamp(
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText('Descend', DESCEND_BUTTON_X + DESCEND_BUTTON_W / 2, DESCEND_BUTTON_Y + DESCEND_BUTTON_H / 2)
+  }
+
+  function drawStubPanel(ctx: CanvasRenderingContext2D, title: string, message: string): void {
+    const panelW = 280
+    const panelH = 120
+    const panelX = (LOGICAL_W - panelW) / 2
+    const panelY = LOGICAL_H - panelH - 100
+
+    ctx.fillStyle = '#2e1d0d'
+    ctx.fillRect(panelX, panelY, panelW, panelH)
+    ctx.strokeStyle = colors.gold
+    ctx.lineWidth = 2
+    ctx.strokeRect(panelX, panelY, panelW, panelH)
+
+    ctx.font = 'bold 14px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.textPrimary
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+    ctx.fillText(title, panelX + panelW / 2, panelY + 12)
+
+    ctx.font = '12px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.textMuted
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+    ctx.fillText(message, panelX + 15, panelY + 40, panelW - 30)
   }
 
   function drawWeaponCard(
@@ -355,7 +404,7 @@ export function createCamp(
     ctx.fillText(sides.toString(), x + size / 2, y + size / 2)
   }
 
-  function draw(ctx: CanvasRenderingContext2D): void {
+  function draw(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
     if (!state.panelOpen) {
       drawCampBackground(ctx)
       drawScrapCounter(ctx)
@@ -363,6 +412,25 @@ export function createCamp(
       drawWeaponRack(ctx)
       drawVisitorStool(ctx)
       drawDescendButton(ctx)
+
+      // Handle stub panel auto-dismiss
+      if (state.stubPanelOpen && state.stubPanelStartTime) {
+        const elapsed = timestamp - state.stubPanelStartTime
+        if (elapsed >= 2000) {
+          state.stubPanelOpen = null
+          state.stubPanelStartTime = null
+        } else {
+          const messages: Record<string, { title: string; msg: string }> = {
+            workbench: { title: 'Workbench', msg: 'Pip tinkers with his dice. Upgrades coming soon.' },
+            scrollWall: { title: 'Sealed Scrolls', msg: 'Nothing readable yet.' },
+            descentRecord: { title: 'Marks of Descent', msg: 'Nothing recorded yet.' },
+          }
+          const msg = messages[state.stubPanelOpen]
+          if (msg) {
+            drawStubPanel(ctx, msg.title, msg.msg)
+          }
+        }
+      }
     } else {
       drawCampBackground(ctx)
       drawScrapCounter(ctx)
@@ -373,6 +441,13 @@ export function createCamp(
   }
 
   function handleClick(x: number, y: number): void {
+    // Dismiss stub panel on any click if open
+    if (state.stubPanelOpen) {
+      state.stubPanelOpen = null
+      state.stubPanelStartTime = null
+      return
+    }
+
     if (state.panelOpen) {
       if (x <= 60 && y >= PANEL_Y && y <= PANEL_Y + 40) {
         state.panelOpen = false
@@ -397,7 +472,22 @@ export function createCamp(
         return
       }
     } else {
-      if (isInDescendButton(x, y)) {
+      if (isInWorkbench(x, y)) {
+        state.stubPanelOpen = 'workbench'
+        state.stubPanelStartTime = performance.now()
+        return
+      }
+      if (isInScrollWall(x, y)) {
+        state.stubPanelOpen = 'scrollWall'
+        state.stubPanelStartTime = performance.now()
+        return
+      }
+      if (isInDescentRecord(x, y)) {
+        state.stubPanelOpen = 'descentRecord'
+        state.stubPanelStartTime = performance.now()
+        return
+      }
+      if (isInDescendButton(x, y) || isInWeaponRack(x, y)) {
         state.panelOpen = true
       }
     }
