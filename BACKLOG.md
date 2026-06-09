@@ -32,16 +32,6 @@ Ships as flavour text; notices do not alter run generation parameters.
 **Depends on:** 029 (camp hub, MetaState — adds `runCount` field).
 See `docs/features/053-dungeon-notice-board.md` for the full spec.
 
-### 029 · Camp Screen, Meta Persistence & Weapon Selection
-
-Closes the outer roguelike loop: a completed run awards **shiny scraps** (remaining gold
-converted one-to-one), the player returns to Pip's warm **camp screen**, chooses a weapon from
-the rack (each contributing dice and a strike action), and descends again. A **live pool preview**
-shows exactly what Pip brings in. Cross-run state (`MetaState`) is persisted in `localStorage`.
-The workbench is visible at camp but not yet operational — dice upgrades ship in 088.
-**Depends on:** 024 (run summary — exit CTA wired to camp), 019/016 (gold model).
-See `docs/features/029-camp-meta-persistence-weapon-selection.md` for the full spec.
-
 ### 088 · Workbench — Dice Upgrades
 
 The second half of the meta-progression foundation: Pip sits at his workbench and spends shiny
