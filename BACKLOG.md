@@ -32,6 +32,18 @@ The workbench is visible at camp but not yet operational — dice upgrades ship 
 **Depends on:** 024 (run summary — exit CTA wired to camp), 019/016 (gold model).
 See `docs/features/029-camp-meta-persistence-weapon-selection.md` for the full spec.
 
+### 088 · Workbench — Dice Upgrades
+
+The second half of the meta-progression foundation: Pip sits at his workbench and spends shiny
+scraps to modify his **permanent dice pool**. Three operations — **Swap** (replace a die with a
+larger face-count, raising ceiling and variance), **Add** (grow the pool by one die of a chosen
+colour and type), and **Engrave** (permanently lock the minimum face of a specific die to tame
+variance) — each costing scraps from `MetaState`. The workbench sub-screen is the camp's hero
+interaction: tappable die objects, inline upgrade options, scrap costs, and confirmation. Together
+with 029 this delivers the full "Shiny Scraps & Dice Upgrades" loop.
+**Depends on:** 029 (MetaState, camp screen, workbench tap target).
+See `docs/features/088-workbench-dice-upgrades.md` for the full spec.
+
 ---
 
 ## NEEDS SPEC
@@ -45,18 +57,6 @@ See `docs/features/029-camp-meta-persistence-weapon-selection.md` for the full s
 > 058 (authored-procedural floors) — a biome's architectural identity (floor shapes, roaming
 > enemies, boss motif) only lands when the floor is pre-authored. Building biome content on the
 > current drafting model would require full rework.
-
-### 088 · Workbench — Dice Upgrades
-
-The second half of the meta-progression foundation: Pip sits at his workbench and spends shiny
-scraps to modify his **permanent dice pool**. Three operations — **Swap** (replace a die with a
-larger face-count, raising ceiling and variance), **Add** (grow the pool by one die of a chosen
-colour and type), and **Engrave** (permanently fix one face of a specific die to tame variance) —
-each costing scraps from `MetaState`. The workbench sub-screen is the camp's hero interaction:
-tappable die objects, inline upgrade options, scrap costs, and confirmation. Together with 029
-this delivers the full "Shiny Scraps & Dice Upgrades" loop.
-**Depends on:** 029 (MetaState, camp screen, workbench tap target).
-**Related:** `docs/concept/meta-progression.md`, `docs/concept/combat-system.md` (die risk profiles).
 
 ### 053 · Dungeon Notice Board
 
