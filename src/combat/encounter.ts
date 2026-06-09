@@ -53,9 +53,10 @@ function resolveStrike(combat: CombatState, rawDamage: number): StrikeResult {
   }
 }
 
-// Strike — 2🔴 — weapon attack value (2).
+// Strike — weapon attack action. Damage determined by active weapon.
 export function applyStrike(combat: CombatState): StrikeResult {
-  return resolveStrike(combat, 2)
+  const damage = combat.strikeAction?.damage ?? 2
+  return resolveStrike(combat, damage)
 }
 
 // Heavy Strike — 4🔴 — weapon attack value +2 (4).

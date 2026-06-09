@@ -1,6 +1,8 @@
 import { colors } from '../colors'
 import type { RunSummary } from './types'
 import type { ScreenController } from './main-menu'
+import type { MetaState } from '../meta/state'
+import { loadMetaState, saveMetaState } from '../meta/state'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
@@ -20,7 +22,7 @@ const CARD_PADDING = 18
 const GOLD_SYMBOL = '◈'
 
 export function createRunSummary(
-  transitionTo: (screen: string) => void,
+  transitionTo: (screen: string, metaState?: MetaState) => void,
   summary: RunSummary,
 ): ScreenController {
   let hoveredElement: string | null = null
@@ -192,6 +194,22 @@ export function createRunSummary(
     ctx.textAlign = 'right'
     ctx.textBaseline = 'top'
     ctx.fillText(`${GOLD_SYMBOL}  ${animatedGold}`, CARD_X + CARD_WIDTH - CARD_PADDING, currentY)
+
+    // Scraps line
+    const scrapsDuration = 1500
+    const scrapsDelay = STATS_ANIMATION_DURATION + 200
+    const scrapsStartTime = animationStartTime ? animationStartTime + scrapsDelay : null
+    const scrapsOpacity = scrapsStartTime && timestamp >= scrapsStartTime ? 1 : 0
+    ctx.globalAlpha = cardOpacity * scrapsOpacity
+
+    ctx.font = '12px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.textMuted
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'top'
+    const scrapsText = summary.goldEarned > 0 ? `→ ${summary.goldEarned} scraps to carry home` : '→ no scraps this run'
+    ctx.fillText(scrapsText, CARD_X + CARD_WIDTH - CARD_PADDING, currentY + 22)
+
+    ctx.globalAlpha = cardOpacity
     currentY += rowHeight
 
     // Defeat-only row: FELLED BY
@@ -243,14 +261,20 @@ export function createRunSummary(
     ctx.fillStyle = colors.gold
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('Begin Again', BUTTON_X + BUTTON_W / 2, BUTTON_Y + BUTTON_H / 2)
+    ctx.fillText('Return to Camp', BUTTON_X + BUTTON_W / 2, BUTTON_Y + BUTTON_H / 2)
 
     ctx.globalAlpha = 1.0
   }
 
   function handleClick(x: number, y: number): void {
     if (isInBeginAgainButton(x, y)) {
-      transitionTo('home')
+      const metaState = loadMetaState()
+      const updatedMeta: MetaState = {
+        ...metaState,
+        scraps: metaState.scraps + summary.goldEarned,
+      }
+      saveMetaState(updatedMeta)
+      transitionTo('camp', updatedMeta)
     }
   }
 

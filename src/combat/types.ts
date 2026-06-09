@@ -86,4 +86,5 @@ export interface CombatState {
   pipPoison: PipState['poison']
   berserkTurnsLeft: number                 // Berserker Draught status; 0 = inactive
   bonusPipsRemaining: number               // Tainted Mushroom bonus pip assignment; 0 = inactive
+  strikeAction: { damage: number } | null  // weapon strike action; null for no strike (e.g. Whisker Staff)
 }

@@ -4,12 +4,15 @@ import { createMainMenu, type ScreenController } from './screens/main-menu'
 import { createHome } from './screens/home'
 import { createGame } from './screens/game'
 import { createRunSummary } from './screens/run-summary'
+import { createCamp } from './screens/camp'
 import type { RunSummary } from './screens/types'
+import type { MetaState } from './meta/state'
+import { loadMetaState, saveMetaState } from './meta/state'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
 
-type Screen = 'main-menu' | 'home' | 'game' | 'run-summary'
+type Screen = 'main-menu' | 'home' | 'camp' | 'game' | 'run-summary'
 
 export class GameApp {
   private currentScreen: Screen = 'main-menu'
@@ -18,6 +21,7 @@ export class GameApp {
   private screens: Record<Screen, ScreenController>
   private dpr: number
   private pendingRunSummary: RunSummary | null = null
+  private metaState: MetaState
 
   constructor() {
     console.log(`GameApp constructor called`)
@@ -47,6 +51,8 @@ export class GameApp {
     document.body.style.backgroundColor = colors.bg
     document.body.appendChild(this.canvas)
 
+    this.metaState = loadMetaState()
+
     const defaultRunSummary: RunSummary = {
       outcome: 'defeat',
       floorReached: 1,
@@ -59,9 +65,29 @@ export class GameApp {
     this.screens = {
       'main-menu': createMainMenu((screen) => this.transitionTo(screen as Screen)),
       'home': createHome((screen) => this.transitionTo(screen as Screen)),
-      'game': createGame((screen, summary) => this.transitionTo(screen as Screen, summary)),
-      'run-summary': createRunSummary(
+      'camp': createCamp(
         (screen) => this.transitionTo(screen as Screen),
+        (metaState) => {
+          this.metaState = metaState
+          // Recreate game screen with updated metaState
+          this.screens['game'] = createGame(
+            (screen, summary) => this.transitionTo(screen as Screen, summary),
+            metaState,
+          )
+          this.transitionTo('game')
+        },
+      ),
+      'game': createGame(
+        (screen, summary) => this.transitionTo(screen as Screen, summary),
+        this.metaState,
+      ),
+      'run-summary': createRunSummary(
+        (screen, metaState) => {
+          if (metaState) {
+            this.metaState = metaState
+          }
+          this.transitionTo(screen as Screen)
+        },
         defaultRunSummary,
       ),
     }

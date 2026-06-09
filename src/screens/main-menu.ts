@@ -1,5 +1,6 @@
 import { colors } from '../colors'
 import { BUILD_ID } from '../build-id'
+import { loadMetaState } from '../meta/state'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
@@ -18,6 +19,9 @@ export interface ScreenController {
 export function createMainMenu(transitionTo: (screen: string) => void): ScreenController {
   let hoveredElement: string | null = null
   let isMouseDevice = false
+  const metaState = loadMetaState()
+  const hasSavedGame = metaState.runCount > 0
+  const buttonLabel = hasSavedGame ? 'RETURN TO CAMP' : 'BEGIN'
 
   function isInNewGameButton(x: number, y: number): boolean {
     return (
@@ -62,7 +66,7 @@ export function createMainMenu(transitionTo: (screen: string) => void): ScreenCo
     ctx.fillStyle = colors.gold
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('NEW GAME', LOGICAL_W / 2, BUTTON_Y + BUTTON_H / 2)
+    ctx.fillText(buttonLabel, LOGICAL_W / 2, BUTTON_Y + BUTTON_H / 2)
 
     ctx.font = '10px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.textMuted
@@ -73,7 +77,7 @@ export function createMainMenu(transitionTo: (screen: string) => void): ScreenCo
 
   function handleClick(x: number, y: number): void {
     if (isInNewGameButton(x, y)) {
-      transitionTo('home')
+      transitionTo(hasSavedGame ? 'camp' : 'home')
     }
   }
 
