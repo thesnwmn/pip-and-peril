@@ -207,7 +207,13 @@ export function createCheckPanel(
   let hoveredApproach: ApproachColour | null = null
 
   const btnW = approachBtnW(check.approaches.length)
-  const approachBtnTop = CONTENT_TOP + APPROACH_LABEL_OFFSET + 18
+
+  // Calculate approach button Y position based on wrapped stakes text
+  function getApproachBtnTop(): number {
+    const titleHeight = 24
+    const stakesSectionHeight = STAKE_LINE_H * 3 + 8
+    return CONTENT_TOP + titleHeight + stakesSectionHeight
+  }
 
   // Hit zone helpers
   function approachZoneX(idx: number): number {
@@ -216,7 +222,8 @@ export function createCheckPanel(
 
   function inApproachBtn(x: number, y: number, idx: number): boolean {
     const bx = approachZoneX(idx)
-    return x >= bx && x <= bx + btnW && y >= approachBtnTop && y <= approachBtnTop + APPROACH_BTN_H
+    const btnTop = getApproachBtnTop() + 20
+    return x >= bx && x <= bx + btnW && y >= btnTop && y <= btnTop + APPROACH_BTN_H
   }
 
   function inRollBtn(x: number, y: number): boolean {
@@ -253,21 +260,47 @@ export function createCheckPanel(
     ctx.textBaseline = 'top'
 
     if (phase === 'stakes') {
-      // Stakes text
+      // Check title (bold and large like trap label)
+      ctx.font = 'bold 19px monospace'
+      ctx.fillStyle = colors.textMuted
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText(check.title, MAP_X + MAP_W / 2, CONTENT_TOP)
+
+      // Stakes text (wrapped to prevent overflow)
       ctx.font = '14px monospace'
       ctx.fillStyle = colors.textMuted
-      ctx.fillText(`✓  ${check.stakeSuccess}`, CONTENT_LEFT, CONTENT_TOP)
-      ctx.fillText(`◑  ${check.stakeCost}`, CONTENT_LEFT, CONTENT_TOP + STAKE_LINE_H)
-      ctx.fillText(`✗  ${check.stakeFail}`, CONTENT_LEFT, CONTENT_TOP + STAKE_LINE_H * 2)
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      let stakeY = CONTENT_TOP + 28
+
+      const successLines = wrapText(ctx, `✓  ${check.stakeSuccess}`, CONTENT_W)
+      successLines.forEach((line) => {
+        ctx.fillText(line, CONTENT_LEFT, stakeY)
+        stakeY += STAKE_LINE_H
+      })
+
+      const costLines = wrapText(ctx, `◑  ${check.stakeCost}`, CONTENT_W)
+      costLines.forEach((line) => {
+        ctx.fillText(line, CONTENT_LEFT, stakeY)
+        stakeY += STAKE_LINE_H
+      })
+
+      const failLines = wrapText(ctx, `✗  ${check.stakeFail}`, CONTENT_W)
+      failLines.forEach((line) => {
+        ctx.fillText(line, CONTENT_LEFT, stakeY)
+        stakeY += STAKE_LINE_H
+      })
 
       // Approach label
       ctx.font = '13px monospace'
-      ctx.fillText('Choose approach:', CONTENT_LEFT, CONTENT_TOP + APPROACH_LABEL_OFFSET)
+      ctx.fillText('Choose approach:', CONTENT_LEFT, getApproachBtnTop())
 
       // Approach buttons
+      const btnTop = getApproachBtnTop() + 20
       check.approaches.forEach((approach, idx) => {
         const hasPool = getPoolDiceForApproach(approach).length > 0
-        drawApproachButton(ctx, approachZoneX(idx), approachBtnTop, btnW, approach, hasPool, hoveredApproach === approach)
+        drawApproachButton(ctx, approachZoneX(idx), btnTop, btnW, approach, hasPool, hoveredApproach === approach)
       })
     } else if (phase === 'roll' || phase === 'rolling' || phase === 'outcome') {
       // Check title
