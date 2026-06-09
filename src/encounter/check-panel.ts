@@ -369,20 +369,8 @@ export function createCheckPanel(
         ctx.textBaseline = 'top'
         ctx.fillText(resultText, MAP_X + MAP_W / 2, ROLL_BTN_Y + 6)
 
-        // Outcome line (NPC reaction from spec)
-        const outcomeLine =
-          resultBand === 'critical' ? (check.critLine ?? check.successLine) :
-          resultBand === 'success'  ? check.successLine :
-          resultBand === 'cost'     ? check.costLine    : check.failLine
-
-        ctx.font = 'italic 14px monospace'
-        ctx.fillStyle = colors.textMuted
-        const lines = wrapText(ctx, outcomeLine, CONTENT_W)
-        let outcomeY = ROLL_BTN_Y + 28
-        lines.forEach((line, i) => {
-          ctx.fillText(line, MAP_X + MAP_W / 2, outcomeY + i * 20)
-        })
-        outcomeY += lines.length * 20 + 12
+        // Continue prompt position (below result text)
+        const outcomeY = ROLL_BTN_Y + 28
 
         // Continue prompt (if held long enough)
         if (outcomeHeld) {
