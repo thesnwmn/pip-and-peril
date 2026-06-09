@@ -223,6 +223,7 @@ export function createChestEncounterPanel(
       panelState = 'trap-outcome'
       if (context.getPipHp() <= 0) {
         setTimeout(() => {
+          if (completed) return
           completed = true
           onComplete('defeat')
         }, 1500)
@@ -679,8 +680,16 @@ export function createChestEncounterPanel(
       }
     }
 
-    if (panelState === 'lock-outcome' || panelState === 'trap-outcome') {
-      // Tapping outcome auto-closes
+    if (panelState === 'trap-outcome') {
+      // Don't allow tap-dismiss when HP is 0 — the defeat timer owns that path
+      if (context.getPipHp() <= 0) return
+      completed = true
+      onComplete('left')
+      return
+    }
+
+    if (panelState === 'lock-outcome') {
+      // Only close if no luck prompt is pending
       if (!getLuckItem()) {
         completed = true
         onComplete('left')

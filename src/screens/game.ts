@@ -335,6 +335,11 @@ export function createGame(transitionTo: (screen: string, summary?: RunSummary) 
       left: () => {
         navPanel.clearWhisper()
       },
+      defeat: () => {
+        const summary = buildRunSummary('defeat')
+        resetRunState()
+        transitionTo('run-summary', summary)
+      },
     },
   })
 
