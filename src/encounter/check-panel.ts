@@ -327,6 +327,13 @@ export function createCheckPanel(
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText('Roll', MAP_X + MAP_W / 2, ROLL_BTN_Y + ROLL_BTN_H / 2)
+
+        // Needs label (below roll button)
+        ctx.font = '13px monospace'
+        ctx.fillStyle = colors.textMuted
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'top'
+        ctx.fillText(`Needs ${COLOUR_GLYPH[chosenApproach!]} ${check.difficulty}`, MAP_X + MAP_W / 2, NEEDS_LABEL_Y)
       } else if (phase === 'rolling') {
         // Roll button — pulsing/greyed while animating
         roundRect(ctx, CONTENT_LEFT, ROLL_BTN_Y, CONTENT_W, ROLL_BTN_H, 6)
@@ -340,6 +347,13 @@ export function createCheckPanel(
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText('Rolling…', MAP_X + MAP_W / 2, ROLL_BTN_Y + ROLL_BTN_H / 2)
+
+        // Needs label (below roll button)
+        ctx.font = '13px monospace'
+        ctx.fillStyle = colors.textMuted
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'top'
+        ctx.fillText(`Needs ${COLOUR_GLYPH[chosenApproach!]} ${check.difficulty}`, MAP_X + MAP_W / 2, NEEDS_LABEL_Y)
       } else {
         // Outcome — show result in place of roll button
         const bandLabel =
@@ -377,13 +391,6 @@ export function createCheckPanel(
           ctx.fillText('(tap to continue)', MAP_X + MAP_W / 2, outcomeY)
         }
       }
-
-      // Needs label (below roll button, secondary info)
-      ctx.font = '13px monospace'
-      ctx.fillStyle = colors.textMuted
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'top'
-      ctx.fillText(`Needs ${COLOUR_GLYPH[chosenApproach!]} ${check.difficulty}`, MAP_X + MAP_W / 2, NEEDS_LABEL_Y)
     }
 
     ctx.restore()
