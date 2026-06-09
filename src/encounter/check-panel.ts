@@ -37,8 +37,7 @@ const APPROACH_BTN_GAP = 8
 
 // Roll / rolling / outcome phases
 const CHECK_TITLE_Y = CONTENT_TOP
-const NEEDS_LABEL_Y = CONTENT_TOP + 32
-const DIE_ROW_TOP = CONTENT_TOP + 60
+const DIE_ROW_TOP = CONTENT_TOP + 32
 const DIE_SIZE = 62
 const DIE_RADIUS = 10
 const DIE_GAP = 8
@@ -46,6 +45,7 @@ const PIP_DOT_R = 3.8
 
 const ROLL_BTN_Y = DIE_ROW_TOP + DIE_SIZE + 16
 const ROLL_BTN_H = 50
+const NEEDS_LABEL_Y = ROLL_BTN_Y + ROLL_BTN_H + 12
 
 // Animation
 const ROLL_ANIM_MS = 600
@@ -207,6 +207,7 @@ export function createCheckPanel(
   let hoveredApproach: ApproachColour | null = null
 
   const btnW = approachBtnW(check.approaches.length)
+  const APPROACH_BTN_TOP = CONTENT_TOP + 32
 
   // Hit zone helpers
   function approachZoneX(idx: number): number {
@@ -215,10 +216,7 @@ export function createCheckPanel(
 
   function inApproachBtn(x: number, y: number, idx: number): boolean {
     const bx = approachZoneX(idx)
-    // In stakes phase, approach buttons are below stakes text which can vary in height
-    // Use a generous Y range that covers most wrapping scenarios
-    const btnTop = CONTENT_TOP + 90  // conservative estimate after title + wrapped stakes
-    return x >= bx && x <= bx + btnW && y >= btnTop && y <= btnTop + APPROACH_BTN_H
+    return x >= bx && x <= bx + btnW && y >= APPROACH_BTN_TOP && y <= APPROACH_BTN_TOP + APPROACH_BTN_H
   }
 
   function inRollBtn(x: number, y: number): boolean {
@@ -262,12 +260,18 @@ export function createCheckPanel(
       ctx.textBaseline = 'top'
       ctx.fillText(check.title, MAP_X + MAP_W / 2, CONTENT_TOP)
 
-      // Stakes text (wrapped with indentation for continuation lines)
+      // Approach buttons (below title)
+      check.approaches.forEach((approach, idx) => {
+        const hasPool = getPoolDiceForApproach(approach).length > 0
+        drawApproachButton(ctx, approachZoneX(idx), APPROACH_BTN_TOP, btnW, approach, hasPool, hoveredApproach === approach)
+      })
+
+      // Stakes text below buttons (wrapped with indentation for continuation lines)
       ctx.font = '14px monospace'
       ctx.fillStyle = colors.textMuted
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
-      let stakeY = CONTENT_TOP + 28
+      let stakeY = APPROACH_BTN_TOP + APPROACH_BTN_H + 12
 
       // Helper to render a stake line with icon, handling wrapping with indentation
       const renderStakeLine = (icon: string, text: string) => {
@@ -287,16 +291,6 @@ export function createCheckPanel(
       renderStakeLine('✓', check.stakeSuccess)
       renderStakeLine('◑', check.stakeCost)
       renderStakeLine('✗', check.stakeFail)
-
-      // Approach label (positioned below actual wrapped stakes text)
-      ctx.font = '13px monospace'
-      ctx.fillText('Choose approach:', CONTENT_LEFT, stakeY + 8)
-
-      // Approach buttons
-      check.approaches.forEach((approach, idx) => {
-        const hasPool = getPoolDiceForApproach(approach).length > 0
-        drawApproachButton(ctx, approachZoneX(idx), stakeY + 28, btnW, approach, hasPool, hoveredApproach === approach)
-      })
     } else if (phase === 'roll' || phase === 'rolling' || phase === 'outcome') {
       // Check title (bold and large like stake phase)
       ctx.font = 'bold 19px monospace'
@@ -304,11 +298,6 @@ export function createCheckPanel(
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
       ctx.fillText(check.title, MAP_X + MAP_W / 2, CHECK_TITLE_Y)
-
-      // Needs label (centered)
-      ctx.font = '14px monospace'
-      ctx.fillStyle = colors.textMuted
-      ctx.fillText(`Needs ${COLOUR_GLYPH[chosenApproach!]} ${check.difficulty}`, MAP_X + MAP_W / 2, NEEDS_LABEL_Y)
 
       // Dice row
       const pool = context.getPool()
@@ -388,6 +377,13 @@ export function createCheckPanel(
           ctx.fillText('(tap to continue)', MAP_X + MAP_W / 2, outcomeY)
         }
       }
+
+      // Needs label (below roll button, secondary info)
+      ctx.font = '13px monospace'
+      ctx.fillStyle = colors.textMuted
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText(`Needs ${COLOUR_GLYPH[chosenApproach!]} ${check.difficulty}`, MAP_X + MAP_W / 2, NEEDS_LABEL_Y)
     }
 
     ctx.restore()
