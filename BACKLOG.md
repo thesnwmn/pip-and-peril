@@ -22,6 +22,16 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
+### 053 · Dungeon Notice Board
+
+Two generated notices pinned to the camp wall before each run, assembled from weighted templates
+(enemy activity reports, merchant sightings, atmospheric warnings, past-run echoes). Seeded with
+`MetaState.runCount` so notices feel rooted in Pip's history rather than purely random. Primes
+each run's feel and makes successive descents feel distinct before the first tile is placed.
+Ships as flavour text; notices do not alter run generation parameters.
+**Depends on:** 029 (camp hub, MetaState — adds `runCount` field).
+See `docs/features/053-dungeon-notice-board.md` for the full spec.
+
 ### 029 · Camp Screen, Meta Persistence & Weapon Selection
 
 Closes the outer roguelike loop: a completed run awards **shiny scraps** (remaining gold
@@ -57,15 +67,6 @@ See `docs/features/088-workbench-dice-upgrades.md` for the full spec.
 > 058 (authored-procedural floors) — a biome's architectural identity (floor shapes, roaming
 > enemies, boss motif) only lands when the floor is pre-authored. Building biome content on the
 > current drafting model would require full rework.
-
-### 053 · Dungeon Notice Board
-
-Two generated notices pinned to the camp wall before each run, assembled from weighted templates
-(enemy activity reports, merchant sightings, atmospheric warnings, past-run echoes). Primes each
-run's feel and makes successive descents feel distinct before the first tile is placed. Ships first
-as pure flavour text; notices can be wired to actual run parameters incrementally after.
-**Depends on:** 029 (camp hub).
-**Related:** `docs/concept/meta-progression.md`.
 
 ### 051 · Visitor System
 
