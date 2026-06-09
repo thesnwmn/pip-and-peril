@@ -43,6 +43,12 @@ export interface DungeonTuning {
 
   // Chance of item in chest loot
   chestHasItemChance: number
+
+  // NPC archetype weights
+  npcArchetypeWeights: Record<'rat-scavenger' | 'frightened-mouse' | 'old-hermit', number>
+
+  // NPC item reward pool weights
+  npcItemPoolWeights: Record<string, number>
 }
 
 export const DUNGEON_TUNING: DungeonTuning = {
@@ -246,4 +252,17 @@ export const DUNGEON_TUNING: DungeonTuning = {
 
   emptyChestChance: 0,
   chestHasItemChance: 0.60,
+
+  npcArchetypeWeights: {
+    'rat-scavenger': 5,
+    'frightened-mouse': 4,
+    'old-hermit': 3,
+  },
+
+  npcItemPoolWeights: {
+    'cheese-crumb': 4,
+    'lucky-acorn': 3,
+    'smoke-pellet': 3,
+    'glowstone-dust': 2,
+  },
 }

@@ -29,6 +29,8 @@ export interface TileCell {
   chestState?: 'closed' | 'opened'
   lockDifficulty?: number
   loot?: { gold: number; item?: string } | null
+  npcType?: 'rat-scavenger' | 'frightened-mouse' | 'old-hermit'
+  npcState?: 'active' | 'completed'
 }
 
 export interface GameMap {

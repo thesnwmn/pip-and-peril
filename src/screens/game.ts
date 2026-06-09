@@ -21,6 +21,7 @@ import { createItemEncounterPanel } from '../encounter/item-panel'
 import { createShopEncounterPanel } from '../encounter/shop-panel'
 import { createTrapEncounterPanel, TRAP_FLAVOURS } from '../encounter/trap-panel'
 import { createChestEncounterPanel } from '../encounter/chest-panel'
+import { createNpcEncounterPanel } from '../encounter/npc-panel'
 import { ITEM_CONFIG } from '../encounter/config'
 import type { RunSummary } from './types'
 import {
@@ -332,6 +333,69 @@ export function createGame(transitionTo: (screen: string, summary?: RunSummary) 
         navPanel.clearWhisper()
       },
       left: () => {
+        navPanel.clearWhisper()
+      },
+    },
+  })
+
+  // Register NPC encounter.
+  registry.register({
+    trigger: (cell) => cell.roomType === 'npc' && cell.npcState === 'active',
+    factory: (onComplete) => {
+      const vpCol = state.pip.col - (state.camera.col - Math.floor(VIEWPORT_COLS / 2))
+      const vpRow = state.pip.row - (state.camera.row - Math.floor(VIEWPORT_ROWS / 2))
+      const pipNatX = MAP_X + vpCol * TILE_SIZE + TILE_SIZE / 2
+      const pipNatY = MAP_Y + vpRow * TILE_SIZE + TILE_SIZE / 2
+      const cell = state.grid.cells[state.pip.row][state.pip.col]!
+      return createNpcEncounterPanel(onComplete, cell,
+        { zoom: 1.4, pipTargetX: pipNatX, pipTargetY: pipNatY },
+        {
+          getPool: () => dicePool,
+          getInventory: () => inventory,
+          setInventory: (inv) => { updateInventoryWithGoldTracking(inv) },
+          getDungeonState: () => state,
+          setDungeonState: (s) => { state = s },
+        },
+      )
+    },
+    handlers: {
+      completed: () => {
+        navPanel.clearWhisper()
+      },
+      left: () => {
+        navPanel.clearWhisper()
+      },
+      dismissed: () => {
+        navPanel.clearWhisper()
+      },
+    },
+  })
+
+  // Register NPC encounter (completed state).
+  registry.register({
+    trigger: (cell) => cell.roomType === 'npc' && cell.npcState === 'completed',
+    factory: (onComplete) => {
+      const vpCol = state.pip.col - (state.camera.col - Math.floor(VIEWPORT_COLS / 2))
+      const vpRow = state.pip.row - (state.camera.row - Math.floor(VIEWPORT_ROWS / 2))
+      const pipNatX = MAP_X + vpCol * TILE_SIZE + TILE_SIZE / 2
+      const pipNatY = MAP_Y + vpRow * TILE_SIZE + TILE_SIZE / 2
+      const cell = state.grid.cells[state.pip.row][state.pip.col]!
+      return createNpcEncounterPanel(onComplete, cell,
+        { zoom: 1.4, pipTargetX: pipNatX, pipTargetY: pipNatY },
+        {
+          getPool: () => dicePool,
+          getInventory: () => inventory,
+          setInventory: (inv) => { updateInventoryWithGoldTracking(inv) },
+          getDungeonState: () => state,
+          setDungeonState: (s) => { state = s },
+        },
+      )
+    },
+    handlers: {
+      completed: () => {
+        navPanel.clearWhisper()
+      },
+      dismissed: () => {
         navPanel.clearWhisper()
       },
     },

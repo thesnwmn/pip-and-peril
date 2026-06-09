@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 028 · NPC Encounter
+
+**Shipped:** 2026-06-08 · **PR:** (pending) · **Spec:** [docs/features/history/028-npc-encounter.md](docs/features/history/028-npc-encounter.md)
+
+The blue **NPC**: dialogue-first, the inverse of combat — text and choices primary, with branching choices and a dice check appearing *inside* the dialogue when a response calls for one. Delivers hints, small rewards, and world voice; completes the encounter-type set. Introduces the **unified check panel** (one roll, approach colour, three-band fail-forward) as a reusable module.
+
+---
+
 ### 024 · Run Summary Screen
 
 **Shipped:** 2026-06-08 · **PR:** #101 · **Spec:** [docs/features/history/024-run-summary-screen.md](docs/features/history/024-run-summary-screen.md)
