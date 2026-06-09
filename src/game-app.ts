@@ -34,12 +34,12 @@ export class GameApp {
     this.dpr = window.devicePixelRatio ?? 1
 
     this.canvas = document.createElement('canvas')
-    this.canvas.width = LOGICAL_W * this.dpr
-    this.canvas.height = LOGICAL_H * this.dpr
+    this.canvas.width = 390 * this.dpr
+    this.canvas.height = 844 * this.dpr
     this.canvas.style.display = 'block'
     this.canvas.style.margin = '0 auto'
-    this.canvas.style.width = `${LOGICAL_W}px`
-    this.canvas.style.height = `${LOGICAL_H}px`
+    this.canvas.style.width = `390px`
+    this.canvas.style.height = `844px`
 
     const ctx = this.canvas.getContext('2d')
     if (!ctx) throw new Error('Failed to get 2D context')
@@ -51,7 +51,18 @@ export class GameApp {
     document.body.style.backgroundColor = colors.bg
     document.body.appendChild(this.canvas)
 
+    // Load MetaState and check for test mode parameters
     this.metaState = loadMetaState()
+    const params = new URLSearchParams(window.location.search)
+    const testMode = params.get('testMode')
+    const testScraps = parseInt(params.get('testScraps') || '0', 10)
+
+    // Apply test mode settings if provided
+    if (testMode === 'camp' && testScraps > 0) {
+      this.metaState = { ...this.metaState, scraps: testScraps, runCount: 1 }
+      saveMetaState(this.metaState)
+      console.log(`🧪 Test mode: Starting at camp with ${testScraps} scraps`)
+    }
 
     const defaultRunSummary: RunSummary = {
       outcome: 'defeat',
@@ -90,6 +101,11 @@ export class GameApp {
         },
         defaultRunSummary,
       ),
+    }
+
+    // Start at camp if test mode is active
+    if (testMode === 'camp') {
+      this.currentScreen = 'camp'
     }
 
     this.setupEventListeners()
