@@ -20,6 +20,20 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
+## READY
+
+### 029 · Camp Screen, Meta Persistence & Weapon Selection
+
+Closes the outer roguelike loop: a completed run awards **shiny scraps** (remaining gold
+converted one-to-one), the player returns to Pip's warm **camp screen**, chooses a weapon from
+the rack (each contributing dice and a strike action), and descends again. A **live pool preview**
+shows exactly what Pip brings in. Cross-run state (`MetaState`) is persisted in `localStorage`.
+The workbench is visible at camp but not yet operational — dice upgrades ship in 088.
+**Depends on:** 024 (run summary — exit CTA wired to camp), 019/016 (gold model).
+See `docs/features/029-camp-meta-persistence-weapon-selection.md` for the full spec.
+
+---
+
 ## NEEDS SPEC
 
 > **Planner note (2026-06-07):** Three principles govern the sequence below.
@@ -32,16 +46,17 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 > enemies, boss motif) only lands when the floor is pre-authored. Building biome content on the
 > current drafting model would require full rework.
 
-### 029 · Meta-Progression: Shiny Scraps & Dice Upgrades
+### 088 · Workbench — Dice Upgrades
 
-The between-runs loop and the roguelike pillar's payoff: a run awards **shiny scraps** (persisted
-across runs), spent in a warm parchment **camp/hub** at the workbench — swap dice for higher-risk
-face counts, add dice, or engrave a face to tame variance. Choosing a weapon from the rack is the
-last decision before descending; the pool preview shows exactly what Pip brings in. Turns a single
-completable run into a reason to play again.
-**Depends on:** 024 (scraps awarded at run end), 019/016 (currency model + persistence).
-*(Absorbs Idea 042 · Die Type Risk Profiles.)*
-**Related:** `docs/concept/meta-progression.md` (full direction).
+The second half of the meta-progression foundation: Pip sits at his workbench and spends shiny
+scraps to modify his **permanent dice pool**. Three operations — **Swap** (replace a die with a
+larger face-count, raising ceiling and variance), **Add** (grow the pool by one die of a chosen
+colour and type), and **Engrave** (permanently fix one face of a specific die to tame variance) —
+each costing scraps from `MetaState`. The workbench sub-screen is the camp's hero interaction:
+tappable die objects, inline upgrade options, scrap costs, and confirmation. Together with 029
+this delivers the full "Shiny Scraps & Dice Upgrades" loop.
+**Depends on:** 029 (MetaState, camp screen, workbench tap target).
+**Related:** `docs/concept/meta-progression.md`, `docs/concept/combat-system.md` (die risk profiles).
 
 ### 053 · Dungeon Notice Board
 
