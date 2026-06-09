@@ -36,8 +36,9 @@ const APPROACH_BTN_H = 50
 const APPROACH_BTN_GAP = 8
 
 // Roll / rolling / outcome phases
-const NEEDS_LABEL_Y = CONTENT_TOP
-const DIE_ROW_TOP = CONTENT_TOP + 28
+const CHECK_TITLE_Y = CONTENT_TOP
+const NEEDS_LABEL_Y = CONTENT_TOP + 32
+const DIE_ROW_TOP = CONTENT_TOP + 60
 const DIE_SIZE = 62
 const DIE_RADIUS = 10
 const DIE_GAP = 8
@@ -201,6 +202,7 @@ export function createCheckPanel(
   let scrambleValues: number[] = []
   let lastScrambleTick = 0
   let resultFired = false
+  let outcomeHeld = false
 
   let hoveredApproach: ApproachColour | null = null
 
@@ -239,10 +241,9 @@ export function createCheckPanel(
         lastScrambleTick = timestamp
       }
     }
-    if (phase === 'outcome' && outcomeStartTime !== null && !resultFired) {
+    if (phase === 'outcome' && outcomeStartTime !== null && !outcomeHeld) {
       if (timestamp - outcomeStartTime >= OUTCOME_HOLD_MS) {
-        resultFired = true
-        context.onResult(resultBand!)
+        outcomeHeld = true
       }
     }
 
@@ -269,10 +270,17 @@ export function createCheckPanel(
         drawApproachButton(ctx, approachZoneX(idx), approachBtnTop, btnW, approach, hasPool, hoveredApproach === approach)
       })
     } else if (phase === 'roll' || phase === 'rolling' || phase === 'outcome') {
-      // Needs label
+      // Check title
+      ctx.font = '13px monospace'
+      ctx.fillStyle = colors.textMuted
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText(check.title, MAP_X + MAP_W / 2, CHECK_TITLE_Y)
+
+      // Needs label (centered)
       ctx.font = '14px monospace'
       ctx.fillStyle = colors.textMuted
-      ctx.fillText(`Needs ${COLOUR_GLYPH[chosenApproach!]} ${check.difficulty}`, CONTENT_LEFT, NEEDS_LABEL_Y)
+      ctx.fillText(`Needs ${COLOUR_GLYPH[chosenApproach!]} ${check.difficulty}`, MAP_X + MAP_W / 2, NEEDS_LABEL_Y)
 
       // Dice row
       const pool = context.getPool()
@@ -339,9 +347,18 @@ export function createCheckPanel(
         ctx.font = 'italic 14px monospace'
         ctx.fillStyle = colors.textMuted
         const lines = wrapText(ctx, outcomeLine, CONTENT_W)
+        let outcomeY = ROLL_BTN_Y + 28
         lines.forEach((line, i) => {
-          ctx.fillText(line, MAP_X + MAP_W / 2, ROLL_BTN_Y + 28 + i * 20)
+          ctx.fillText(line, MAP_X + MAP_W / 2, outcomeY + i * 20)
         })
+        outcomeY += lines.length * 20 + 12
+
+        // Continue prompt (if held long enough)
+        if (outcomeHeld) {
+          ctx.font = 'italic 13px monospace'
+          ctx.fillStyle = colors.textMuted
+          ctx.fillText('(tap to continue)', MAP_X + MAP_W / 2, outcomeY)
+        }
       }
     }
 
@@ -372,6 +389,9 @@ export function createCheckPanel(
         rollStartTime = performance.now()
         phase = 'rolling'
       }
+    } else if (phase === 'outcome' && outcomeHeld && !resultFired) {
+      resultFired = true
+      context.onResult(resultBand!)
     }
   }
 

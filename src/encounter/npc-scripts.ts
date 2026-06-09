@@ -2,6 +2,7 @@ export type ApproachColour = 'red' | 'green' | 'blue' | 'yellow'
 export type NodeId = string
 
 export interface CheckSpec {
+  title: string
   approaches: ApproachColour[]
   difficulty: number
   stakeSuccess: string
@@ -63,6 +64,7 @@ export const RAT_SCAVENGER: NpcScript = {
         {
           label: 'What do you know?',
           check: {
+            title: 'Gather Information',
             approaches: ['blue', 'yellow'],
             difficulty: 2,
             stakeSuccess: 'He tells you something useful.',
@@ -147,6 +149,7 @@ export const FRIGHTENED_MOUSE: NpcScript = {
         {
           label: '[Reassure them]',
           check: {
+            title: 'Offer Comfort',
             approaches: ['yellow', 'green'],
             difficulty: 2,
             stakeSuccess: 'They relax and share something.',
@@ -230,6 +233,7 @@ export const OLD_HERMIT: NpcScript = {
         {
           label: 'What are the right questions?',
           check: {
+            title: 'Seek Wisdom',
             approaches: ['blue', 'red'],
             difficulty: 3,
             stakeSuccess: 'Something specific about what lies ahead.',
