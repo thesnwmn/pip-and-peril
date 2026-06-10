@@ -219,8 +219,26 @@ export function createRunSummary(
     ctx.globalAlpha = cardOpacity
     currentY += rowHeight
 
-    // Defeat-only row: FELLED BY
-    if (summary.outcome === 'defeat') {
+    // Outcome-specific row
+    if (wasAbandoned) {
+      // Show "RUN ABANDONED" for abandoned runs
+      // Separator line
+      ctx.strokeStyle = colors.parchmentRule
+      ctx.globalAlpha = cardOpacity * 0.3
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(CARD_X + CARD_PADDING, currentY - 20)
+      ctx.lineTo(CARD_X + CARD_WIDTH - CARD_PADDING, currentY - 20)
+      ctx.stroke()
+      ctx.globalAlpha = cardOpacity
+
+      ctx.font = '10px monospace'
+      ctx.fillStyle = colors.textMuted
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      ctx.fillText('RUN ABANDONED', CARD_X + CARD_PADDING, currentY)
+    } else if (summary.outcome === 'defeat') {
+      // Show "FELLED BY" for natural defeats
       // Separator line
       ctx.strokeStyle = colors.parchmentRule
       ctx.globalAlpha = cardOpacity * 0.3
