@@ -26,9 +26,10 @@ camp, make targeted choices about the dice Pip carries forward.
    from feature 029. The panel rises from the bottom; the camp dims behind a scrim. The camp
    is not interactable while the panel is open.
 
-2. The panel header shows: a **← Back** affordance (top-left), the label **"Pip's Dice"**
-   (centred), and the **current scraps count** prefixed by a pouch icon (right-aligned, `--gold`,
-   16px, bold).
+2. The panel header shows: an **✕ close button** (top-right, 44×44 px tap area — per the sub-panel
+   model introduced in feature 090), the label **"Pip's Dice"** (centred), and the **current scraps
+   count** prefixed by a pouch icon (right-aligned, `--gold`, 16px, bold). The `← Back` affordance
+   described in the original spec is superseded by the ✕ button (see feature 090, criterion 17).
 
 3. The scraps count **updates live** as upgrades are purchased within the session. It never
    displays a negative value.

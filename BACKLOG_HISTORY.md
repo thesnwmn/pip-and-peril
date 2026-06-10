@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 090 · Camp Screen Redesign — Scene & Activity Bar
+
+**Shipped:** 2026-06-10 · **PR:** (pending) · **Spec:** [docs/features/history/090-camp-screen-redesign.md](docs/features/history/090-camp-screen-redesign.md)
+
+The camp screen is restructured into a permanent split: a warm animated scene zone (Pip seated by a flickering campfire, weapon rack, workbench, dungeon arch) above an activity bar (four labelled buttons — Weapons, Workbench, Notices, Visitor — plus a persistent Descend CTA). Scene objects lose their tap targets; all navigation flows through the activity bar. Sub-panels rise from the bottom with ✕ dismiss buttons.
+
+---
+
 ### 053 · Dungeon Notice Board
 
 **Shipped:** 2026-06-10 · **PR:** #109 · **Spec:** [docs/features/history/053-dungeon-notice-board.md](docs/features/history/053-dungeon-notice-board.md)
