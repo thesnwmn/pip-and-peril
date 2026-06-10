@@ -1,5 +1,6 @@
 import { colors } from '../colors'
 import { BUILD_ID } from '../build-id'
+import { loadMetaState } from '../meta/state'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
@@ -18,6 +19,7 @@ export interface ScreenController {
 export function createMainMenu(transitionTo: (screen: string) => void): ScreenController {
   let hoveredElement: string | null = null
   let isMouseDevice = false
+  const metaState = loadMetaState()
 
   function isInNewGameButton(x: number, y: number): boolean {
     return (
@@ -73,7 +75,8 @@ export function createMainMenu(transitionTo: (screen: string) => void): ScreenCo
 
   function handleClick(x: number, y: number): void {
     if (isInNewGameButton(x, y)) {
-      transitionTo('home')
+      // Always go directly to the game (skip camp)
+      transitionTo('game')
     }
   }
 

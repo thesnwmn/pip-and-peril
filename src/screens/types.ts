@@ -5,4 +5,5 @@ export interface RunSummary {
   goldEarned: number
   killedBy: string | null
   killedByFloor: number | null
+  abandoned?: boolean
 }

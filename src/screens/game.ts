@@ -30,12 +30,33 @@ import {
   VIEWPORT_COLS,
   VIEWPORT_ROWS,
 } from './game-layout'
+import type { MetaState } from '../meta/state'
+import { WEAPON_SPECS } from '../meta/weapons'
 
-export function createGame(transitionTo: (screen: string, summary?: RunSummary) => void): ScreenController {
+export function createGame(
+  transitionTo: (screen: string, summary?: RunSummary) => void,
+  metaState: MetaState,
+): ScreenController {
   let state: DungeonState = initDungeon()
   let hoveredElement: string | null = null
   let isMouseDevice = false
-  let dicePool: DicePool = starterPool()
+
+  function createRunPool(meta: MetaState): DicePool {
+    const permanent = meta.permanentPool.map(p => ({
+      color: p.colour as any,
+      sides: p.faces,
+    }))
+    const weapon = WEAPON_SPECS[meta.activeWeaponId]
+    if (!weapon) return starterPool()
+    return {
+      dice: [...permanent, ...weapon.addedDice],
+      rolls: [],
+      totals: { red: 0, blue: 0, green: 0, yellow: 0 },
+      state: 'idle',
+    }
+  }
+
+  let dicePool: DicePool = createRunPool(metaState)
   let inventory: Inventory = { gold: 0, items: [] }
 
   // Floor transition tracking
@@ -116,7 +137,13 @@ export function createGame(transitionTo: (screen: string, summary?: RunSummary) 
 
   const menuModal = createMenuModal('game', (screen) => {
     resetRunState()
-    transitionTo(screen)
+    if (screen === 'home') {
+      // User clicked "End Run" — show run summary with no rewards
+      const abandonedSummary = buildRunSummary('defeat')
+      transitionTo('run-summary', { ...abandonedSummary, abandoned: true })
+    } else {
+      transitionTo(screen)
+    }
   })
 
   const registry = createEncounterRegistry()
@@ -410,21 +437,26 @@ export function createGame(transitionTo: (screen: string, summary?: RunSummary) 
   // Adding a new encounter type requires only registering here — no other changes to this file.
   registry.register({
     trigger: (cell) => cell.roomType === 'enemy' && cell.cleared !== true,
-    factory: (onComplete) => createCombatEncounterPanel(
-      onComplete,
-      {
-        getPool: () => dicePool,
-        setPool: (p) => { dicePool = p },
-        getPipHp: () => pipHp,
-        setPipHp: (hp) => { pipHp = hp },
-        getPipMaxHp: () => pipMaxHp,
-        getInventory: () => inventory,
-        setInventory: (inv) => { inventory = inv },
-        getDungeonState: () => state,
-        setDungeonState: (s) => { state = s },
-      },
-      combatEntryFrom,
-    ),
+    factory: (onComplete) => {
+      const weapon = WEAPON_SPECS[metaState.activeWeaponId]
+      const strikeAction = weapon?.strikeAction ? { damage: weapon.strikeAction.cost.red } : null
+      return createCombatEncounterPanel(
+        onComplete,
+        {
+          getPool: () => dicePool,
+          setPool: (p) => { dicePool = p },
+          getPipHp: () => pipHp,
+          setPipHp: (hp) => { pipHp = hp },
+          getPipMaxHp: () => pipMaxHp,
+          getInventory: () => inventory,
+          setInventory: (inv) => { inventory = inv },
+          getDungeonState: () => state,
+          setDungeonState: (s) => { state = s },
+        },
+        combatEntryFrom,
+        { strikeAction },
+      )
+    },
     handlers: {
       victory: () => {
         state = { ...state, enemiesDefeated: state.enemiesDefeated + 1, uiState: 'idle' }
@@ -452,6 +484,8 @@ export function createGame(transitionTo: (screen: string, summary?: RunSummary) 
     factory: (onComplete) => {
       const tile = state.grid.cells[state.pip.row][state.pip.col]
       const bossSpec = getEnemySpec(tile?.enemyId ?? 'rat-king')
+      const weapon = WEAPON_SPECS[metaState.activeWeaponId]
+      const strikeAction = weapon?.strikeAction ? { damage: weapon.strikeAction.cost.red } : null
       return createCombatEncounterPanel(
         onComplete,
         {
@@ -471,6 +505,7 @@ export function createGame(transitionTo: (screen: string, summary?: RunSummary) 
           intro: bossSpec.bossTitleCard
             ? { titleCard: bossSpec.bossTitleCard, wideZoom: 0.75 }
             : undefined,
+          strikeAction,
         },
       )
     },

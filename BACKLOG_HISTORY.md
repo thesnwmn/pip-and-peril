@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 029 · Camp Screen, Meta Persistence & Weapon Selection
+
+**Shipped:** 2026-06-09 · **PR:** (pending) · **Spec:** [docs/features/history/029-camp-meta-persistence-weapon-selection.md](docs/features/history/029-camp-meta-persistence-weapon-selection.md)
+
+Closes the outer roguelike loop: completed runs award shiny scraps (gold converted one-to-one), the player returns to the warm camp screen, and chooses a weapon from the rack before descending again. Cross-run state persists in localStorage with versioning. Pool composition is dynamic (permanent dice + weapon dice). Strike action varies by weapon.
+
+---
+
 ### 028 · NPC Encounter
 
 **Shipped:** 2026-06-08 · **PR:** (pending) · **Spec:** [docs/features/history/028-npc-encounter.md](docs/features/history/028-npc-encounter.md)

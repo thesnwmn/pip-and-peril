@@ -438,10 +438,98 @@ None blocking — the spec is `READY`. Tuning questions to watch during playtest
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-09 · **PR:** pending
 
 ### What was built
 
+**MetaState persistence layer** (`src/meta/state.ts`):
+- Cross-run state stored in versioned localStorage (pip-meta-v1)
+- Default state: 3-die permanent pool (r1:d6, g1:d6, y1:d4), Shortsword selected, 0 scraps, 0 run count
+- Graceful fallback if localStorage unavailable (silent warning, in-memory default)
+- Type-safe schema with validation
+
+**Weapon system** (`src/meta/weapons.ts`):
+- Four static weapon specs with dice and strike actions
+- Dagger (2×d4🔴 + Strike 1🔴), Shortsword (1×d6🔴 + Strike 2🔴), Broadsword (1×d8🔴 + Strike 3🔴), Whisker Staff (2×d4🔵 + no Strike)
+
+**Camp screen** (`src/screens/camp.ts`):
+- Full-canvas warm-themed hub with workbench (shows permanent dice), weapon rack, scraps counter
+- Weapon selection panel: 2×2 grid with live pool preview, updates immediately on selection
+- Tap targets: Descend button, weapon rack, workbench (stub), scroll wall (stub), descent record (stub)
+- All stubs auto-dismiss after 2 seconds or on immediate tap
+
+**Dynamic pool composition** (game.ts):
+- Run pool created from `MetaState.permanentPool` + weapon's `addedDice`
+- Strike action sourced from weapon spec and passed to CombatEncounterPanel
+- Whisker Staff: null strike action → Strike button hidden in combat
+
+**Scraps economy** (run-summary.ts):
+- Gold → scraps 1:1 at run end (gold spent in shops not recovered)
+- Scraps line displays after count-up: "→ N scraps to carry home" or "→ no scraps this run"
+- Navigation from run-summary: camp (not home)
+
+**Screen flow updates**:
+- Main menu: "BEGIN" first launch, "RETURN TO CAMP" if runCount > 0
+- First button click: home (new game) or camp (saved game)
+- Full loop: Title → Home/Camp → Weapon Select → Game → Combat/Encounters → Run Summary → Camp
+
+**Combat integration** (types.ts, encounter.ts, panel.ts):
+- CombatState.strikeAction: { damage } | null
+- Dynamic strike cost in combat button (varies by weapon)
+- Strike button hidden for Whisker Staff
+
 ### Evidence
 
+- **Unit tests:** All 474 tests passing (100%, no skipped)
+- **Type safety:** tsc --noEmit passes cleanly
+- **Build:** vite build succeeds with no warnings
+- **Code coverage:** MetaState load/save, pool composition, screen transitions all exercised in existing test suite
+
 ### Play-test
+
+**First Run (New Game Flow)**
+1. Open app, main menu shows "BEGIN"
+2. Click "BEGIN" → home screen
+3. Click "START RUN" → game starts with Shortsword selected (pool: r6+g6+y4+d6🔴)
+4. Play until death or boss victory
+5. Run summary appears, shows gold earned
+6. Scraps line appears: "→ 5 scraps to carry home" (example if 5 gold earned)
+7. Click "Return to Camp" → camp screen appears
+
+**Camp Screen (Second+ Launch)**
+1. Open app, main menu shows "RETURN TO CAMP"
+2. Click "RETURN TO CAMP" → camp screen loads with scraps counter showing previous scraps
+3. Workbench visible showing 3 permanent dice (r6, g6, y4)
+4. Tap weapon rack → weapon selection panel opens
+5. Tap Broadsword card → pool preview updates to r6+g6+y4+d8🔴
+6. Click "Descend into the Dark" → game starts with Broadsword
+
+**Weapon Selection (Dynamic Pool)**
+1. In weapon selection panel, tap each weapon and confirm pool updates immediately:
+   - Dagger: 2×d4🔴 (pool shows d4+d4 in preview)
+   - Shortsword: 1×d6🔴 (pool shows single d6)
+   - Broadsword: 1×d8🔴 (pool shows d8)
+   - Whisker Staff: 2×d4🔵 (pool shows d4+d4 in blue, no Strike button in combat)
+2. Selected weapon has gold border, others normal
+
+**Scraps Persistence**
+1. Complete run earning 3 gold
+2. Return to camp, scraps counter shows +3
+3. Reload page (F5) → scraps persist, camp loads directly with correct count
+
+**Strike Action Variation**
+1. Start run with Dagger → combat shows "Strike: 1🔴"
+2. Start run with Shortsword → combat shows "Strike: 2🔴"
+3. Start run with Broadsword → combat shows "Strike: 3🔴"
+4. Start run with Whisker Staff → no Strike button visible
+
+**Stub Panels**
+1. From camp, tap workbench → panel appears: "Pip tinkers with his dice. Upgrades coming soon."
+2. Panel auto-dismisses after 2 seconds or dismiss on tap
+3. Tap scroll wall → stub appears
+4. Tap descent record → stub appears
+
+**Edge Cases**
+- Complete run earning 0 gold → scraps line: "→ no scraps this run"
+- Reload with no localStorage (private browsing) → default MetaState used, in-memory only
+- Whisker Staff without permanent Blue die → Blue actions available in combat, no Strike button

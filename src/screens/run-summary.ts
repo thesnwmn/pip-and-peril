@@ -1,6 +1,8 @@
 import { colors } from '../colors'
 import type { RunSummary } from './types'
 import type { ScreenController } from './main-menu'
+import type { MetaState } from '../meta/state'
+import { loadMetaState, saveMetaState } from '../meta/state'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
@@ -20,13 +22,15 @@ const CARD_PADDING = 18
 const GOLD_SYMBOL = '◈'
 
 export function createRunSummary(
-  transitionTo: (screen: string) => void,
+  transitionTo: (screen: string, metaState?: MetaState) => void,
   summary: RunSummary,
 ): ScreenController {
   let hoveredElement: string | null = null
   let isMouseDevice = false
   let fadeInStartTime: DOMHighResTimeStamp | null = null
   let animationStartTime: DOMHighResTimeStamp | null = null
+  const metaState = loadMetaState()
+  const wasAbandoned = summary.abandoned ?? false
 
   const FADE_IN_DURATION = 600
   const STATS_ANIMATION_DURATION = 1000
@@ -192,17 +196,52 @@ export function createRunSummary(
     ctx.textAlign = 'right'
     ctx.textBaseline = 'top'
     ctx.fillText(`${GOLD_SYMBOL}  ${animatedGold}`, CARD_X + CARD_WIDTH - CARD_PADDING, currentY)
+
+    // Scraps line (fades in with card, not delayed)
+    ctx.globalAlpha = cardOpacity
+
+    ctx.font = '12px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.textMuted
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'top'
+    let scrapsText: string
+    if (wasAbandoned) {
+      scrapsText = '→ no rewards - no marks'
+    } else {
+      scrapsText = summary.goldEarned > 0 ? `→ ${summary.goldEarned} scraps to carry home` : '→ no scraps this run'
+    }
+    ctx.fillText(scrapsText, CARD_X + CARD_WIDTH - CARD_PADDING, currentY + 22)
+
+    ctx.globalAlpha = cardOpacity
     currentY += rowHeight
 
-    // Defeat-only row: FELLED BY
-    if (summary.outcome === 'defeat') {
+    // Outcome-specific row
+    if (wasAbandoned) {
+      // Show "RUN ABANDONED" for abandoned runs
       // Separator line
       ctx.strokeStyle = colors.parchmentRule
       ctx.globalAlpha = cardOpacity * 0.3
       ctx.lineWidth = 1
       ctx.beginPath()
-      ctx.moveTo(CARD_X + CARD_PADDING, currentY - 20)
-      ctx.lineTo(CARD_X + CARD_WIDTH - CARD_PADDING, currentY - 20)
+      ctx.moveTo(CARD_X + CARD_PADDING, currentY - 10)
+      ctx.lineTo(CARD_X + CARD_WIDTH - CARD_PADDING, currentY - 10)
+      ctx.stroke()
+      ctx.globalAlpha = cardOpacity
+
+      ctx.font = '10px monospace'
+      ctx.fillStyle = colors.textMuted
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      ctx.fillText('RUN ABANDONED', CARD_X + CARD_PADDING, currentY)
+    } else if (summary.outcome === 'defeat') {
+      // Show "FELLED BY" for natural defeats
+      // Separator line
+      ctx.strokeStyle = colors.parchmentRule
+      ctx.globalAlpha = cardOpacity * 0.3
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(CARD_X + CARD_PADDING, currentY - 10)
+      ctx.lineTo(CARD_X + CARD_WIDTH - CARD_PADDING, currentY - 10)
       ctx.stroke()
       ctx.globalAlpha = cardOpacity
 
@@ -243,14 +282,21 @@ export function createRunSummary(
     ctx.fillStyle = colors.gold
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('Begin Again', BUTTON_X + BUTTON_W / 2, BUTTON_Y + BUTTON_H / 2)
+    ctx.fillText('Return to Camp', BUTTON_X + BUTTON_W / 2, BUTTON_Y + BUTTON_H / 2)
 
     ctx.globalAlpha = 1.0
   }
 
   function handleClick(x: number, y: number): void {
     if (isInBeginAgainButton(x, y)) {
-      transitionTo('home')
+      const updatedMeta: MetaState = {
+        ...metaState,
+        // Award scraps unless the run was abandoned
+        scraps: wasAbandoned ? metaState.scraps : metaState.scraps + summary.goldEarned,
+        runCount: metaState.runCount + 1,
+      }
+      saveMetaState(updatedMeta)
+      transitionTo('camp', updatedMeta)
     }
   }
 

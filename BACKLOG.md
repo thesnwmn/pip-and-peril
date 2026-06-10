@@ -32,16 +32,6 @@ Ships as flavour text; notices do not alter run generation parameters.
 **Depends on:** 029 (camp hub, MetaState — adds `runCount` field).
 See `docs/features/053-dungeon-notice-board.md` for the full spec.
 
-### 029 · Camp Screen, Meta Persistence & Weapon Selection
-
-Closes the outer roguelike loop: a completed run awards **shiny scraps** (remaining gold
-converted one-to-one), the player returns to Pip's warm **camp screen**, chooses a weapon from
-the rack (each contributing dice and a strike action), and descends again. A **live pool preview**
-shows exactly what Pip brings in. Cross-run state (`MetaState`) is persisted in `localStorage`.
-The workbench is visible at camp but not yet operational — dice upgrades ship in 088.
-**Depends on:** 024 (run summary — exit CTA wired to camp), 019/016 (gold model).
-See `docs/features/029-camp-meta-persistence-weapon-selection.md` for the full spec.
-
 ### 088 · Workbench — Dice Upgrades
 
 The second half of the meta-progression foundation: Pip sits at his workbench and spends shiny
@@ -86,6 +76,14 @@ are visible but unrevealing; a light "show unlock condition" affordance addresse
 without spoiling discovery.
 **Depends on:** 029 (camp hub), 024 (run summary — marks awarded at run end).
 **Related:** `docs/concept/meta-progression.md`.
+
+### 089 · Scalable Dice Pool Display
+
+Improve dice rendering to handle **variable pool sizes** (currently hard-coded for 4 dice) and
+**diverse die types** (D4, D6, D8, and larger). Sized dynamically to fit container; smaller die
+glyphs (or alternative notation) for higher face counts. Affects camp permanent pool display,
+weapon card pools, and run-time pool preview. Ships as visual refactor with no mechanical changes.
+**Depends on:** 029 (camp screen), 088 (workbench upgrades — unlocks larger pools).
 
 ---
 

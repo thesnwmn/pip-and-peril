@@ -550,16 +550,22 @@ export function drawCombatPanel(ctx: CanvasRenderingContext2D, s: CombatPanelDra
   if (inPlayerTurn && openCategory) {
     // Draw submenu for open category
     if (openCategory === 'red') {
-      const strikeAffordable = canAfford(pool, { red: 2 })
-      const heavyAffordable = canAfford(pool, { red: 4 })
       const flashing = s.flashingElement
       const flashActive = flashing !== null && s.flashEndTime !== null && timestamp < s.flashEndTime
 
-      drawSubmenuBtn(ctx, {
-        id: 'strike', label: 'Strike', costLabel: '2🔴',
-        affordable: strikeAffordable,
-      }, 0, SUBMENU_Y, s.hoveredElement === 'sub-strike',
-      flashActive && flashing === 'sub-strike')
+      // Strike button: only show if weapon has a strike action
+      if (combat.strikeAction !== null) {
+        const strikeCost = combat.strikeAction.damage
+        const strikeAffordable = canAfford(pool, { red: strikeCost })
+
+        drawSubmenuBtn(ctx, {
+          id: 'strike', label: 'Strike', costLabel: `${strikeCost}🔴`,
+          affordable: strikeAffordable,
+        }, 0, SUBMENU_Y, s.hoveredElement === 'sub-strike',
+        flashActive && flashing === 'sub-strike')
+      }
+
+      const heavyAffordable = canAfford(pool, { red: 4 })
 
       drawSubmenuBtn(ctx, {
         id: 'heavy', label: 'Heavy Strike', costLabel: '4🔴',

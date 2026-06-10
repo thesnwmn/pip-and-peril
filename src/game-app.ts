@@ -4,12 +4,15 @@ import { createMainMenu, type ScreenController } from './screens/main-menu'
 import { createHome } from './screens/home'
 import { createGame } from './screens/game'
 import { createRunSummary } from './screens/run-summary'
+import { createCamp } from './screens/camp'
 import type { RunSummary } from './screens/types'
+import type { MetaState } from './meta/state'
+import { loadMetaState, saveMetaState } from './meta/state'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
 
-type Screen = 'main-menu' | 'home' | 'game' | 'run-summary'
+type Screen = 'main-menu' | 'home' | 'camp' | 'game' | 'run-summary'
 
 export class GameApp {
   private currentScreen: Screen = 'main-menu'
@@ -18,6 +21,7 @@ export class GameApp {
   private screens: Record<Screen, ScreenController>
   private dpr: number
   private pendingRunSummary: RunSummary | null = null
+  private metaState: MetaState
 
   constructor() {
     console.log(`GameApp constructor called`)
@@ -30,12 +34,12 @@ export class GameApp {
     this.dpr = window.devicePixelRatio ?? 1
 
     this.canvas = document.createElement('canvas')
-    this.canvas.width = LOGICAL_W * this.dpr
-    this.canvas.height = LOGICAL_H * this.dpr
+    this.canvas.width = 390 * this.dpr
+    this.canvas.height = 844 * this.dpr
     this.canvas.style.display = 'block'
     this.canvas.style.margin = '0 auto'
-    this.canvas.style.width = `${LOGICAL_W}px`
-    this.canvas.style.height = `${LOGICAL_H}px`
+    this.canvas.style.width = `390px`
+    this.canvas.style.height = `844px`
 
     const ctx = this.canvas.getContext('2d')
     if (!ctx) throw new Error('Failed to get 2D context')
@@ -46,6 +50,19 @@ export class GameApp {
     document.body.style.padding = '0'
     document.body.style.backgroundColor = colors.bg
     document.body.appendChild(this.canvas)
+
+    // Load MetaState and check for test mode parameters
+    this.metaState = loadMetaState()
+    const params = new URLSearchParams(window.location.search)
+    const testMode = params.get('testMode')
+    const testScraps = parseInt(params.get('testScraps') || '0', 10)
+
+    // Apply test mode settings if provided
+    if (testMode === 'camp' && testScraps > 0) {
+      this.metaState = { ...this.metaState, scraps: testScraps, runCount: 1 }
+      saveMetaState(this.metaState)
+      console.log(`🧪 Test mode: Starting at camp with ${testScraps} scraps`)
+    }
 
     const defaultRunSummary: RunSummary = {
       outcome: 'defeat',
@@ -59,11 +76,50 @@ export class GameApp {
     this.screens = {
       'main-menu': createMainMenu((screen) => this.transitionTo(screen as Screen)),
       'home': createHome((screen) => this.transitionTo(screen as Screen)),
-      'game': createGame((screen, summary) => this.transitionTo(screen as Screen, summary)),
-      'run-summary': createRunSummary(
+      'camp': createCamp(
         (screen) => this.transitionTo(screen as Screen),
+        (metaState) => {
+          this.metaState = metaState
+          // Recreate game screen with updated metaState
+          this.screens['game'] = createGame(
+            (screen, summary) => this.transitionTo(screen as Screen, summary),
+            metaState,
+          )
+          this.transitionTo('game')
+        },
+      ),
+      'game': createGame(
+        (screen, summary) => this.transitionTo(screen as Screen, summary),
+        this.metaState,
+      ),
+      'run-summary': createRunSummary(
+        (screen, metaState) => {
+          if (metaState) {
+            this.metaState = metaState
+          }
+          // Recreate camp screen with fresh state when returning from run
+          if (screen === 'camp') {
+            this.screens['camp'] = createCamp(
+              (s) => this.transitionTo(s as Screen),
+              (m) => {
+                this.metaState = m
+                this.screens['game'] = createGame(
+                  (s, summary) => this.transitionTo(s as Screen, summary),
+                  m,
+                )
+                this.transitionTo('game')
+              },
+            )
+          }
+          this.transitionTo(screen as Screen)
+        },
         defaultRunSummary,
       ),
+    }
+
+    // Start at camp if test mode is active
+    if (testMode === 'camp') {
+      this.currentScreen = 'camp'
     }
 
     this.setupEventListeners()
@@ -93,7 +149,26 @@ export class GameApp {
     if (next === 'run-summary' && summary) {
       this.pendingRunSummary = summary
       this.screens['run-summary'] = createRunSummary(
-        (screen) => this.transitionTo(screen as Screen),
+        (screen, metaState) => {
+          if (metaState) {
+            this.metaState = metaState
+          }
+          // Recreate camp screen with fresh state when returning from run
+          if (screen === 'camp') {
+            this.screens['camp'] = createCamp(
+              (s) => this.transitionTo(s as Screen),
+              (m) => {
+                this.metaState = m
+                this.screens['game'] = createGame(
+                  (s, summary) => this.transitionTo(s as Screen, summary),
+                  m,
+                )
+                this.transitionTo('game')
+              },
+            )
+          }
+          this.transitionTo(screen as Screen)
+        },
         summary,
       )
     }

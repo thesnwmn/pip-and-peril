@@ -46,6 +46,8 @@ export interface CombatOptions {
     titleCard: { name: string; flavour: string }
     wideZoom: number
   }
+  // Strike action from the active weapon (null if weapon has no strike)
+  strikeAction?: { damage: number } | null
 }
 
 export function createCombatEncounterPanel(
@@ -56,6 +58,7 @@ export function createCombatEncounterPanel(
 ): EncounterPanel {
   const victoryOutcome = options.victoryOutcome ?? 'victory'
   const intro = options.intro ?? null
+  const strikeAction = options.strikeAction ?? { damage: 2 }
 
   // ── Combat state ─────────────────────────────────────────────────────────
 
@@ -83,6 +86,7 @@ export function createCombatEncounterPanel(
     pipPoison: null,
     berserkTurnsLeft: 0,
     bonusPipsRemaining: 0,
+    strikeAction,
   }
 
   let lastEnemyHeadline = ''
