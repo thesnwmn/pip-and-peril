@@ -343,7 +343,7 @@ None blocking. The feature is `READY` as specified.
 
 ## Shipped
 
-**Date:** 2026-06-10 · **PR:** (pending)
+**Date:** 2026-06-10 · **PR:** #109
 
 ### What was built
 
