@@ -36,11 +36,18 @@ const DESCEND_BTN: Rect = {
 }
 
 // ── Weapon-selection panel ────────────────────────────────────────────────────
-const PANEL_HEIGHT = 560
-const PANEL_Y = LOGICAL_H - PANEL_HEIGHT
+// Browser mode (from weapon rack): shorter, no descend button
+const PANEL_BROWSER_HEIGHT = 380
+const PANEL_BROWSER_Y = LOGICAL_H - PANEL_BROWSER_HEIGHT
+
+// Selection mode (from descend button): full height with descend button
+const PANEL_SELECTION_HEIGHT = 560
+const PANEL_SELECTION_Y = LOGICAL_H - PANEL_SELECTION_HEIGHT
+
 const PANEL_W = LOGICAL_W
 
-const BACK_BTN: Rect = { x: 0, y: PANEL_Y, w: 90, h: 48 }
+// Close button in top-right corner (for both browser and selection modes)
+const CLOSE_BTN: Rect = { x: LOGICAL_W - 56, y: 8, w: 48, h: 48 }
 
 const WEAPON_CARD_W = 150
 const WEAPON_CARD_H = 150
@@ -48,12 +55,14 @@ const WEAPON_CARD_GAP = 14
 const WEAPON_GRID_COLS = 2
 // Centre the 2-wide grid horizontally.
 const WEAPON_GRID_X = (LOGICAL_W - (WEAPON_CARD_W * WEAPON_GRID_COLS + WEAPON_CARD_GAP)) / 2
-const WEAPON_GRID_Y = PANEL_Y + 56
+// Weapon grid starts at same Y for both modes (header + padding)
+const WEAPON_GRID_Y_OFFSET = 56
 
 const DIE_SIZE = 28
-const POOL_PREVIEW_Y = WEAPON_GRID_Y + WEAPON_CARD_H * 2 + WEAPON_CARD_GAP + 36
+// Pool preview in selection mode (only shown there)
+const POOL_PREVIEW_Y_OFFSET = 36
 
-// Descend CTA (panel)
+// Descend CTA (panel, only in selection mode)
 const PANEL_DESCEND_BTN: Rect = {
   x: (LOGICAL_W - 280) / 2,
   y: LOGICAL_H - 70,
@@ -77,11 +86,11 @@ const STUB_MESSAGES: Record<string, { title: string; msg: string }> = {
 interface CampState {
   metaState: MetaState
   panelOpen: boolean
+  panelMode: 'browser' | 'selection' // Weapon rack = browser, Descend button = selection
   selectedWeaponId: string
   hoveredElement: string | null
   isMouseDevice: boolean
   stubPanelOpen: string | null
-  stubPanelStartTime: number | null
 }
 
 export function createCamp(
@@ -92,21 +101,23 @@ export function createCamp(
   const state: CampState = {
     metaState: meta,
     panelOpen: false,
+    panelMode: 'selection',
     selectedWeaponId: meta.activeWeaponId,
     hoveredElement: null,
     isMouseDevice: false,
     stubPanelOpen: null,
-    stubPanelStartTime: null,
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
   function getWeaponCardRect(index: number): Rect {
+    const panelY = state.panelMode === 'selection' ? PANEL_SELECTION_Y : PANEL_BROWSER_Y
+    const weaponGridY = panelY + WEAPON_GRID_Y_OFFSET
     const col = index % WEAPON_GRID_COLS
     const row = Math.floor(index / WEAPON_GRID_COLS)
     return {
       x: WEAPON_GRID_X + col * (WEAPON_CARD_W + WEAPON_CARD_GAP),
-      y: WEAPON_GRID_Y + row * (WEAPON_CARD_H + WEAPON_CARD_GAP),
+      y: weaponGridY + row * (WEAPON_CARD_H + WEAPON_CARD_GAP),
       w: WEAPON_CARD_W,
       h: WEAPON_CARD_H,
     }
@@ -127,6 +138,22 @@ export function createCamp(
     }))
     const weapon = WEAPON_SPECS[state.selectedWeaponId]
     return weapon ? [...permanent, ...weapon.addedDice] : permanent
+  }
+
+  // Helper to get stub panel geometry
+  function getStubPanelRect(): Rect {
+    const panelW = 320
+    const panelH = 150
+    const panelX = (LOGICAL_W - panelW) / 2
+    const panelY = (LOGICAL_H - panelH) / 2
+    return { x: panelX, y: panelY, w: panelW, h: panelH }
+  }
+
+  function getStubCloseButtonRect(): Rect {
+    const panel = getStubPanelRect()
+    const closeX = panel.x + panel.w - 28
+    const closeY = panel.y + 12
+    return { x: closeX - 16, y: closeY - 16, w: 32, h: 32 }
   }
 
   function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
@@ -328,35 +355,50 @@ export function createCamp(
   }
 
   function drawStubPanel(ctx: CanvasRenderingContext2D, title: string, message: string): void {
-    const panelW = 320
-    const panelH = 150
-    const panelX = (LOGICAL_W - panelW) / 2
-    const panelY = (LOGICAL_H - panelH) / 2
+    const panel = getStubPanelRect()
+
+    // Dim the camp behind the stub panel
+    ctx.globalAlpha = 0.75
+    ctx.fillStyle = colors.bg
+    ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
+    ctx.globalAlpha = 1
 
     ctx.fillStyle = '#2e1d0d'
-    ctx.fillRect(panelX, panelY, panelW, panelH)
+    ctx.fillRect(panel.x, panel.y, panel.w, panel.h)
     ctx.strokeStyle = colors.gold
     ctx.lineWidth = 2
-    ctx.strokeRect(panelX, panelY, panelW, panelH)
+    ctx.strokeRect(panel.x, panel.y, panel.w, panel.h)
 
     ctx.font = 'bold 16px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.textPrimary
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
-    ctx.fillText(title, panelX + panelW / 2, panelY + 20)
+    ctx.fillText(title, panel.x + panel.w / 2, panel.y + 20)
 
     ctx.font = '13px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.textMuted
-    const lines = wrapText(ctx, message, panelW - 48)
-    let lineY = panelY + 56
+    const lines = wrapText(ctx, message, panel.w - 48)
+    let lineY = panel.y + 56
     for (const line of lines) {
-      ctx.fillText(line, panelX + panelW / 2, lineY)
+      ctx.fillText(line, panel.x + panel.w / 2, lineY)
       lineY += 20
     }
 
-    ctx.font = 'italic 11px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = colors.textMuted
-    ctx.fillText('tap to dismiss', panelX + panelW / 2, panelY + panelH - 26)
+    // Draw close (X) button in top-right corner of stub panel
+    const closeBtn = getStubCloseButtonRect()
+    const closeCenterX = closeBtn.x + closeBtn.w / 2
+    const closeCenterY = closeBtn.y + closeBtn.h / 2
+    const closeSize = 16
+    ctx.strokeStyle = state.hoveredElement === 'stub-close' ? colors.gold : colors.textMuted
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(closeCenterX - closeSize / 2, closeCenterY - closeSize / 2)
+    ctx.lineTo(closeCenterX + closeSize / 2, closeCenterY + closeSize / 2)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.moveTo(closeCenterX + closeSize / 2, closeCenterY - closeSize / 2)
+    ctx.lineTo(closeCenterX - closeSize / 2, closeCenterY + closeSize / 2)
+    ctx.stroke()
   }
 
   // ── Weapon-selection panel drawing ──────────────────────────────────────────
@@ -419,31 +461,44 @@ export function createCamp(
   }
 
   function drawWeaponSelectionPanel(ctx: CanvasRenderingContext2D): void {
+    const panelY = state.panelMode === 'selection' ? PANEL_SELECTION_Y : PANEL_BROWSER_Y
+    const panelHeight = state.panelMode === 'selection' ? PANEL_SELECTION_HEIGHT : PANEL_BROWSER_HEIGHT
+
     // Dim the camp behind the panel
-    ctx.globalAlpha = 0.55
+    ctx.globalAlpha = 0.75
     ctx.fillStyle = colors.bg
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
     ctx.globalAlpha = 1
 
     // Panel surface
     ctx.fillStyle = '#2e1d0d'
-    ctx.fillRect(0, PANEL_Y, PANEL_W, PANEL_HEIGHT)
+    ctx.fillRect(0, panelY, PANEL_W, panelHeight)
     ctx.strokeStyle = colors.gold
     ctx.lineWidth = 2
-    ctx.strokeRect(0, PANEL_Y, PANEL_W, PANEL_HEIGHT)
+    ctx.strokeRect(0, panelY, PANEL_W, panelHeight)
 
-    // Header
-    ctx.font = '15px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = state.hoveredElement === 'back' ? colors.gold : colors.textMuted
-    ctx.textAlign = 'left'
-    ctx.textBaseline = 'middle'
-    ctx.fillText('← Back', 18, BACK_BTN.y + BACK_BTN.h / 2)
-
+    // Header: centered "Choose Your Weapon" title
     ctx.font = 'bold 16px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.textPrimary
-    ctx.textAlign = 'right'
+    ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('Choose Your Weapon', LOGICAL_W - 18, BACK_BTN.y + BACK_BTN.h / 2)
+    ctx.fillText('Choose Your Weapon', LOGICAL_W / 2, panelY + 24)
+
+    // Close (X) button in top-right
+    const closeHovered = state.hoveredElement === 'close'
+    const closeCenterX = CLOSE_BTN.x + CLOSE_BTN.w / 2
+    const closeCenterY = panelY + CLOSE_BTN.h / 2
+    const closeSize = 16
+    ctx.strokeStyle = closeHovered ? colors.gold : colors.textMuted
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(closeCenterX - closeSize / 2, closeCenterY - closeSize / 2)
+    ctx.lineTo(closeCenterX + closeSize / 2, closeCenterY + closeSize / 2)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.moveTo(closeCenterX + closeSize / 2, closeCenterY - closeSize / 2)
+    ctx.lineTo(closeCenterX - closeSize / 2, closeCenterY + closeSize / 2)
+    ctx.stroke()
 
     // Weapon cards
     const ids = state.metaState.unlockedWeaponIds
@@ -451,45 +506,48 @@ export function createCamp(
       drawWeaponCard(ctx, ids[i], getWeaponCardRect(i), ids[i] === state.selectedWeaponId)
     }
 
-    // Pool preview
-    ctx.font = '12px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = colors.textMuted
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'top'
-    ctx.fillText('Your dice this run:', LOGICAL_W / 2, POOL_PREVIEW_Y - 22)
+    // Pool preview (only in selection mode)
+    if (state.panelMode === 'selection') {
+      const poolPreviewY = panelY + panelHeight - 120
+      ctx.font = '12px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = colors.textMuted
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText('Your dice this run:', LOGICAL_W / 2, poolPreviewY - 22)
 
-    const poolDice = getRunPoolDice()
-    const totalW = poolDice.length * DIE_SIZE + (poolDice.length - 1) * 6
-    let dieX = (LOGICAL_W - totalW) / 2
-    for (const die of poolDice) {
-      drawDie(ctx, dieX, POOL_PREVIEW_Y, die.sides, die.color, DIE_SIZE)
-      dieX += DIE_SIZE + 6
+      const poolDice = getRunPoolDice()
+      const totalW = poolDice.length * DIE_SIZE + (poolDice.length - 1) * 6
+      let dieX = (LOGICAL_W - totalW) / 2
+      for (const die of poolDice) {
+        drawDie(ctx, dieX, poolPreviewY, die.sides, die.color, DIE_SIZE)
+        dieX += DIE_SIZE + 6
+      }
+
+      // Descend CTA
+      const hovered = state.isMouseDevice && state.hoveredElement === 'panel-descend'
+      ctx.globalAlpha = hovered ? 0.95 : 0.85
+      ctx.fillStyle = colors.gold
+      ctx.fillRect(PANEL_DESCEND_BTN.x, PANEL_DESCEND_BTN.y, PANEL_DESCEND_BTN.w, PANEL_DESCEND_BTN.h)
+      ctx.globalAlpha = 1
+      ctx.strokeStyle = colors.gold
+      ctx.lineWidth = 2
+      strokeRoundRect(ctx, PANEL_DESCEND_BTN, 4)
+
+      ctx.font = 'bold 16px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = '#1a1208'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(
+        'Descend into the Dark',
+        PANEL_DESCEND_BTN.x + PANEL_DESCEND_BTN.w / 2,
+        PANEL_DESCEND_BTN.y + PANEL_DESCEND_BTN.h / 2,
+      )
     }
-
-    // Descend CTA
-    const hovered = state.isMouseDevice && state.hoveredElement === 'panel-descend'
-    ctx.globalAlpha = hovered ? 0.95 : 0.85
-    ctx.fillStyle = colors.gold
-    ctx.fillRect(PANEL_DESCEND_BTN.x, PANEL_DESCEND_BTN.y, PANEL_DESCEND_BTN.w, PANEL_DESCEND_BTN.h)
-    ctx.globalAlpha = 1
-    ctx.strokeStyle = colors.gold
-    ctx.lineWidth = 2
-    strokeRoundRect(ctx, PANEL_DESCEND_BTN, 4)
-
-    ctx.font = 'bold 16px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = '#1a1208'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(
-      'Descend into the Dark',
-      PANEL_DESCEND_BTN.x + PANEL_DESCEND_BTN.w / 2,
-      PANEL_DESCEND_BTN.y + PANEL_DESCEND_BTN.h / 2,
-    )
   }
 
   // ── Top-level draw ────────────────────────────────────────────────────────────
 
-  function draw(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
+  function draw(ctx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
     // Camp scene is always the base layer and always clears the full canvas.
     drawCampScene(ctx)
 
@@ -499,29 +557,41 @@ export function createCamp(
     }
 
     // Stub panel (only meaningful on the camp scene, never over the weapon panel)
-    if (state.stubPanelOpen && state.stubPanelStartTime !== null) {
-      if (timestamp - state.stubPanelStartTime >= 2000) {
-        state.stubPanelOpen = null
-        state.stubPanelStartTime = null
-      } else {
-        const stub = STUB_MESSAGES[state.stubPanelOpen]
-        if (stub) drawStubPanel(ctx, stub.title, stub.msg)
-      }
+    if (state.stubPanelOpen) {
+      const stub = STUB_MESSAGES[state.stubPanelOpen]
+      if (stub) drawStubPanel(ctx, stub.title, stub.msg)
     }
   }
 
   // ── Input ─────────────────────────────────────────────────────────────────────
 
   function handleClick(x: number, y: number): void {
-    // A stub panel swallows the next click (dismiss).
+    // Stub panel handling: close on X button or click outside
     if (state.stubPanelOpen) {
-      state.stubPanelOpen = null
-      state.stubPanelStartTime = null
+      const closeBtn = getStubCloseButtonRect()
+      if (inRect(closeBtn, x, y)) {
+        state.stubPanelOpen = null
+        return
+      }
+      // Click outside the stub panel to dismiss
+      const panel = getStubPanelRect()
+      if (!inRect(panel, x, y)) {
+        state.stubPanelOpen = null
+        return
+      }
+      // Click inside panel but not on close button: stay open
       return
     }
 
     if (state.panelOpen) {
-      if (inRect(BACK_BTN, x, y)) {
+      // Close button in top-right
+      const closeBtnForHitTest: Rect = {
+        x: CLOSE_BTN.x,
+        y: state.panelMode === 'selection' ? PANEL_SELECTION_Y : PANEL_BROWSER_Y,
+        w: CLOSE_BTN.w,
+        h: CLOSE_BTN.h,
+      }
+      if (inRect(closeBtnForHitTest, x, y)) {
         state.panelOpen = false
         state.hoveredElement = null
         return
@@ -533,7 +603,7 @@ export function createCamp(
         return
       }
 
-      if (inRect(PANEL_DESCEND_BTN, x, y)) {
+      if (state.panelMode === 'selection' && inRect(PANEL_DESCEND_BTN, x, y)) {
         const newState: MetaState = {
           ...state.metaState,
           activeWeaponId: state.selectedWeaponId,
@@ -546,8 +616,15 @@ export function createCamp(
     }
 
     // Camp scene
-    if (inRect(DESCEND_BTN, x, y) || inRect(WEAPON_RACK, x, y)) {
+    if (inRect(DESCEND_BTN, x, y)) {
       state.panelOpen = true
+      state.panelMode = 'selection'
+      state.hoveredElement = null
+      return
+    }
+    if (inRect(WEAPON_RACK, x, y)) {
+      state.panelOpen = true
+      state.panelMode = 'browser'
       state.hoveredElement = null
       return
     }
@@ -567,16 +644,27 @@ export function createCamp(
 
   function openStub(id: string): void {
     state.stubPanelOpen = id
-    state.stubPanelStartTime = performance.now()
   }
 
   function handlePointerMove(x: number, y: number): void {
     state.isMouseDevice = true
 
+    if (state.stubPanelOpen) {
+      const closeBtn = getStubCloseButtonRect()
+      state.hoveredElement = inRect(closeBtn, x, y) ? 'stub-close' : null
+      return
+    }
+
     if (state.panelOpen) {
-      if (inRect(BACK_BTN, x, y)) {
-        state.hoveredElement = 'back'
-      } else if (inRect(PANEL_DESCEND_BTN, x, y)) {
+      const closeBtnForHitTest: Rect = {
+        x: CLOSE_BTN.x,
+        y: state.panelMode === 'selection' ? PANEL_SELECTION_Y : PANEL_BROWSER_Y,
+        w: CLOSE_BTN.w,
+        h: CLOSE_BTN.h,
+      }
+      if (inRect(closeBtnForHitTest, x, y)) {
+        state.hoveredElement = 'close'
+      } else if (state.panelMode === 'selection' && inRect(PANEL_DESCEND_BTN, x, y)) {
         state.hoveredElement = 'panel-descend'
       } else {
         state.hoveredElement = weaponAt(x, y)
