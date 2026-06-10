@@ -193,6 +193,15 @@ export function createCamp(
     return null
   }
 
+  function getRunPoolDice(): Die[] {
+    const permanent: Die[] = state.metaState.permanentPool.map((p) => ({
+      color: p.colour as Die['color'],
+      sides: p.faces,
+    }))
+    const weapon = WEAPON_SPECS[state.selectedWeaponId]
+    return weapon ? [...permanent, ...weapon.addedDice] : permanent
+  }
+
   function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
     const words = text.split(' ')
     const lines: string[] = []
@@ -742,6 +751,24 @@ export function createCamp(
       } else {
         ctx.fillText('— no strike —', cardCX, textY)
       }
+    }
+
+    // Run dice pool preview (between cards and descend button)
+    const poolDice = getRunPoolDice()
+    const poolLabelY = PANEL_DESCEND_BTN.y - 46
+    ctx.font = '11px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.textMuted
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+    ctx.fillText('Your dice this run:', LOGICAL_W / 2, poolLabelY)
+    const poolDieSize = 22
+    const poolDieGap = 5
+    const poolTotalW = poolDice.length * poolDieSize + (poolDice.length - 1) * poolDieGap
+    let poolDieX = (LOGICAL_W - poolTotalW) / 2
+    const poolDieY = poolLabelY + 14
+    for (const die of poolDice) {
+      drawDie(ctx, poolDieX, poolDieY, die.sides, die.color, poolDieSize)
+      poolDieX += poolDieSize + poolDieGap
     }
 
     // Descend CTA
