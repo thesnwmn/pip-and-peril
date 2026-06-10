@@ -25,7 +25,7 @@ export function inRect(r: Rect, x: number, y: number): boolean {
 // ── Zone split ─────────────────────────────────────────────────────────────────
 // Scene zone: Y 0 → SCENE_BOTTOM (≥55% of LOGICAL_H per spec)
 // Activity bar zone: Y SCENE_BOTTOM → LOGICAL_H
-export const SCENE_BOTTOM = Math.round(0.62 * LOGICAL_H)  // ≈ 523
+export const SCENE_BOTTOM = Math.round(0.56 * LOGICAL_H)  // ≈ 473
 
 // ── Activity bar ───────────────────────────────────────────────────────────────
 const ACTIVITY_BAR_PAD_TOP = 20
@@ -93,13 +93,13 @@ const NOTICE_TEXT = '#1a0f05'
 
 // ── Scene element positions (shifted up ~70 px after scroll-wall removal) ──────
 // Arch passage (back wall)
-const ARCH: Rect = { x: LOGICAL_W / 2 - 55, y: 285, w: 110, h: 125 }
+const ARCH: Rect = { x: LOGICAL_W / 2 - 55, y: 215, w: 110, h: 125 }
 // Workbench (left side)
-const WORKBENCH_SCENE: Rect = { x: 16, y: 178, w: 132, h: 80 }
+const WORKBENCH_SCENE: Rect = { x: 16, y: 108, w: 132, h: 80 }
 
 // Campfire
 const FIRE_CX = 185
-const FIRE_CY = 382
+const FIRE_CY = 312
 const FIRE_BASE_RADIUS = 44
 const FIRE_FLAME_MIN = 12
 const FIRE_FLAME_MAX = 22
@@ -108,17 +108,17 @@ const FIRE_FRAME_MAX_MS = 250
 
 // Pip
 const PIP_CX = 242
-const PIP_CY = 390
+const PIP_CY = 320
 
 // Visitor stool
 const STOOL_CX = 128
-const STOOL_CY = 375
+const STOOL_CY = 305
 
 // Weapon silhouettes (decorative, right wall)
 const WEAPON_SILS = [
-  { x: 284, yBase: 350, w: 7,  h: 52, lean: -0.12 },  // dagger
-  { x: 308, yBase: 330, w: 11, h: 70, lean:  0.10 },  // sword
-  { x: 336, yBase: 315, w: 5,  h: 80, lean: -0.08 },  // staff
+  { x: 284, yBase: 280, w: 7,  h: 52, lean: -0.12 },  // dagger
+  { x: 308, yBase: 260, w: 11, h: 70, lean:  0.10 },  // sword
+  { x: 336, yBase: 245, w: 5,  h: 80, lean: -0.08 },  // staff
 ]
 
 // ── State ──────────────────────────────────────────────────────────────────────
