@@ -29,6 +29,8 @@ export function createRunSummary(
   let isMouseDevice = false
   let fadeInStartTime: DOMHighResTimeStamp | null = null
   let animationStartTime: DOMHighResTimeStamp | null = null
+  const metaState = loadMetaState()
+  const isFirstRun = metaState.runCount === 0
 
   const FADE_IN_DURATION = 600
   const STATS_ANIMATION_DURATION = 1000
@@ -206,7 +208,12 @@ export function createRunSummary(
     ctx.fillStyle = colors.textMuted
     ctx.textAlign = 'right'
     ctx.textBaseline = 'top'
-    const scrapsText = summary.goldEarned > 0 ? `→ ${summary.goldEarned} scraps to carry home` : '→ no scraps this run'
+    let scrapsText: string
+    if (isFirstRun) {
+      scrapsText = '→ no rewards - no marks'
+    } else {
+      scrapsText = summary.goldEarned > 0 ? `→ ${summary.goldEarned} scraps to carry home` : '→ no scraps this run'
+    }
     ctx.fillText(scrapsText, CARD_X + CARD_WIDTH - CARD_PADDING, currentY + 22)
 
     ctx.globalAlpha = cardOpacity
@@ -268,10 +275,11 @@ export function createRunSummary(
 
   function handleClick(x: number, y: number): void {
     if (isInBeginAgainButton(x, y)) {
-      const metaState = loadMetaState()
       const updatedMeta: MetaState = {
         ...metaState,
-        scraps: metaState.scraps + summary.goldEarned,
+        // Only award scraps if not the first run
+        scraps: isFirstRun ? metaState.scraps : metaState.scraps + summary.goldEarned,
+        runCount: metaState.runCount + 1,
       }
       saveMetaState(updatedMeta)
       transitionTo('camp', updatedMeta)

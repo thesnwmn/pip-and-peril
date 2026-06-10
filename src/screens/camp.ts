@@ -37,7 +37,7 @@ const DESCEND_BTN: Rect = {
 
 // ── Weapon-selection panel ────────────────────────────────────────────────────
 // Browser mode (from weapon rack): centered, no descend button
-const PANEL_BROWSER_HEIGHT = 380
+const PANEL_BROWSER_HEIGHT = 420
 const PANEL_BROWSER_Y = (LOGICAL_H - PANEL_BROWSER_HEIGHT) / 2
 
 // Selection mode (from descend button): full height with descend button
@@ -608,7 +608,6 @@ export function createCamp(
         const newState: MetaState = {
           ...state.metaState,
           activeWeaponId: state.selectedWeaponId,
-          runCount: state.metaState.runCount + 1,
         }
         saveMetaState(newState)
         onStartRun(newState)
