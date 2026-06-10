@@ -36,9 +36,9 @@ const DESCEND_BTN: Rect = {
 }
 
 // ── Weapon-selection panel ────────────────────────────────────────────────────
-// Browser mode (from weapon rack): shorter, no descend button
+// Browser mode (from weapon rack): centered, no descend button
 const PANEL_BROWSER_HEIGHT = 380
-const PANEL_BROWSER_Y = LOGICAL_H - PANEL_BROWSER_HEIGHT
+const PANEL_BROWSER_Y = (LOGICAL_H - PANEL_BROWSER_HEIGHT) / 2
 
 // Selection mode (from descend button): full height with descend button
 const PANEL_SELECTION_HEIGHT = 560
@@ -47,7 +47,7 @@ const PANEL_SELECTION_Y = LOGICAL_H - PANEL_SELECTION_HEIGHT
 const PANEL_W = LOGICAL_W
 
 // Close button in top-right corner (for both browser and selection modes)
-const CLOSE_BTN: Rect = { x: LOGICAL_W - 56, y: 8, w: 48, h: 48 }
+const CLOSE_BTN: Rect = { x: LOGICAL_W - 50, y: 10, w: 40, h: 40 }
 
 const WEAPON_CARD_W = 150
 const WEAPON_CARD_H = 150
@@ -151,9 +151,9 @@ export function createCamp(
 
   function getStubCloseButtonRect(): Rect {
     const panel = getStubPanelRect()
-    const closeX = panel.x + panel.w - 28
-    const closeY = panel.y + 12
-    return { x: closeX - 16, y: closeY - 16, w: 32, h: 32 }
+    const closeX = panel.x + panel.w - 24
+    const closeY = panel.y + 20
+    return { x: closeX - 14, y: closeY - 14, w: 28, h: 28 }
   }
 
   function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
@@ -388,7 +388,7 @@ export function createCamp(
     const closeBtn = getStubCloseButtonRect()
     const closeCenterX = closeBtn.x + closeBtn.w / 2
     const closeCenterY = closeBtn.y + closeBtn.h / 2
-    const closeSize = 16
+    const closeSize = 12
     ctx.strokeStyle = state.hoveredElement === 'stub-close' ? colors.gold : colors.textMuted
     ctx.lineWidth = 2
     ctx.beginPath()
@@ -477,18 +477,19 @@ export function createCamp(
     ctx.lineWidth = 2
     ctx.strokeRect(0, panelY, PANEL_W, panelHeight)
 
-    // Header: centered "Choose Your Weapon" title
+    // Header: centered title (varies by mode)
+    const panelTitle = state.panelMode === 'selection' ? 'Choose Your Weapon' : 'Weapons'
     ctx.font = 'bold 16px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.textPrimary
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('Choose Your Weapon', LOGICAL_W / 2, panelY + 24)
+    ctx.fillText(panelTitle, LOGICAL_W / 2, panelY + 24)
 
     // Close (X) button in top-right
     const closeHovered = state.hoveredElement === 'close'
     const closeCenterX = CLOSE_BTN.x + CLOSE_BTN.w / 2
     const closeCenterY = panelY + CLOSE_BTN.h / 2
-    const closeSize = 16
+    const closeSize = 12
     ctx.strokeStyle = closeHovered ? colors.gold : colors.textMuted
     ctx.lineWidth = 2
     ctx.beginPath()
