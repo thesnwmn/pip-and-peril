@@ -4,6 +4,9 @@ import type { MetaState } from '../meta/state'
 import { loadMetaState, saveMetaState } from '../meta/state'
 import { WEAPON_SPECS } from '../meta/weapons'
 import type { Die } from '../dice/pool'
+import { generateNotices } from '../camp/notices'
+import type { NoticeState } from '../camp/notices'
+import { easeOut } from '../animation/easing'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
@@ -26,6 +29,18 @@ const WORKBENCH: Rect = { x: 20, y: 200, w: 170, h: 130 }
 const WEAPON_RACK: Rect = { x: 210, y: 200, w: 160, h: 150 }
 const STOOL_POS = { x: LOGICAL_W / 2, y: 430 }
 const ARCH: Rect = { x: LOGICAL_W / 2 - 70, y: 500, w: 140, h: 120 }
+const NOTICE_BOARD: Rect = { x: 20, y: 640, w: 88, h: 70 }
+
+// ── Notice panel ─────────────────────────────────────────────────────────────
+const NOTICE_PANEL_H = 244
+const NOTICE_PANEL_RISE_MS = 400
+const NOTICE_PANEL_SINK_MS = 300
+const NOTICE_CARD_W = LOGICAL_W - 32
+const NOTICE_CARD_H = 82
+const NOTICE_CARD_PADDING = 12
+const NOTICE_CARD_GAP = 10
+const NOTICE_BG = '#f5e8c4'
+const NOTICE_TEXT = '#1a0f05'
 
 // Descend CTA (camp scene)
 const DESCEND_BTN: Rect = {
@@ -91,6 +106,13 @@ interface CampState {
   hoveredElement: string | null
   isMouseDevice: boolean
   stubPanelOpen: string | null
+  noticeState: NoticeState
+  noticePanelOpen: boolean
+  noticePanelProgress: number  // 0=closed 1=fully open
+  noticePanelAnimStart: number // performance.now() when current animation started
+  noticeDismissVisible: boolean
+  noticeDismissAlpha: number
+  noticeDismissStart: number   // timestamp from draw when label first appeared
 }
 
 export function createCamp(
@@ -106,6 +128,13 @@ export function createCamp(
     hoveredElement: null,
     isMouseDevice: false,
     stubPanelOpen: null,
+    noticeState: generateNotices(meta),
+    noticePanelOpen: false,
+    noticePanelProgress: 0,
+    noticePanelAnimStart: 0,
+    noticeDismissVisible: false,
+    noticeDismissAlpha: 0,
+    noticeDismissStart: 0,
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -220,6 +249,7 @@ export function createCamp(
     drawWeaponRack(ctx)
     drawStool(ctx)
     drawArch(ctx)
+    drawNoticeBoard(ctx)
     drawDescendButton(ctx)
   }
 
@@ -334,6 +364,119 @@ export function createCamp(
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText('· · ·', ARCH.x + ARCH.w / 2, ARCH.y + ARCH.h / 2)
+  }
+
+  function drawNoticeBoard(ctx: CanvasRenderingContext2D): void {
+    const r = NOTICE_BOARD
+    const isHovered = state.isMouseDevice && state.hoveredElement === 'notice-board'
+
+    // Dark wood surface
+    ctx.fillStyle = isHovered ? '#3a2c1a' : '#2a1c0a'
+    ctx.fillRect(r.x, r.y, r.w, r.h)
+    ctx.strokeStyle = '#5a3d1a'
+    ctx.lineWidth = 2
+    ctx.strokeRect(r.x, r.y, r.w, r.h)
+
+    // Two cream paper rectangles
+    const paperX = r.x + 10
+    const paperW = r.w - 20
+    const paperH = Math.floor((r.h - 24) / 2)
+    const paper1Y = r.y + 8
+    const paper2Y = paper1Y + paperH + 6
+
+    for (const paperY of [paper1Y, paper2Y]) {
+      ctx.fillStyle = NOTICE_BG
+      ctx.fillRect(paperX, paperY, paperW, paperH)
+      // Gold pin dot in top-right corner of each paper
+      ctx.fillStyle = colors.gold
+      ctx.beginPath()
+      ctx.arc(paperX + paperW - 5, paperY + 5, 2.5, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
+
+  function drawNoticeCard(ctx: CanvasRenderingContext2D, cardY: number, text: string): void {
+    const cardX = 16
+
+    // Subtle drop shadow
+    ctx.globalAlpha = 0.25
+    ctx.fillStyle = '#000'
+    ctx.fillRect(cardX + 2, cardY + 2, NOTICE_CARD_W, NOTICE_CARD_H)
+    ctx.globalAlpha = 1
+
+    // Card background (warm parchment)
+    ctx.fillStyle = NOTICE_BG
+    ctx.fillRect(cardX, cardY, NOTICE_CARD_W, NOTICE_CARD_H)
+
+    // Subtle border
+    ctx.strokeStyle = 'rgba(26, 15, 5, 0.3)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(cardX, cardY, NOTICE_CARD_W, NOTICE_CARD_H)
+
+    // Italic hand-inked text
+    ctx.font = 'italic 13px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = NOTICE_TEXT
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    const lines = wrapText(ctx, text, NOTICE_CARD_W - NOTICE_CARD_PADDING * 2)
+    let textY = cardY + NOTICE_CARD_PADDING
+    for (const line of lines) {
+      ctx.fillText(line, cardX + NOTICE_CARD_PADDING, textY)
+      textY += 20
+    }
+  }
+
+  function drawNoticePanel(ctx: CanvasRenderingContext2D): void {
+    const easedProgress = easeOut(state.noticePanelProgress)
+    const panelY = LOGICAL_H - Math.round(NOTICE_PANEL_H * easedProgress)
+
+    // Dim camp behind panel
+    ctx.globalAlpha = 0.5 * easedProgress
+    ctx.fillStyle = colors.bg
+    ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
+    ctx.globalAlpha = 1
+
+    // Panel surface (warm camp brown)
+    ctx.fillStyle = '#2e1d0d'
+    ctx.fillRect(0, panelY, LOGICAL_W, NOTICE_PANEL_H)
+
+    // Subtle top border
+    ctx.strokeStyle = '#5a3d1a'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(0, panelY)
+    ctx.lineTo(LOGICAL_W, panelY)
+    ctx.stroke()
+
+    // Notice cards
+    const card1Y = panelY + 20
+    drawNoticeCard(ctx, card1Y, state.noticeState.notices[0].text)
+    const card2Y = card1Y + NOTICE_CARD_H + NOTICE_CARD_GAP
+    drawNoticeCard(ctx, card2Y, state.noticeState.notices[1].text)
+
+    // Ghost dismiss label (fades after 2 s of being fully open)
+    if (state.noticeDismissVisible && state.noticeDismissAlpha > 0 && state.noticePanelProgress >= 1) {
+      ctx.globalAlpha = state.noticeDismissAlpha
+      ctx.font = '11px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = colors.textMuted
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'bottom'
+      ctx.fillText('tap to dismiss', LOGICAL_W / 2, LOGICAL_H - 12)
+      ctx.globalAlpha = 1
+    }
+  }
+
+  function openNoticePanel(): void {
+    state.noticePanelOpen = true
+    state.noticePanelAnimStart = performance.now()
+    state.noticeDismissVisible = false
+    state.noticeDismissAlpha = 0
+  }
+
+  function closeNoticePanel(): void {
+    state.noticePanelOpen = false
+    state.noticePanelAnimStart = performance.now()
+    state.noticeDismissVisible = false
   }
 
   function drawDescendButton(ctx: CanvasRenderingContext2D): void {
@@ -548,16 +691,46 @@ export function createCamp(
 
   // ── Top-level draw ────────────────────────────────────────────────────────────
 
-  function draw(ctx: CanvasRenderingContext2D, _timestamp: DOMHighResTimeStamp): void {
+  function draw(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
+    // Advance notice panel animation
+    if (state.noticePanelOpen && state.noticePanelProgress < 1) {
+      const elapsed = timestamp - state.noticePanelAnimStart
+      state.noticePanelProgress = Math.min(1, elapsed / NOTICE_PANEL_RISE_MS)
+      if (state.noticePanelProgress >= 1 && !state.noticeDismissVisible) {
+        state.noticeDismissVisible = true
+        state.noticeDismissAlpha = 1
+        state.noticeDismissStart = timestamp
+      }
+    } else if (!state.noticePanelOpen && state.noticePanelProgress > 0) {
+      const elapsed = timestamp - state.noticePanelAnimStart
+      state.noticePanelProgress = Math.max(0, 1 - elapsed / NOTICE_PANEL_SINK_MS)
+    }
+
+    // Advance dismiss label fade (starts 2 s after panel fully opens)
+    if (state.noticeDismissVisible && state.noticePanelProgress >= 1) {
+      const elapsed = timestamp - state.noticeDismissStart
+      if (elapsed >= 2000) {
+        state.noticeDismissAlpha = Math.max(0, 1 - (elapsed - 2000) / 500)
+        if (state.noticeDismissAlpha <= 0) state.noticeDismissVisible = false
+      }
+    }
+
     // Camp scene is always the base layer and always clears the full canvas.
     drawCampScene(ctx)
 
+    // Weapon panel (highest priority overlay)
     if (state.panelOpen) {
       drawWeaponSelectionPanel(ctx)
       return
     }
 
-    // Stub panel (only meaningful on the camp scene, never over the weapon panel)
+    // Notice panel (animating or open)
+    if (state.noticePanelProgress > 0) {
+      drawNoticePanel(ctx)
+      return
+    }
+
+    // Stub panel (only meaningful on the camp scene)
     if (state.stubPanelOpen) {
       const stub = STUB_MESSAGES[state.stubPanelOpen]
       if (stub) drawStubPanel(ctx, stub.title, stub.msg)
@@ -581,6 +754,15 @@ export function createCamp(
         return
       }
       // Click inside panel but not on close button: stay open
+      return
+    }
+
+    // Notice panel: consume all taps while visible (open or mid-close animation)
+    if (state.noticePanelOpen || state.noticePanelProgress > 0) {
+      if (state.noticePanelOpen) {
+        const panelTop = LOGICAL_H - NOTICE_PANEL_H
+        if (y < panelTop) closeNoticePanel()
+      }
       return
     }
 
@@ -640,6 +822,10 @@ export function createCamp(
       openStub('descentRecord')
       return
     }
+    if (inRect(NOTICE_BOARD, x, y)) {
+      openNoticePanel()
+      return
+    }
   }
 
   function openStub(id: string): void {
@@ -672,7 +858,16 @@ export function createCamp(
       return
     }
 
-    state.hoveredElement = inRect(DESCEND_BTN, x, y) ? 'descend' : null
+    if (state.noticePanelOpen || state.noticePanelProgress > 0) {
+      state.hoveredElement = null
+      return
+    }
+
+    if (inRect(NOTICE_BOARD, x, y)) {
+      state.hoveredElement = 'notice-board'
+    } else {
+      state.hoveredElement = inRect(DESCEND_BTN, x, y) ? 'descend' : null
+    }
   }
 
   return { draw, handleClick, handlePointerMove }

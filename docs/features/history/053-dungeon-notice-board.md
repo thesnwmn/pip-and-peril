@@ -343,10 +343,28 @@ None blocking. The feature is `READY` as specified.
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-10 · **PR:** (pending)
 
 ### What was built
 
+- **`src/camp/notices.ts`**: Notice generation module with four template banks (8 entries each), variable resolution (`{run_count}`, `{run_count_ordinal}`, `{comparative}`), category eligibility gating (`past-run-echo` requires `runCount > 0`), and graceful fallback for invalid/undefined `runCount`. Exports `NoticeState`, `NoticeEntry`, and the `atmosphericLine` field for future run-start transitions.
+- **`src/screens/camp.ts`**: Notice board object in the camp lower-left (dark wood, two cream paper backs with gold pin dots). Animated notice panel rising from the screen bottom (~400 ms ease-out open / ~300 ms sink-close). Two parchment-warm notice cards with italic text. Ghost "tap to dismiss" label fading after 2 s. Click and hover guards block camp interactions during both opening and closing animation.
+- **`src/meta/state.ts`**: Backward-compatible `runCount` migration — saved state without the field loads as `runCount: 0` and is re-persisted rather than reset to default.
+
 ### Evidence
 
+- **11 unit tests** in `src/camp/notices.test.ts`: two notices always generated, from different categories, `atmosphericLine` == `notices[0].text`, `past-run-echo` excluded at `runCount=0`, `past-run-echo` reachable at `runCount>0`, no unfilled `{variable}` slots after resolution, `{run_count}` resolved correctly, `undefined`/`NaN` runCount treated as 0.
+- `npm run typecheck` clean, `npm run build` clean, all 489 tests pass.
+- Inline Reviewer pass completed; three confirmed bugs fixed (animation-snap on re-open during close, camp hit-tests during close animation, hover bleed-through during close animation).
+
 ### Play-test
+
+1. Open the game at camp (`?testMode=camp&testScraps=0`).
+2. **Notice board visible**: Dark wood rectangle with two cream paper scraps and gold pin dots appears in the lower-left (~y 640).
+3. **Tap the notice board**: A warm brown panel rises smoothly (~400 ms). Two parchment-coloured cards appear with italic prose.
+4. **Read the notices**: No `{variable}` literals, text fits two lines or fewer on each card.
+5. **Tap outside the panel**: Panel sinks (~300 ms). Board is interactive again.
+6. **Dismiss label**: "tap to dismiss" appears after the panel fully opens and fades after ~2 s.
+7. **runCount=0 (first visit)**: Delete `pip-meta-v1` in DevTools localStorage and reload — notices only come from three categories (no past-run-echo).
+8. **runCount>0**: Use `?testMode=camp&testScraps=5` (sets `runCount=1`). Repeat taps until a past-run-echo notice appears (e.g. "Run 1. Still standing.").
+9. **Backward compat**: In DevTools console: `localStorage.setItem('pip-meta-v1', JSON.stringify({version:1,scraps:5,permanentPool:[],activeWeaponId:'shortsword',unlockedWeaponIds:['shortsword']}))` then reload — game loads normally with `runCount=0` and no console warnings about corruption.

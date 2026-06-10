@@ -31,7 +31,7 @@ const DEFAULT_META_STATE: MetaState = {
   runCount: 0,
 }
 
-function isValidMetaState(data: unknown): data is MetaState {
+function isValidMetaState(data: unknown): boolean {
   if (typeof data !== 'object' || data === null) return false
   const obj = data as Record<string, unknown>
   return (
@@ -39,8 +39,8 @@ function isValidMetaState(data: unknown): data is MetaState {
     typeof obj.scraps === 'number' &&
     Array.isArray(obj.permanentPool) &&
     typeof obj.activeWeaponId === 'string' &&
-    Array.isArray(obj.unlockedWeaponIds) &&
-    typeof obj.runCount === 'number'
+    Array.isArray(obj.unlockedWeaponIds)
+    // runCount is optional — migrated from pre-053 saves on load
   )
 }
 
@@ -52,14 +52,32 @@ export function loadMetaState(): MetaState {
       return DEFAULT_META_STATE
     }
 
-    const parsed = JSON.parse(stored)
+    const parsed = JSON.parse(stored) as Record<string, unknown>
     if (!isValidMetaState(parsed)) {
       console.warn('Corrupted or unrecognisable MetaState; starting fresh')
       saveMetaState(DEFAULT_META_STATE)
       return DEFAULT_META_STATE
     }
 
-    return parsed
+    // Migrate runCount from pre-053 saves that lack the field
+    const runCountRaw = parsed.runCount
+    const runCount =
+      typeof runCountRaw === 'number' && !isNaN(runCountRaw) ? runCountRaw : 0
+
+    const result: MetaState = {
+      version: 1,
+      scraps: parsed.scraps as number,
+      permanentPool: parsed.permanentPool as MetaState['permanentPool'],
+      activeWeaponId: parsed.activeWeaponId as string,
+      unlockedWeaponIds: parsed.unlockedWeaponIds as string[],
+      runCount,
+    }
+
+    if (typeof runCountRaw !== 'number' || isNaN(runCountRaw as number)) {
+      saveMetaState(result)
+    }
+
+    return result
   } catch (error) {
     console.warn('Failed to load MetaState from localStorage; starting fresh', error)
     return DEFAULT_META_STATE
