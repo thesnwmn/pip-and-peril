@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 053 · Dungeon Notice Board
+
+**Shipped:** 2026-06-10 · **PR:** #109 · **Spec:** [docs/features/history/053-dungeon-notice-board.md](docs/features/history/053-dungeon-notice-board.md)
+
+Two generated notices pinned to the camp wall before each run, assembled from template banks across four categories (enemy activity, merchant sightings, atmosphere, past-run echoes). Seeded with `MetaState.runCount`; exposes `atmosphericLine` for future run-start transitions. Ships as flavour text only.
+
+---
+
 ### 029 · Camp Screen, Meta Persistence & Weapon Selection
 
 **Shipped:** 2026-06-09 · **PR:** (pending) · **Spec:** [docs/features/history/029-camp-meta-persistence-weapon-selection.md](docs/features/history/029-camp-meta-persistence-weapon-selection.md)

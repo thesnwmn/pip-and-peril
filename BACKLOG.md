@@ -22,16 +22,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-### 053 · Dungeon Notice Board
-
-Two generated notices pinned to the camp wall before each run, assembled from weighted templates
-(enemy activity reports, merchant sightings, atmospheric warnings, past-run echoes). Seeded with
-`MetaState.runCount` so notices feel rooted in Pip's history rather than purely random. Primes
-each run's feel and makes successive descents feel distinct before the first tile is placed.
-Ships as flavour text; notices do not alter run generation parameters.
-**Depends on:** 029 (camp hub, MetaState — adds `runCount` field).
-See `docs/features/053-dungeon-notice-board.md` for the full spec.
-
 ### 088 · Workbench — Dice Upgrades
 
 The second half of the meta-progression foundation: Pip sits at his workbench and spends shiny
