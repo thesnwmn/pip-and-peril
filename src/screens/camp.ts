@@ -7,6 +7,9 @@ import type { Die } from '../dice/pool'
 import { generateNotices } from '../camp/notices'
 import type { NoticeState } from '../camp/notices'
 import { easeOut } from '../animation/easing'
+import { STATUS_BAR_H } from './game-layout'
+import { createMenuModal, drawMenuButton, isInMenuButton } from '../menu/modal'
+import type { MenuModal } from '../menu/modal'
 
 // ── Canvas dimensions ──────────────────────────────────────────────────────────
 export const LOGICAL_W = 390
@@ -41,7 +44,8 @@ export function getDescendStripRect(): Rect {
 }
 
 // ── Sub-panel (all overlays share these constants) ─────────────────────────────
-const SUB_PANEL_TOP = 80           // final Y when fully open; scene visible+dimmed above
+// Panels rise to the scene/activity dividing line — activity bar is always visible beneath
+const SUB_PANEL_TOP = SCENE_BOTTOM
 const SUB_PANEL_RISE_MS = 400
 const SUB_PANEL_SINK_MS = 300
 const CLOSE_BTN_SIZE = 44          // 44×44 tap target per spec
@@ -57,7 +61,7 @@ export function getCloseBtnRect(panelY: number): Rect {
 
 // ── Weapon-card layout (relative to animated panelY) ──────────────────────────
 const WEAPON_CARD_W = 150
-const WEAPON_CARD_H = 150
+const WEAPON_CARD_H = 80
 const WEAPON_CARD_GAP = 14
 const WEAPON_GRID_COLS = 2
 const WEAPON_GRID_X = (LOGICAL_W - (WEAPON_CARD_W * WEAPON_GRID_COLS + WEAPON_CARD_GAP)) / 2
@@ -87,15 +91,15 @@ const NOTICE_CARD_GAP = 10
 const NOTICE_BG = '#f5e8c4'
 const NOTICE_TEXT = '#1a0f05'
 
-// ── Scene element positions (all decorative — no tap targets) ──────────────────
-const SCRAPS_POS = { x: 20, y: 14 }
-const SCROLL_WALL: Rect = { x: 0, y: 46, w: LOGICAL_W, h: 76 }
-const ARCH: Rect = { x: LOGICAL_W / 2 - 55, y: 355, w: 110, h: 125 }
-const WORKBENCH_SCENE: Rect = { x: 16, y: 248, w: 132, h: 80 }
+// ── Scene element positions (shifted up ~70 px after scroll-wall removal) ──────
+// Arch passage (back wall)
+const ARCH: Rect = { x: LOGICAL_W / 2 - 55, y: 285, w: 110, h: 125 }
+// Workbench (left side)
+const WORKBENCH_SCENE: Rect = { x: 16, y: 178, w: 132, h: 80 }
 
 // Campfire
 const FIRE_CX = 185
-const FIRE_CY = 452
+const FIRE_CY = 382
 const FIRE_BASE_RADIUS = 44
 const FIRE_FLAME_MIN = 12
 const FIRE_FLAME_MAX = 22
@@ -104,17 +108,17 @@ const FIRE_FRAME_MAX_MS = 250
 
 // Pip
 const PIP_CX = 242
-const PIP_CY = 460
+const PIP_CY = 390
 
 // Visitor stool
 const STOOL_CX = 128
-const STOOL_CY = 445
+const STOOL_CY = 375
 
 // Weapon silhouettes (decorative, right wall)
 const WEAPON_SILS = [
-  { x: 284, yBase: 420, w: 7,  h: 52, lean: -0.12 },  // dagger
-  { x: 308, yBase: 400, w: 11, h: 70, lean:  0.10 },  // sword
-  { x: 336, yBase: 385, w: 5,  h: 80, lean: -0.08 },  // staff
+  { x: 284, yBase: 350, w: 7,  h: 52, lean: -0.12 },  // dagger
+  { x: 308, yBase: 330, w: 11, h: 70, lean:  0.10 },  // sword
+  { x: 336, yBase: 315, w: 5,  h: 80, lean: -0.08 },  // staff
 ]
 
 // ── State ──────────────────────────────────────────────────────────────────────
@@ -123,6 +127,7 @@ export type SubPanelName = 'weapons' | 'workbench' | 'notices' | 'visitor'
 
 interface CampState {
   metaState: MetaState
+  menuModal: MenuModal
   // Active sub-panel and shared animation progress
   activeSubPanel: SubPanelName | null
   panelProgress: number       // 0 = closed, 1 = fully open
@@ -150,6 +155,7 @@ export function createCamp(
   const meta = loadMetaState()
   const state: CampState = {
     metaState: meta,
+    menuModal: createMenuModal('home', transitionTo),
     activeSubPanel: null,
     panelProgress: 0,
     panelAnimStart: 0,
@@ -185,15 +191,6 @@ export function createCamp(
       if (inRect(getWeaponCardRect(i, panelY), x, y)) return ids[i]
     }
     return null
-  }
-
-  function getRunPoolDice(): Die[] {
-    const permanent: Die[] = state.metaState.permanentPool.map((p) => ({
-      color: p.colour as Die['color'],
-      sides: p.faces,
-    }))
-    const weapon = WEAPON_SPECS[state.selectedWeaponId]
-    return weapon ? [...permanent, ...weapon.addedDice] : permanent
   }
 
   function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
@@ -266,7 +263,7 @@ export function createCamp(
 
   function drawAmbientGlow(ctx: CanvasRenderingContext2D): void {
     const tallest = Math.max(...state.fireFlameHeights)
-    const radius = FIRE_BASE_RADIUS + (tallest - 17)  // base + deviation
+    const radius = FIRE_BASE_RADIUS + (tallest - 17)
     const grad = ctx.createRadialGradient(FIRE_CX, FIRE_CY, 0, FIRE_CX, FIRE_CY, radius * 3)
     grad.addColorStop(0, 'rgba(200, 120, 30, 0.15)')
     grad.addColorStop(1, 'rgba(200, 120, 30, 0)')
@@ -274,66 +271,94 @@ export function createCamp(
     ctx.fillRect(0, 0, LOGICAL_W, SCENE_BOTTOM)
   }
 
-  function drawScrollWall(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = '#3a2818'
-    ctx.fillRect(SCROLL_WALL.x, SCROLL_WALL.y, SCROLL_WALL.w, SCROLL_WALL.h)
-    ctx.strokeStyle = '#5a3d1a'
-    ctx.lineWidth = 1
-    ctx.strokeRect(SCROLL_WALL.x, SCROLL_WALL.y, SCROLL_WALL.w, SCROLL_WALL.h)
-    // Rolled parchment cylinders
-    for (let i = 0; i < 4; i++) {
-      const x = 40 + i * 82
-      ctx.fillStyle = '#2e1d0d'
-      ctx.fillRect(x, SCROLL_WALL.y + 12, 56, 56)
-      ctx.strokeStyle = '#5a3d1a'
-      ctx.lineWidth = 1
-      ctx.strokeRect(x, SCROLL_WALL.y + 12, 56, 56)
-    }
-  }
-
   function drawArch(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = '#0d0d18'
-    ctx.fillRect(ARCH.x, ARCH.y, ARCH.w, ARCH.h)
-    ctx.strokeStyle = '#3a2818'
-    ctx.lineWidth = 3
-    ctx.strokeRect(ARCH.x, ARCH.y, ARCH.w, ARCH.h)
-    // Faint cool glow inside arch
-    const archGrad = ctx.createRadialGradient(
-      ARCH.x + ARCH.w / 2, ARCH.y + ARCH.h / 2, 4,
-      ARCH.x + ARCH.w / 2, ARCH.y + ARCH.h / 2, ARCH.w / 2,
+    const { x: ax, y: ay, w: aw, h: ah } = ARCH
+    const pillarW = 16
+    const archCX = ax + aw / 2
+    const archOpenW = aw - pillarW * 2        // ~78
+    const archRad   = archOpenW / 2           // ~39
+    const archTopY  = ay + archRad + 8        // Y coordinate of arch curve apex
+
+    // Stone face background
+    ctx.fillStyle = '#2a2035'
+    ctx.fillRect(ax, ay, aw, ah)
+
+    // Arch opening (dark void carved into stone)
+    ctx.fillStyle = '#07071a'
+    ctx.beginPath()
+    ctx.moveTo(ax + pillarW, ay + ah)
+    ctx.lineTo(ax + pillarW, archTopY)
+    ctx.arc(archCX, archTopY, archRad, Math.PI, 0, false)
+    ctx.lineTo(ax + aw - pillarW, ay + ah)
+    ctx.closePath()
+    ctx.fill()
+
+    // Cool ambient glow deep in the arch
+    const grd = ctx.createRadialGradient(
+      archCX, ay + ah * 0.7, 0,
+      archCX, ay + ah * 0.7, archRad,
     )
-    archGrad.addColorStop(0, 'rgba(60, 60, 120, 0.25)')
-    archGrad.addColorStop(1, 'rgba(60, 60, 120, 0)')
-    ctx.fillStyle = archGrad
-    ctx.fillRect(ARCH.x, ARCH.y, ARCH.w, ARCH.h)
-    ctx.font = '11px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = '#4a4a6a'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText('· · ·', ARCH.x + ARCH.w / 2, ARCH.y + ARCH.h / 2)
+    grd.addColorStop(0, 'rgba(60, 60, 150, 0.35)')
+    grd.addColorStop(1, 'rgba(0, 0, 0, 0)')
+    ctx.fillStyle = grd
+    ctx.beginPath()
+    ctx.moveTo(ax + pillarW, ay + ah)
+    ctx.lineTo(ax + pillarW, archTopY)
+    ctx.arc(archCX, archTopY, archRad, Math.PI, 0, false)
+    ctx.lineTo(ax + aw - pillarW, ay + ah)
+    ctx.closePath()
+    ctx.fill()
+
+    // Stone border
+    ctx.strokeStyle = '#4a3858'
+    ctx.lineWidth = 2
+    ctx.strokeRect(ax, ay, aw, ah)
+
+    // Arch opening outline (keystone trace)
+    ctx.strokeStyle = '#3a2850'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(ax + pillarW, ay + ah)
+    ctx.lineTo(ax + pillarW, archTopY)
+    ctx.arc(archCX, archTopY, archRad, Math.PI, 0, false)
+    ctx.lineTo(ax + aw - pillarW, ay + ah)
+    ctx.stroke()
   }
 
   function drawWorkbenchScene(ctx: CanvasRenderingContext2D): void {
     const r = WORKBENCH_SCENE
-    ctx.fillStyle = '#2e1d0d'
-    ctx.fillRect(r.x, r.y, r.w, r.h)
-    ctx.strokeStyle = '#5a3d1a'
-    ctx.lineWidth = 2
-    ctx.strokeRect(r.x, r.y, r.w, r.h)
-    // Surface line
-    ctx.strokeStyle = '#3a2818'
+
+    // Table legs (behind surface)
+    const legW = 8
+    const legH = 38
+    const legY = r.y + r.h - legH
+    ctx.fillStyle = '#5a3010'
+    ctx.fillRect(r.x + 10, legY, legW, legH)
+    ctx.fillRect(r.x + r.w - 10 - legW, legY, legW, legH)
+
+    // Table top surface
+    const surfH = 12
+    const surfY = r.y + r.h - legH - surfH
+    ctx.fillStyle = '#7a4818'
+    ctx.fillRect(r.x, surfY, r.w, surfH)
+    // Top face highlight
+    ctx.fillStyle = '#9a6830'
+    ctx.fillRect(r.x + 2, surfY, r.w - 4, 4)
+    // Front edge shadow
+    ctx.strokeStyle = '#5a3010'
     ctx.lineWidth = 1
     ctx.beginPath()
-    ctx.moveTo(r.x, r.y + r.h - 22)
-    ctx.lineTo(r.x + r.w, r.y + r.h - 22)
+    ctx.moveTo(r.x, surfY + surfH)
+    ctx.lineTo(r.x + r.w, surfY + surfH)
     ctx.stroke()
-    // Permanent dice as small coloured squares
+
+    // Permanent dice sitting on the table surface
     const dice = state.metaState.permanentPool
-    const dieSize = 14
-    const gap = 5
+    const dieSize = 12
+    const gap = 4
     const totalW = dice.length * dieSize + Math.max(0, dice.length - 1) * gap
     let dieX = r.x + (r.w - totalW) / 2
-    const dieY = r.y + r.h - 20
+    const dieY = surfY - dieSize - 2
     for (const die of dice) {
       ctx.fillStyle = DIE_COLOR_MAP[die.colour] || '#888'
       ctx.fillRect(dieX, dieY, dieSize, dieSize)
@@ -342,11 +367,6 @@ export function createCamp(
       ctx.strokeRect(dieX, dieY, dieSize, dieSize)
       dieX += dieSize + gap
     }
-    ctx.font = '10px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = colors.textMuted
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'top'
-    ctx.fillText('Workbench', r.x + r.w / 2, r.y + 8)
   }
 
   function drawWeaponSilhouettes(ctx: CanvasRenderingContext2D): void {
@@ -359,7 +379,7 @@ export function createCamp(
       ctx.strokeStyle = '#3a2818'
       ctx.lineWidth = 1
       ctx.strokeRect(-sil.w / 2, -sil.h, sil.w, sil.h)
-      // Crossguard on sword (index 1, widest shape)
+      // Crossguard on sword (widest shape)
       if (sil.w >= 10) {
         ctx.fillStyle = '#3a2818'
         ctx.fillRect(-sil.w / 2 - 5, -sil.h + 12, sil.w + 10, 4)
@@ -369,12 +389,10 @@ export function createCamp(
   }
 
   function drawVisitorArea(ctx: CanvasRenderingContext2D): void {
-    // Empty stool (no visitor present in this feature)
     const stoolW = 30
     const stoolH = 8
     ctx.fillStyle = '#3a2818'
     ctx.fillRect(STOOL_CX - stoolW / 2, STOOL_CY - stoolH / 2, stoolW, stoolH)
-    // Stool legs
     ctx.strokeStyle = '#3a2818'
     ctx.lineWidth = 3
     const legY = STOOL_CY + stoolH / 2
@@ -393,20 +411,17 @@ export function createCamp(
       const h = heights[i]
       const fx = FIRE_CX + offsets[i]
       const fy = FIRE_CY
-      // Elongated teardrop flame: wide at base, pointed at tip
       ctx.beginPath()
       ctx.moveTo(fx, fy - h)
       ctx.bezierCurveTo(fx + 8, fy - h * 0.6, fx + 7, fy, fx, fy + 2)
       ctx.bezierCurveTo(fx - 7, fy, fx - 8, fy - h * 0.6, fx, fy - h)
       ctx.closePath()
-      // Gradient from base to tip
       const flameGrad = ctx.createLinearGradient(fx, fy, fx, fy - h)
       flameGrad.addColorStop(0, '#c8781e')
       flameGrad.addColorStop(1, '#e89a30')
       ctx.fillStyle = flameGrad
       ctx.fill()
     }
-    // Ember base circle
     ctx.beginPath()
     ctx.arc(FIRE_CX, FIRE_CY + 2, 10, 0, Math.PI * 2)
     ctx.fillStyle = '#c8781e'
@@ -419,58 +434,73 @@ export function createCamp(
     const bodyColor = '#a07048'
     const bellyColor = '#c09860'
 
-    // Body: oval, facing left (toward fire)
+    // Body: upright oval (taller than wide)
     ctx.beginPath()
-    ctx.ellipse(cx, cy + 4, 10, 6, 0, 0, Math.PI * 2)
+    ctx.ellipse(cx, cy, 7, 12, 0, 0, Math.PI * 2)
     ctx.fillStyle = bodyColor
     ctx.fill()
 
-    // Belly patch (lighter oval on front-lower body)
+    // Belly patch
     ctx.beginPath()
-    ctx.ellipse(cx - 3, cy + 5, 5, 3, 0, 0, Math.PI * 2)
+    ctx.ellipse(cx, cy + 2, 4, 7, 0, 0, Math.PI * 2)
     ctx.fillStyle = bellyColor
     ctx.fill()
 
-    // Head: circle above-left of body
-    const hx = cx - 8
-    const hy = cy - 4
+    // Head: above body
+    const hx = cx
+    const hy = cy - 18
     ctx.beginPath()
     ctx.arc(hx, hy, 8, 0, Math.PI * 2)
     ctx.fillStyle = bodyColor
     ctx.fill()
 
-    // Ears: two filled triangles atop head
+    // Ears: two triangles pointing UP (tip above, base at head edge)
     ctx.fillStyle = bodyColor
-    for (const ex of [hx - 4, hx + 2]) {
+    for (const ex of [hx - 5, hx + 2]) {
       ctx.beginPath()
-      ctx.moveTo(ex, hy - 8)
-      ctx.lineTo(ex - 4, hy - 16)
-      ctx.lineTo(ex + 4, hy - 16)
+      ctx.moveTo(ex, hy - 16)      // tip: above head
+      ctx.lineTo(ex - 4, hy - 8)   // base-left: at head edge
+      ctx.lineTo(ex + 4, hy - 8)   // base-right: at head edge
       ctx.closePath()
       ctx.fill()
     }
 
-    // Eye: small dark dot
+    // Inner ear (pink)
+    ctx.fillStyle = '#d08060'
+    for (const ex of [hx - 5, hx + 2]) {
+      ctx.beginPath()
+      ctx.moveTo(ex, hy - 14)
+      ctx.lineTo(ex - 2, hy - 9)
+      ctx.lineTo(ex + 2, hy - 9)
+      ctx.closePath()
+      ctx.fill()
+    }
+
+    // Eye (facing left, toward fire)
     ctx.beginPath()
     ctx.arc(hx - 3, hy - 1, 1.5, 0, Math.PI * 2)
     ctx.fillStyle = '#2a1808'
     ctx.fill()
 
-    // Tail: curved arc from behind body to the right
+    // Eye shine
     ctx.beginPath()
-    ctx.moveTo(cx + 10, cy + 4)
-    ctx.quadraticCurveTo(cx + 22, cy + 14, cx + 18, cy + 22)
+    ctx.arc(hx - 4, hy - 2, 0.5, 0, Math.PI * 2)
+    ctx.fillStyle = '#ffffff'
+    ctx.fill()
+
+    // Snout
+    ctx.beginPath()
+    ctx.ellipse(hx - 6, hy + 1, 3, 2, -0.3, 0, Math.PI * 2)
+    ctx.fillStyle = bellyColor
+    ctx.fill()
+
+    // Tail: curves from lower body
+    ctx.beginPath()
+    ctx.moveTo(cx + 7, cy + 8)
+    ctx.quadraticCurveTo(cx + 22, cy + 18, cx + 16, cy + 28)
     ctx.strokeStyle = bodyColor
     ctx.lineWidth = 2
     ctx.stroke()
-  }
-
-  function drawScrapCounter(ctx: CanvasRenderingContext2D): void {
-    ctx.font = 'bold 18px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = colors.gold
-    ctx.textAlign = 'left'
-    ctx.textBaseline = 'top'
-    ctx.fillText(`◈ ${state.metaState.scraps} scraps`, SCRAPS_POS.x, SCRAPS_POS.y)
   }
 
   function drawActivityIcon(
@@ -484,29 +514,24 @@ export function createCamp(
     ctx.strokeStyle = '#c8781e'
     ctx.fillStyle = '#c8781e'
     ctx.lineWidth = 1.5
-    const s = 10  // half-size of 24px icon
+    const s = 10
 
     if (name === 'weapons') {
-      // Sword: vertical rectangle with crossguard
       ctx.fillRect(cx - 2, cy - s, 4, s * 2)
       ctx.fillRect(cx - s, cy - 2, s * 2, 4)
-      // Pommel
       ctx.beginPath()
       ctx.arc(cx, cy + s + 3, 3, 0, Math.PI * 2)
       ctx.fill()
     } else if (name === 'workbench') {
-      // Die face: square with one centred dot
       ctx.strokeRect(cx - s, cy - s, s * 2, s * 2)
       ctx.beginPath()
       ctx.arc(cx, cy, 3, 0, Math.PI * 2)
       ctx.fill()
     } else if (name === 'notices') {
-      // Scroll: rectangle with two text lines
       ctx.strokeRect(cx - s, cy - s, s * 2, s * 2)
       ctx.fillRect(cx - s + 3, cy - 3, s * 2 - 6, 2)
       ctx.fillRect(cx - s + 3, cy + 3, s * 2 - 6, 2)
     } else if (name === 'visitor') {
-      // Seated figure: circle head + rectangle body
       ctx.beginPath()
       ctx.arc(cx, cy - s + 4, 4, 0, Math.PI * 2)
       ctx.fill()
@@ -517,11 +542,9 @@ export function createCamp(
   }
 
   function drawActivityBar(ctx: CanvasRenderingContext2D): void {
-    // Activity bar background
     ctx.fillStyle = '#2e1d0d'
     ctx.fillRect(0, SCENE_BOTTOM, LOGICAL_W, LOGICAL_H - SCENE_BOTTOM)
 
-    // Zone dividing line
     ctx.strokeStyle = '#5a3d1a'
     ctx.lineWidth = 1
     ctx.beginPath()
@@ -543,13 +566,11 @@ export function createCamp(
       const alpha = isVisitor ? 0.4 : 1
       const hovered = state.isMouseDevice && state.hoveredElement === `activity-${btn.name}`
 
-      // Button background on hover
       if (hovered && !isVisitor) {
         ctx.fillStyle = 'rgba(90, 61, 26, 0.4)'
         ctx.fillRect(r.x, r.y, r.w, r.h)
       }
 
-      // Vertical separator between buttons
       if (i > 0) {
         ctx.strokeStyle = '#3a2818'
         ctx.lineWidth = 1
@@ -560,10 +581,9 @@ export function createCamp(
       }
 
       const cx = r.x + r.w / 2
-      const iconCY = r.y + 24  // icon centred at 24px from button top
+      const iconCY = r.y + 24
       drawActivityIcon(ctx, btn.name, cx, iconCY, alpha)
 
-      // Label
       ctx.globalAlpha = alpha
       ctx.font = '12px system-ui, -apple-system, sans-serif'
       ctx.fillStyle = isVisitor ? colors.textMuted : colors.textPrimary
@@ -581,7 +601,6 @@ export function createCamp(
       ctx.fillRect(descend.x, descend.y, descend.w, descend.h)
     }
 
-    // Descend top border
     ctx.strokeStyle = '#5a3d1a'
     ctx.lineWidth = 1
     ctx.beginPath()
@@ -596,36 +615,58 @@ export function createCamp(
     ctx.fillText('Descend', descend.x + descend.w / 2, descend.y + descend.h / 2)
   }
 
+  function drawStatusBar(ctx: CanvasRenderingContext2D): void {
+    // Semi-transparent backing so status bar reads over scene
+    ctx.fillStyle = 'rgba(26, 18, 8, 0.85)'
+    ctx.fillRect(0, 0, LOGICAL_W, STATUS_BAR_H)
+
+    ctx.strokeStyle = '#3a2818'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(0, STATUS_BAR_H)
+    ctx.lineTo(LOGICAL_W, STATUS_BAR_H)
+    ctx.stroke()
+
+    // Menu button (left)
+    const menuHovered = state.isMouseDevice && state.hoveredElement === 'menu-btn'
+    drawMenuButton(ctx, menuHovered)
+
+    // Scraps count (right)
+    ctx.font = 'bold 14px monospace'
+    ctx.fillStyle = colors.gold
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(`◈ ${state.metaState.scraps}`, LOGICAL_W - 16, STATUS_BAR_H / 2)
+  }
+
   function drawCampScene(ctx: CanvasRenderingContext2D): void {
     ctx.fillStyle = '#1a1208'
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 
     drawAmbientGlow(ctx)
-    drawScrollWall(ctx)
     drawArch(ctx)
     drawWorkbenchScene(ctx)
     drawWeaponSilhouettes(ctx)
     drawVisitorArea(ctx)
     drawCampfire(ctx)
     drawPip(ctx)
-    drawScrapCounter(ctx)
     drawActivityBar(ctx)
   }
 
   // ── Sub-panel drawing ────────────────────────────────────────────────────────
 
   function drawSubPanelBase(ctx: CanvasRenderingContext2D, panelY: number, title: string): void {
-    // Scrim over scene zone
+    // Scrim over scene zone only (status bar stays clear)
     ctx.globalAlpha = 0.40
     ctx.fillStyle = '#000000'
-    ctx.fillRect(0, 0, LOGICAL_W, panelY)
+    ctx.fillRect(0, STATUS_BAR_H, LOGICAL_W, panelY - STATUS_BAR_H)
     ctx.globalAlpha = 1
 
     // Panel surface
     ctx.fillStyle = '#2e1d0d'
     ctx.fillRect(0, panelY, LOGICAL_W, LOGICAL_H - panelY)
 
-    // Top border of panel
+    // Top border
     ctx.strokeStyle = '#5a3d1a'
     ctx.lineWidth = 1
     ctx.beginPath()
@@ -646,7 +687,6 @@ export function createCamp(
   function drawWeaponPanel(ctx: CanvasRenderingContext2D, panelY: number): void {
     drawSubPanelBase(ctx, panelY, 'Choose Your Weapon')
 
-    // Weapon cards
     const ids = state.metaState.unlockedWeaponIds
     for (let i = 0; i < ids.length; i++) {
       const cardRect = getWeaponCardRect(i, panelY)
@@ -662,37 +702,38 @@ export function createCamp(
       ctx.strokeRect(cardRect.x, cardRect.y, cardRect.w, cardRect.h)
 
       const cardCX = cardRect.x + cardRect.w / 2
-      const pad = 10
+      const pad = 8
       let textY = cardRect.y + pad
 
-      ctx.font = 'bold 14px system-ui, -apple-system, sans-serif'
+      // Name
+      ctx.font = 'bold 13px system-ui, -apple-system, sans-serif'
       ctx.fillStyle = colors.textPrimary
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
       ctx.fillText(spec.name, cardCX, textY)
-      textY += 20
+      textY += 18
 
-      ctx.font = 'italic 11px system-ui, -apple-system, sans-serif'
+      // Flavour (first line only at small size)
+      ctx.font = 'italic 10px system-ui, -apple-system, sans-serif'
       ctx.fillStyle = colors.textMuted
       const flavourLines = wrapText(ctx, spec.flavour, cardRect.w - pad * 2)
-      for (const line of flavourLines) {
-        ctx.fillText(line, cardCX, textY)
-        textY += 14
-      }
-      textY += 6
+      ctx.fillText(flavourLines[0], cardCX, textY)
+      textY += 14
 
-      const dieSize = 20
-      const gap = 6
+      // Dice
+      const dieSize = 16
+      const dieGap = 5
       const dice = spec.addedDice
-      const totalW = dice.length * dieSize + (dice.length - 1) * gap
-      let dieX = cardCX - totalW / 2
+      const totalDiceW = dice.length * dieSize + (dice.length - 1) * dieGap
+      let dieX = cardCX - totalDiceW / 2
       for (const die of dice) {
         drawDie(ctx, dieX, textY, die.sides, die.color, dieSize)
-        dieX += dieSize + gap
+        dieX += dieSize + dieGap
       }
-      textY += dieSize + 8
+      textY += dieSize + 4
 
-      ctx.font = '11px system-ui, -apple-system, sans-serif'
+      // Strike cost
+      ctx.font = '10px system-ui, -apple-system, sans-serif'
       ctx.fillStyle = colors.textMuted
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
@@ -701,22 +742,6 @@ export function createCamp(
       } else {
         ctx.fillText('— no strike —', cardCX, textY)
       }
-    }
-
-    // Pool preview
-    const poolPreviewY = LOGICAL_H - 130
-    ctx.font = '12px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = colors.textMuted
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'top'
-    ctx.fillText('Your dice this run:', LOGICAL_W / 2, poolPreviewY - 22)
-
-    const poolDice = getRunPoolDice()
-    const totalW = poolDice.length * DIE_SIZE + (poolDice.length - 1) * 6
-    let dieX = (LOGICAL_W - totalW) / 2
-    for (const die of poolDice) {
-      drawDie(ctx, dieX, poolPreviewY, die.sides, die.color, DIE_SIZE)
-      dieX += DIE_SIZE + 6
     }
 
     // Descend CTA
@@ -772,7 +797,6 @@ export function createCamp(
     const card2Y = card1Y + NOTICE_CARD_H + NOTICE_CARD_GAP
     drawNoticeCard(ctx, card2Y, state.noticeState.notices[1].text)
 
-    // Ghost dismiss label (fades after 2 s of being fully open)
     if (state.noticeDismissVisible && state.noticeDismissAlpha > 0 && state.panelProgress >= 1) {
       ctx.globalAlpha = state.noticeDismissAlpha
       ctx.font = '11px system-ui, -apple-system, sans-serif'
@@ -799,7 +823,7 @@ export function createCamp(
   function openPanel(name: SubPanelName): void {
     state.activeSubPanel = name
     state.panelClosing = false
-    // Offset animStart so the rise continues from the current panelProgress rather than snapping to 0
+    // Continue from current progress rather than snapping to bottom
     state.panelAnimStart = performance.now() - state.panelProgress * SUB_PANEL_RISE_MS
     if (name === 'notices') {
       state.noticeDismissVisible = false
@@ -809,7 +833,7 @@ export function createCamp(
 
   function closePanel(): void {
     state.panelClosing = true
-    // Offset animStart so the sink continues from the current panelProgress rather than snapping to 1
+    // Continue from current progress rather than snapping to top
     state.panelAnimStart = performance.now() - (1 - state.panelProgress) * SUB_PANEL_SINK_MS
     state.noticeDismissVisible = false
     // activeSubPanel stays set until panelProgress reaches 0 (draw loop clears it)
@@ -832,7 +856,6 @@ export function createCamp(
     if (!state.panelClosing && state.activeSubPanel !== null && state.panelProgress < 1) {
       const elapsed = timestamp - state.panelAnimStart
       state.panelProgress = Math.min(1, elapsed / SUB_PANEL_RISE_MS)
-      // Start notice dismiss timer when panel fully opens
       if (
         state.activeSubPanel === 'notices' &&
         state.panelProgress >= 1 &&
@@ -851,7 +874,7 @@ export function createCamp(
       }
     }
 
-    // Advance notice dismiss label fade (starts 2 s after fully open)
+    // Advance notice dismiss label fade
     if (state.noticeDismissVisible && state.panelProgress >= 1) {
       const elapsed = timestamp - state.noticeDismissStart
       if (elapsed >= 2000) {
@@ -860,35 +883,47 @@ export function createCamp(
       }
     }
 
-    // Always draw the base camp scene
+    // Base camp scene (no status bar — drawn last so it stays on top)
     drawCampScene(ctx)
 
-    // Sub-panel overlay (if any panel is open or mid-animation)
+    // Sub-panel overlay
     if (state.panelProgress > 0 && state.activeSubPanel !== null) {
       const panelY = getAnimatedPanelY(state.panelProgress)
       if (state.activeSubPanel === 'weapons') drawWeaponPanel(ctx, panelY)
       else if (state.activeSubPanel === 'notices') drawNoticesPanel(ctx, panelY)
       else if (state.activeSubPanel === 'workbench') drawWorkbenchPanel(ctx, panelY)
-      // visitor: not active (button is dimmed)
     }
+
+    // Status bar always on top of scene and panels
+    drawStatusBar(ctx)
+
+    // Menu modal on very top
+    state.menuModal.draw(ctx)
   }
 
   // ── Input ────────────────────────────────────────────────────────────────────
 
   function handleClick(x: number, y: number): void {
+    // Menu modal takes priority
+    if (state.menuModal.handleClick(x, y)) return
+
+    // Menu button opens modal
+    if (isInMenuButton(x, y)) {
+      state.menuModal.open()
+      return
+    }
+
     // Panel is open or animating — intercept all taps
     if (state.panelProgress > 0 && state.activeSubPanel !== null) {
       const panelY = getAnimatedPanelY(state.panelProgress)
       const closeBtn = getCloseBtnRect(panelY)
 
-      // ✕ button
       if (inRect(closeBtn, x, y)) {
         closePanel()
         state.hoveredElement = null
         return
       }
 
-      // Weapon panel interactions (only when fully open)
       if (state.activeSubPanel === 'weapons' && !state.panelClosing) {
         const weapon = weaponAt(x, y, panelY)
         if (weapon) {
@@ -903,13 +938,11 @@ export function createCamp(
         }
       }
 
-      // Notices panel: tap above panel (outside) to dismiss
       if (state.activeSubPanel === 'notices' && !state.panelClosing && y < panelY) {
         closePanel()
         return
       }
 
-      // Consume all taps while panel is visible (open or animating)
       return
     }
 
@@ -918,7 +951,7 @@ export function createCamp(
     for (let i = 0; i < buttons.length; i++) {
       const r = getActivityButtonRect(i)
       if (inRect(r, x, y)) {
-        if (buttons[i] === 'visitor') return  // dimmed — no action
+        if (buttons[i] === 'visitor') return
         openPanel(buttons[i])
         return
       }
@@ -934,6 +967,15 @@ export function createCamp(
 
   function handlePointerMove(x: number, y: number): void {
     state.isMouseDevice = true
+
+    // Modal consumes pointer when open
+    if (state.menuModal.handlePointerMove(x, y)) return
+
+    // Menu button hover
+    if (isInMenuButton(x, y)) {
+      state.hoveredElement = 'menu-btn'
+      return
+    }
 
     if (state.panelProgress > 0 && state.activeSubPanel !== null) {
       const panelY = getAnimatedPanelY(state.panelProgress)
@@ -951,7 +993,6 @@ export function createCamp(
       return
     }
 
-    // Activity bar hover
     const buttons: SubPanelName[] = ['weapons', 'workbench', 'notices', 'visitor']
     for (let i = 0; i < buttons.length; i++) {
       const r = getActivityButtonRect(i)

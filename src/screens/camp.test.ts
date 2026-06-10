@@ -101,10 +101,9 @@ describe('getAnimatedPanelY', () => {
     expect(getAnimatedPanelY(0)).toBe(LOGICAL_H)
   })
 
-  it('returns SUB_PANEL_TOP at progress=1 (fully open)', () => {
+  it('returns SCENE_BOTTOM at progress=1 (fully open — panels rise to activity bar boundary)', () => {
     const y = getAnimatedPanelY(1)
-    expect(y).toBeGreaterThan(0)
-    expect(y).toBeLessThan(LOGICAL_H / 2)
+    expect(y).toBe(SCENE_BOTTOM)
   })
 
   it('is monotonically decreasing as progress increases', () => {
