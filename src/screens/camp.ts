@@ -68,13 +68,14 @@ const WEAPON_GRID_X = (LOGICAL_W - (WEAPON_CARD_W * WEAPON_GRID_COLS + WEAPON_CA
 const WEAPON_GRID_Y_OFFSET = 56
 const DIE_SIZE = 28
 
-// Descend CTA inside weapon panel
-const PANEL_DESCEND_BTN: Rect = {
-  x: (LOGICAL_W - 280) / 2,
-  y: LOGICAL_H - 70,
-  w: 280,
-  h: 54,
-}
+// Descend CTA and pool preview — offsets from panelY so they scroll in with the panel
+const GRID_BOTTOM_OFFSET  = WEAPON_GRID_Y_OFFSET + 2 * WEAPON_CARD_H + WEAPON_CARD_GAP  // 230
+const POOL_LABEL_OFFSET   = GRID_BOTTOM_OFFSET + 8    // 238
+const POOL_DICE_OFFSET    = POOL_LABEL_OFFSET + 14    // 252
+const POOL_DIE_SIZE       = 22
+const DESCEND_BTN_OFFSET  = POOL_DICE_OFFSET + POOL_DIE_SIZE + 8  // 282
+const DESCEND_BTN_W       = 280
+const DESCEND_BTN_H       = 54
 
 const DIE_COLOR_MAP: Record<string, string> = {
   red: '#ef4444',
@@ -182,6 +183,15 @@ export function createCamp(
       y: weaponGridY + row * (WEAPON_CARD_H + WEAPON_CARD_GAP),
       w: WEAPON_CARD_W,
       h: WEAPON_CARD_H,
+    }
+  }
+
+  function getDescendPanelBtnRect(panelY: number): Rect {
+    return {
+      x: (LOGICAL_W - DESCEND_BTN_W) / 2,
+      y: panelY + DESCEND_BTN_OFFSET,
+      w: DESCEND_BTN_W,
+      h: DESCEND_BTN_H,
     }
   }
 
@@ -753,41 +763,41 @@ export function createCamp(
       }
     }
 
-    // Run dice pool preview (between cards and descend button)
+    // Run dice pool preview — position relative to panelY so it scrolls in with the panel
     const poolDice = getRunPoolDice()
-    const poolLabelY = PANEL_DESCEND_BTN.y - 46
+    const poolLabelY = panelY + POOL_LABEL_OFFSET
     ctx.font = '11px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.textMuted
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
     ctx.fillText('Your dice this run:', LOGICAL_W / 2, poolLabelY)
-    const poolDieSize = 22
     const poolDieGap = 5
-    const poolTotalW = poolDice.length * poolDieSize + (poolDice.length - 1) * poolDieGap
+    const poolTotalW = poolDice.length * POOL_DIE_SIZE + (poolDice.length - 1) * poolDieGap
     let poolDieX = (LOGICAL_W - poolTotalW) / 2
-    const poolDieY = poolLabelY + 14
+    const poolDieY = panelY + POOL_DICE_OFFSET
     for (const die of poolDice) {
-      drawDie(ctx, poolDieX, poolDieY, die.sides, die.color, poolDieSize)
-      poolDieX += poolDieSize + poolDieGap
+      drawDie(ctx, poolDieX, poolDieY, die.sides, die.color, POOL_DIE_SIZE)
+      poolDieX += POOL_DIE_SIZE + poolDieGap
     }
 
-    // Descend CTA
+    // Descend CTA — relative to panelY so it scrolls in with the panel
+    const descendBtn = getDescendPanelBtnRect(panelY)
     const hovered = state.isMouseDevice && state.hoveredElement === 'panel-descend'
     ctx.globalAlpha = hovered ? 0.95 : 0.85
     ctx.fillStyle = colors.gold
-    ctx.fillRect(PANEL_DESCEND_BTN.x, PANEL_DESCEND_BTN.y, PANEL_DESCEND_BTN.w, PANEL_DESCEND_BTN.h)
+    ctx.fillRect(descendBtn.x, descendBtn.y, descendBtn.w, descendBtn.h)
     ctx.globalAlpha = 1
     ctx.strokeStyle = colors.gold
     ctx.lineWidth = 2
-    strokeRoundRect(ctx, PANEL_DESCEND_BTN, 4)
+    strokeRoundRect(ctx, descendBtn, 4)
     ctx.font = 'bold 16px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = '#1a1208'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(
       'Descend into the Dark',
-      PANEL_DESCEND_BTN.x + PANEL_DESCEND_BTN.w / 2,
-      PANEL_DESCEND_BTN.y + PANEL_DESCEND_BTN.h / 2,
+      descendBtn.x + descendBtn.w / 2,
+      descendBtn.y + descendBtn.h / 2,
     )
   }
 
@@ -957,7 +967,7 @@ export function createCamp(
           state.selectedWeaponId = weapon
           return
         }
-        if (inRect(PANEL_DESCEND_BTN, x, y)) {
+        if (inRect(getDescendPanelBtnRect(panelY), x, y)) {
           const newState: MetaState = { ...state.metaState, activeWeaponId: state.selectedWeaponId }
           saveMetaState(newState)
           onStartRun(newState)
@@ -1009,7 +1019,7 @@ export function createCamp(
       const closeBtn = getCloseBtnRect(panelY)
       if (inRect(closeBtn, x, y)) {
         state.hoveredElement = 'panel-close'
-      } else if (state.activeSubPanel === 'weapons' && !state.panelClosing && inRect(PANEL_DESCEND_BTN, x, y)) {
+      } else if (state.activeSubPanel === 'weapons' && !state.panelClosing && inRect(getDescendPanelBtnRect(panelY), x, y)) {
         state.hoveredElement = 'panel-descend'
       } else if (state.activeSubPanel === 'weapons' && !state.panelClosing) {
         const w = weaponAt(x, y, panelY)
