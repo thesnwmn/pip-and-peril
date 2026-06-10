@@ -197,12 +197,8 @@ export function createRunSummary(
     ctx.textBaseline = 'top'
     ctx.fillText(`${GOLD_SYMBOL}  ${animatedGold}`, CARD_X + CARD_WIDTH - CARD_PADDING, currentY)
 
-    // Scraps line
-    const scrapsDuration = 1500
-    const scrapsDelay = STATS_ANIMATION_DURATION + 200
-    const scrapsStartTime = animationStartTime ? animationStartTime + scrapsDelay : null
-    const scrapsOpacity = scrapsStartTime && timestamp >= scrapsStartTime ? 1 : 0
-    ctx.globalAlpha = cardOpacity * scrapsOpacity
+    // Scraps line (fades in with card, not delayed)
+    ctx.globalAlpha = cardOpacity
 
     ctx.font = '12px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.textMuted
@@ -227,8 +223,8 @@ export function createRunSummary(
       ctx.globalAlpha = cardOpacity * 0.3
       ctx.lineWidth = 1
       ctx.beginPath()
-      ctx.moveTo(CARD_X + CARD_PADDING, currentY - 20)
-      ctx.lineTo(CARD_X + CARD_WIDTH - CARD_PADDING, currentY - 20)
+      ctx.moveTo(CARD_X + CARD_PADDING, currentY - 10)
+      ctx.lineTo(CARD_X + CARD_WIDTH - CARD_PADDING, currentY - 10)
       ctx.stroke()
       ctx.globalAlpha = cardOpacity
 
@@ -244,8 +240,8 @@ export function createRunSummary(
       ctx.globalAlpha = cardOpacity * 0.3
       ctx.lineWidth = 1
       ctx.beginPath()
-      ctx.moveTo(CARD_X + CARD_PADDING, currentY - 20)
-      ctx.lineTo(CARD_X + CARD_WIDTH - CARD_PADDING, currentY - 20)
+      ctx.moveTo(CARD_X + CARD_PADDING, currentY - 10)
+      ctx.lineTo(CARD_X + CARD_WIDTH - CARD_PADDING, currentY - 10)
       ctx.stroke()
       ctx.globalAlpha = cardOpacity
 
