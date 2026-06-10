@@ -149,7 +149,26 @@ export class GameApp {
     if (next === 'run-summary' && summary) {
       this.pendingRunSummary = summary
       this.screens['run-summary'] = createRunSummary(
-        (screen) => this.transitionTo(screen as Screen),
+        (screen, metaState) => {
+          if (metaState) {
+            this.metaState = metaState
+          }
+          // Recreate camp screen with fresh state when returning from run
+          if (screen === 'camp') {
+            this.screens['camp'] = createCamp(
+              (s) => this.transitionTo(s as Screen),
+              (m) => {
+                this.metaState = m
+                this.screens['game'] = createGame(
+                  (s, summary) => this.transitionTo(s as Screen, summary),
+                  m,
+                )
+                this.transitionTo('game')
+              },
+            )
+          }
+          this.transitionTo(screen as Screen)
+        },
         summary,
       )
     }
