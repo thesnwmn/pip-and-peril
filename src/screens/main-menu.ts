@@ -75,9 +75,8 @@ export function createMainMenu(transitionTo: (screen: string) => void): ScreenCo
 
   function handleClick(x: number, y: number): void {
     if (isInNewGameButton(x, y)) {
-      // If player has completed runs, go to camp. Otherwise skip straight to game.
-      const destination = metaState.runCount > 0 ? 'camp' : 'game'
-      transitionTo(destination)
+      // Always go directly to the game (skip camp)
+      transitionTo('game')
     }
   }
 

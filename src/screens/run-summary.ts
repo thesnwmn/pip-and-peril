@@ -30,7 +30,7 @@ export function createRunSummary(
   let fadeInStartTime: DOMHighResTimeStamp | null = null
   let animationStartTime: DOMHighResTimeStamp | null = null
   const metaState = loadMetaState()
-  const isFirstRun = metaState.runCount === 0
+  const wasAbandoned = summary.abandoned ?? false
 
   const FADE_IN_DURATION = 600
   const STATS_ANIMATION_DURATION = 1000
@@ -209,7 +209,7 @@ export function createRunSummary(
     ctx.textAlign = 'right'
     ctx.textBaseline = 'top'
     let scrapsText: string
-    if (isFirstRun) {
+    if (wasAbandoned) {
       scrapsText = '→ no rewards - no marks'
     } else {
       scrapsText = summary.goldEarned > 0 ? `→ ${summary.goldEarned} scraps to carry home` : '→ no scraps this run'
@@ -277,8 +277,8 @@ export function createRunSummary(
     if (isInBeginAgainButton(x, y)) {
       const updatedMeta: MetaState = {
         ...metaState,
-        // Only award scraps if not the first run
-        scraps: isFirstRun ? metaState.scraps : metaState.scraps + summary.goldEarned,
+        // Award scraps unless the run was abandoned
+        scraps: wasAbandoned ? metaState.scraps : metaState.scraps + summary.goldEarned,
         runCount: metaState.runCount + 1,
       }
       saveMetaState(updatedMeta)

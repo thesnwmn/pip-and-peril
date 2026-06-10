@@ -137,7 +137,13 @@ export function createGame(
 
   const menuModal = createMenuModal('game', (screen) => {
     resetRunState()
-    transitionTo(screen)
+    if (screen === 'home') {
+      // User clicked "End Run" — show run summary with no rewards
+      const abandonedSummary = buildRunSummary('defeat')
+      transitionTo('run-summary', { ...abandonedSummary, abandoned: true })
+    } else {
+      transitionTo(screen)
+    }
   })
 
   const registry = createEncounterRegistry()
