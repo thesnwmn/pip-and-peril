@@ -44,6 +44,15 @@ with 029 this delivers the full "Shiny Scraps & Dice Upgrades" loop.
 **Depends on:** 029 (MetaState, camp screen, workbench tap target).
 See `docs/features/088-workbench-dice-upgrades.md` for the full spec.
 
+### 089 · Scalable Dice Pool Display
+
+Improve dice rendering to handle **variable pool sizes** (currently hard-coded for 4 dice) and
+**diverse die types** (D4, D6, D8, and larger). Sized dynamically to fit container; smaller die
+glyphs (or alternative notation) for higher face counts. Affects camp permanent pool display,
+weapon card pools, and run-time pool preview. Ships as visual refactor with no mechanical changes.
+**Depends on:** 029 (camp screen), 088 (workbench upgrades — unlocks larger pools).
+See `docs/features/089-scalable-dice-pool-display.md` for the full spec.
+
 ---
 
 ## NEEDS SPEC
@@ -76,16 +85,6 @@ are visible but unrevealing; a light "show unlock condition" affordance addresse
 without spoiling discovery.
 **Depends on:** 029 (camp hub), 024 (run summary — marks awarded at run end).
 **Related:** `docs/concept/meta-progression.md`.
-
-### 089 · Scalable Dice Pool Display
-
-Improve dice rendering to handle **variable pool sizes** (currently hard-coded for 4 dice) and
-**diverse die types** (D4, D6, D8, and larger). Sized dynamically to fit container; smaller die
-glyphs (or alternative notation) for higher face counts. Affects camp permanent pool display,
-weapon card pools, and run-time pool preview. Ships as visual refactor with no mechanical changes.
-**Depends on:** 029 (camp screen), 088 (workbench upgrades — unlocks larger pools).
-
----
 
 ### 041 · Rattled / Emboldened Combat States
 
