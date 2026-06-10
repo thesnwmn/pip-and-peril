@@ -77,7 +77,8 @@ export function createMainMenu(transitionTo: (screen: string) => void): ScreenCo
 
   function handleClick(x: number, y: number): void {
     if (isInNewGameButton(x, y)) {
-      transitionTo(hasSavedGame ? 'camp' : 'home')
+      // Always go to camp (whether new game or returning)
+      transitionTo('camp')
     }
   }
 

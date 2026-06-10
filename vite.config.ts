@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
-import { resolve } from 'path'
+import path from 'path'
 
 export default defineConfig({
   base: './',
@@ -7,8 +7,8 @@ export default defineConfig({
     outDir: 'dist',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        game: resolve(__dirname, 'game.html'),
+        main: path.resolve(__dirname, 'index.html'),
+        game: path.resolve(__dirname, 'game.html'),
       },
     },
   },

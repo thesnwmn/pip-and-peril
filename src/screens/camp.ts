@@ -16,6 +16,19 @@ const DESCEND_BUTTON_Y = LOGICAL_H - 60
 const PANEL_HEIGHT = 550
 const PANEL_Y = LOGICAL_H - PANEL_HEIGHT
 const PANEL_W = LOGICAL_W
+const PANEL_PADDING = 20
+
+const WEAPON_GRID_COLS = 2
+const WEAPON_GRID_ROWS = 2
+const WEAPON_CARD_W = 130
+const WEAPON_CARD_H = 140
+// Weapon cards positioned relative to panel
+const WEAPON_GRID_PANEL_X = 20
+const WEAPON_GRID_PANEL_Y = 60
+const WEAPON_CARD_GAP = 10
+
+const DIE_SIZE = 28
+const POOL_PREVIEW_PANEL_Y = 380
 
 interface CampState {
   metaState: MetaState
@@ -26,16 +39,6 @@ interface CampState {
   stubPanelOpen: string | null
   stubPanelStartTime: number | null
 }
-
-const WEAPON_GRID_COLS = 2
-const WEAPON_GRID_ROWS = 2
-const WEAPON_CARD_W = 130
-const WEAPON_CARD_H = 140
-const WEAPON_GRID_START_X = (LOGICAL_W - (WEAPON_CARD_W * 2 + 10)) / 2
-const WEAPON_GRID_START_Y = 80
-
-const DIE_SIZE = 28
-const POOL_PREVIEW_Y = PANEL_Y + 380
 
 export function createCamp(
   transitionTo: (screen: string) => void,
@@ -62,8 +65,8 @@ export function createCamp(
 
   function getWeaponCardPos(col: number, row: number): { x: number; y: number } {
     return {
-      x: WEAPON_GRID_START_X + col * (WEAPON_CARD_W + 10),
-      y: WEAPON_GRID_START_Y + row * (WEAPON_CARD_H + 10),
+      x: WEAPON_GRID_PANEL_X + col * (WEAPON_CARD_W + WEAPON_CARD_GAP),
+      y: PANEL_Y + WEAPON_GRID_PANEL_Y + row * (WEAPON_CARD_H + WEAPON_CARD_GAP),
     }
   }
 
@@ -81,7 +84,7 @@ export function createCamp(
   }
 
   function getRunPoolDice(): Die[] {
-    const permanent = state.metaState.permanentPool.map(p => ({
+    const permanent = state.metaState.permanentPool.map((p: typeof state.metaState.permanentPool[0]) => ({
       color: p.colour as any,
       sides: p.faces,
     }))
@@ -122,9 +125,9 @@ export function createCamp(
 
   function drawWorkbench(ctx: CanvasRenderingContext2D): void {
     const benchX = 20
-    const benchY = 200
+    const benchY = 140
     const benchW = 150
-    const benchH = 120
+    const benchH = 100
 
     ctx.fillStyle = '#2e1d0d'
     ctx.fillRect(benchX, benchY, benchW, benchH)
@@ -139,7 +142,7 @@ export function createCamp(
     ctx.fillText('Workbench', benchX + benchW / 2, benchY + 5)
 
     let diceX = benchX + 15
-    const diceY = benchY + 30
+    const diceY = benchY + 28
     const diceGap = 35
 
     for (const die of state.metaState.permanentPool) {
@@ -272,38 +275,54 @@ export function createCamp(
     ctx.lineWidth = isSelected ? 2 : 1
     ctx.strokeRect(x, y, WEAPON_CARD_W, WEAPON_CARD_H)
 
-    let textY = y + 8
-    ctx.font = 'bold 12px system-ui, -apple-system, sans-serif'
+    const cardPadding = 8
+    let textY = y + cardPadding
+
+    // Name
+    ctx.font = 'bold 11px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.textPrimary
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
     ctx.fillText(spec.name, x + WEAPON_CARD_W / 2, textY)
 
-    textY += 16
-    ctx.font = '10px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = colors.textMuted
-    ctx.textAlign = 'center'
-    ctx.fillText(spec.flavour, x + 5, textY, WEAPON_CARD_W - 10)
+    textY += 14
 
-    textY += 28
-    ctx.font = '10px system-ui, -apple-system, sans-serif'
+    // Flavour (wrapped)
+    ctx.font = '9px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.textMuted
     ctx.textAlign = 'center'
+    const maxWidth = WEAPON_CARD_W - cardPadding * 2
+    const words = spec.flavour.split(' ')
+    let line = ''
+    for (const word of words) {
+      const testLine = line ? line + ' ' + word : word
+      const metrics = ctx.measureText(testLine)
+      if (metrics.width > maxWidth && line) {
+        ctx.fillText(line, x + WEAPON_CARD_W / 2, textY)
+        textY += 10
+        line = word
+      } else {
+        line = testLine
+      }
+    }
+    if (line) {
+      ctx.fillText(line, x + WEAPON_CARD_W / 2, textY)
+      textY += 12
+    }
+
+    // Dice
+    ctx.font = '9px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.textMuted
     const diceText = spec.addedDice.map(d => `d${d.sides}`).join(', ')
     ctx.fillText(`+${diceText}`, x + WEAPON_CARD_W / 2, textY)
+    textY += 12
 
+    // Strike
     if (spec.strikeAction) {
-      textY += 14
-      ctx.font = '10px system-ui, -apple-system, sans-serif'
-      ctx.fillStyle = colors.textMuted
-      ctx.textAlign = 'center'
+      ctx.font = '9px system-ui, -apple-system, sans-serif'
       const cost = spec.strikeAction.cost.red
       ctx.fillText(`Strike: ${cost}🔴`, x + WEAPON_CARD_W / 2, textY)
     } else {
-      textY += 14
-      ctx.font = '10px system-ui, -apple-system, sans-serif'
-      ctx.fillStyle = colors.textMuted
-      ctx.textAlign = 'center'
       ctx.fillText('—', x + WEAPON_CARD_W / 2, textY)
     }
   }
@@ -341,20 +360,22 @@ export function createCamp(
       drawWeaponCard(ctx, weaponIds[i], pos.x, pos.y, isSelected)
     }
 
+    const poolLabelY = PANEL_Y + POOL_PREVIEW_PANEL_Y - 25
     ctx.font = '12px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.textMuted
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
-    ctx.fillText('Your dice this run:', LOGICAL_W / 2, POOL_PREVIEW_Y - 25)
+    ctx.fillText('Your dice this run:', LOGICAL_W / 2, poolLabelY)
 
     const poolDice = getRunPoolDice()
     const totalDiceWidth = poolDice.length * DIE_SIZE + (poolDice.length - 1) * 6
     const poolStartX = (LOGICAL_W - totalDiceWidth) / 2
+    const poolY = PANEL_Y + POOL_PREVIEW_PANEL_Y
 
     for (let i = 0; i < poolDice.length; i++) {
       const die = poolDice[i]
       const x = poolStartX + i * (DIE_SIZE + 6)
-      drawDie(ctx, x, POOL_PREVIEW_Y, die.sides, die.color, DIE_SIZE - 4)
+      drawDie(ctx, x, poolY, die.sides, die.color, DIE_SIZE - 4)
     }
 
     const buttonFill = state.isMouseDevice && state.hoveredElement === 'descend-into-dark'
@@ -449,17 +470,20 @@ export function createCamp(
     }
 
     if (state.panelOpen) {
-      if (x <= 60 && y >= PANEL_Y && y <= PANEL_Y + 40) {
+      // Back button (top-left of panel)
+      if (x <= 60 && y >= PANEL_Y && y <= PANEL_Y + 50) {
         state.panelOpen = false
         return
       }
 
+      // Weapon card selection
       const hoveredWeapon = isInWeaponCard(x, y)
       if (hoveredWeapon) {
         state.selectedWeaponId = hoveredWeapon
         return
       }
 
+      // Descend button in panel (bottom of panel)
       if (x >= DESCEND_BUTTON_X && x <= DESCEND_BUTTON_X + DESCEND_BUTTON_W &&
           y >= LOGICAL_H - 70 && y <= LOGICAL_H - 15) {
         const newState = {
@@ -472,6 +496,7 @@ export function createCamp(
         return
       }
     } else {
+      // Camp screen interactions
       if (isInWorkbench(x, y)) {
         state.stubPanelOpen = 'workbench'
         state.stubPanelStartTime = performance.now()
