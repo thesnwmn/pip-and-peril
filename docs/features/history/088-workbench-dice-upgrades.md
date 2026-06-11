@@ -1,6 +1,6 @@
 # 088 · Workbench — Dice Upgrades
 
-**Status:** READY
+**Status:** SHIPPED
 **Source idea:** Backlog item 088; concept in `docs/concept/meta-progression.md`
 **Depends on:** 029 (MetaState schema, camp screen, workbench tap target, die visual language from feature 005)
 
@@ -11,10 +11,11 @@
 The workbench sub-screen makes Pip's permanent dice pool upgradeable between runs. Tapping the
 workbench at camp opens a panel where Pip spends shiny scraps on three operations against his
 physical dice: **Swap** a die for a larger face-count (higher ceiling, more variance), **Add** a
-new die of a chosen colour (grows the pool), and **Engrave** a die's minimum face upward (cheaply
-tames worst-case outcomes). Each operation deducts scraps and persists immediately. Together with
-029, this closes the full "Shiny Scraps & Dice Upgrades" loop: earn scraps in a run, return to
-camp, make targeted choices about the dice Pip carries forward.
+new die of a chosen colour (grows the pool), and **Engrave** a die's minimum face upward in
+**sequential tiers** — each tier raising the floor by one pip and costing more than the last,
+requiring the previous tier before the next can be purchased. Each operation deducts scraps and
+persists immediately. Together with 029, this closes the full "Shiny Scraps & Dice Upgrades" loop:
+earn scraps in a run, return to camp, make targeted choices about the dice Pip carries forward.
 
 ---
 
@@ -76,38 +77,45 @@ camp, make targeted choices about the dice Pip carries forward.
 
 ### Engrave operation
 
-11. The inline area for a selected die shows an **Engrave** option when `die.minFloor` is absent
-    or equals 1 (i.e. not yet engraved). Label: **"Engrave minimum face"**. Cost: **15 scraps**
-    for any die at any size. If the player cannot afford it, the option is dimmed and disabled.
+11. The inline area for a selected die shows an **Engrave** option when
+    `(die.minFloor ?? 1) < Math.floor(die.faces / 2)` (i.e. at least one tier remains). The label
+    reads **"Engrave — raise min to [nextVal]"** where `nextVal = (die.minFloor ?? 1) + 1`. Cost
+    is determined by which tier this purchase represents (the target value):
 
-12. Tapping an affordable Engrave option opens an inline **value picker** showing available locked
-    values as distinct tap buttons. Available values are the integers from **2** through
-    **`Math.floor(die.faces / 2)`** inclusive:
+    | Next min value | Tier | Cost |
+    |---|---|---|
+    | 2 | 1 | 30 scraps |
+    | 3 | 2 | 50 scraps |
+    | 4 | 3 | 75 scraps |
+    | 5 | 4 | 100 scraps |
+    | 6 | 5 | 125 scraps |
 
-    | Die | Available values |
-    |---|---|
-    | d4 | 2 |
-    | d6 | 2, 3 |
-    | d8 | 2, 3, 4 |
-    | d10 | 2, 3, 4, 5 |
-    | d12 | 2, 3, 4, 5, 6 |
+    The cost is displayed inline next to the Engrave label. A die at d4 can only ever reach tier 1
+    (min 2). A die at d6 can reach tier 2 (min 3). Larger dice unlock higher tiers. If the player
+    cannot afford the current tier cost, the option is **visually dimmed** and the tap does nothing.
 
-13. Tapping a value presents an inline confirm: **"Lock minimum face to [V] for 15 scraps?"**
-    with a **Confirm** button and a cancel option. Tapping Confirm:
-    - deducts 15 from `MetaState.scraps`
-    - sets `die.minFloor` to the chosen value on the `PermanentDie` record
+12. Tapping an affordable Engrave option presents an inline confirm: **"Raise minimum face to
+    [nextVal] for [C] scraps?"** with a **Confirm** button and a cancel option. Tapping Confirm:
+    - deducts C from `MetaState.scraps`
+    - sets `die.minFloor` to `nextVal` on the `PermanentDie` record
     - persists `MetaState`
-    - closes the confirm state; the die object receives a visual engrave marker (see Visual design)
+    - closes the confirm state; the die object's engrave marker updates (see Visual design)
 
-14. A die with `minFloor > 1` shows **"Engraved: min [V]"** (11px, `--text-muted`) in the
-    inline area instead of the Engrave option. Engraving is **one-time and permanent** — the
-    option is not shown again for that die.
+13. A die at maximum engrave tier (`die.minFloor === Math.floor(die.faces / 2)`) shows
+    **"Min: [V] — max tier"** (11px, `--text-muted`) in the inline area. No further Engrave
+    option is displayed.
+
+14. A die with `die.minFloor > 1` but below max tier shows **"Min: [V]"** (11px, `--text-muted`)
+    above the Engrave option for the next tier. Both the current floor status and the next-tier
+    option are visible simultaneously — the player can see where the die is and what the next
+    investment costs in one glance.
 
 ### Swap + Engrave interaction
 
-15. Swapping an engraved die **preserves `minFloor`**. A d6 with `minFloor: 3` swapped to d8
-    becomes a d8 with `minFloor: 3`. The engraved status label updates to reflect the (now
-    potentially different) fraction of max, but the locked value is unchanged.
+15. Swapping an engraved die **preserves `minFloor`**. A d6 with `minFloor: 3` (tier 2) swapped
+    to d8 becomes a d8 with `minFloor: 3` — the tier-2 engrave carries. The next available tier
+    on the d8 is tier 3 (raise min to 4, 75 scraps). The inline area shows the carried floor status
+    and the tier-3 option immediately after the swap.
 
 ### Add Die operation
 
@@ -166,8 +174,8 @@ camp, make targeted choices about the dice Pip carries forward.
 
 - **Blue's first die**: cannot be added via Add until it is already in the permanent pool. That
   arrival is feature 052's responsibility.
-- **Named dice / die provenance** (Idea 050): deferred as a polish pass after the base workbench
-  ships and is playtested.
+- **Named dice / die provenance / die collection / per-run loadout / engrave tier redesign**:
+  captured as feature **093** (Named Dice & Die Collection).
 - **Downward swap / die removal**: A die cannot be swapped to a smaller face count or removed
   from the pool. Once added, a die is permanent.
 - **Engrave any face**: this spec locks only the minimum face. Arbitrary-face engraving is a more
@@ -215,16 +223,14 @@ PermanentDie {
   │                                (affordable)                       (affordable,
   │                                        │                          not engraved)
   │                                        ▼                                 ▼
-  │                               [Swap confirm]                    [Value picker]
-  │                               "Swap to dN for C scraps?"         tap value V
-  │                               [Confirm] / cancel                          ▼
-  │                                        │                        [Engrave confirm]
-  │                               Confirm: scraps update            "Lock min to V?"
-  │                                        die.faces updated        [Confirm] / cancel
-  │                                        persist                            │
-  │                                        deselect                  Confirm: scraps update
-  │                                                                  die.minFloor = V
-  │                                                                  persist / deselect
+  │                               [Swap confirm]                    [Engrave confirm]
+  │                               "Swap to dN for C scraps?"        "Raise min to V for C?"
+  │                               [Confirm] / cancel                [Confirm] / cancel
+  │                                        │                                  │
+  │                               Confirm: scraps update            Confirm: scraps update
+  │                                        die.faces updated                  die.minFloor = nextVal
+  │                                        persist                            persist
+  │                                        deselect                           deselect
   │
   ├─ tap "+ Add Die" ────────────────────────────────────────────────────────┐
   │                                                                          ▼
@@ -246,23 +252,29 @@ PermanentDie {
   └─ tap Done ──────────────────────────────────────────────────────────► [Camp]
 ```
 
-### Engrave: why minimum face only
+### Engrave: why minimum face only, and why sequential
 
-The meta doc describes engraving as "taming variance" — fixing the worst outcome. Locking the
-minimum face delivers exactly this: the die still reaches its full ceiling, but bottoms out less
-badly. The alternative — letting the player fix any face — requires showing the full face grid and
-choosing a target value for each, which is a 5+-tap flow with hard-to-reason outcomes (fixing a
-middle face has unclear value). Locking the minimum is the only operation where the value is
-always legible: "this die can never roll below V." The value picker cap at `floor(faces / 2)`
-prevents trivialising the die (a d6 engraved to 4 would have an expected value of 4.3, nearly
-matching a d8; the cap limits this to min 3, expected 3.8).
+Locking the minimum face is the only operation where the value is always legible: "this die can
+never roll below V." It tames the worst outcome without touching the ceiling — the die is calmer
+but not weaker. The cap at `floor(faces / 2)` prevents trivialising the die (a d6 engraved to
+min 4 would have an expected value of 4.3, nearly matching a d8; the cap holds it to min 3,
+expected 3.8).
+
+Sequential tiers rather than a free pick exist for two reasons. First, skipping to min 3 on a
+d6 is a stronger operation than min 2 — it should cost more. A flat 15sc one-shot purchase
+obscured this. Second, sequential tiers create an investment relationship with a specific die over
+multiple runs: the player who has put 80sc into a d6 (30 + 50) has a *history* with it. This
+aligns with feature 093's direction of named, personally-owned dice.
+
+The engrave costs are deliberately expensive relative to swap costs — tier 2 (50sc) equals the
+Add Die cost. Deep engraving is a late-meta choice, not an early-run habit.
 
 ### Engrave persistence through swap
 
-When a die is swapped, `minFloor` copies to the upgraded die unchanged. A d6 engraved to min 3,
-swapped to d8, is a d8 with min floor 3. The player paid for both decisions separately; both
-stand. The engrave becomes a smaller fraction of the new max but remains active — the player who
-engraved before swapping accepted this trade.
+When a die is swapped, `minFloor` copies to the upgraded die unchanged. A d6 engraved to min 3
+(tier 2), swapped to d8, is a d8 with min 3 — tier 2 carried. The d8's tier-3 option (min 4,
+75sc) becomes available immediately. The player who engraved before swapping gets the benefit on
+the new die and can continue the investment there.
 
 ### Costs rationale
 
@@ -277,10 +289,17 @@ run reaching floor 2 (based on the gold model in feature 019):
 | Swap d8 → d10 | 45 | Mid-meta; requires consistent floor-2 runs |
 | Swap d10 → d12 | 60 | Late-meta; 2–3 deep runs |
 | Add Die | 50 | High-impact; appropriately expensive |
-| Engrave | 15 | Cheap reward for owning a die worth locking |
+| Engrave tier 1 (min 2) | 30 | Meaningful but approachable; 1–2 runs |
+| Engrave tier 2 (min 3) | 50 | Rivals Add Die; a genuine commitment |
+| Engrave tier 3 (min 4) | 75 | Mid-late meta; reserved for dice you trust |
+| Engrave tier 4 (min 5) | 100 | Late-meta; 3–4 deep runs |
+| Engrave tier 5 (min 6) | 125 | d12 only; endgame investment |
 
-Engrave is intentionally cheap — it requires already having a die with a face count worth
-engraving, which is itself a gating factor.
+Engrave costs are intentionally heavy — the old 15sc flat cost made engraving a throwaway. At 30sc
+for tier 1, engraving a die is a real choice that competes with a Swap. At 50sc for tier 2, it
+rivals adding a new die entirely. This creates meaningful tension: "do I deepen this die or get
+a new one?" The cost ladder also means tier-1 engrave remains accessible while late tiers are
+visibly late-meta investments.
 
 ### Edge cases
 
@@ -288,8 +307,8 @@ engraving, which is itself a gating factor.
   but nothing is purchasable. The player can still open the workbench and see their pool.
 - **Add Die with max pool**: no hard enforcement, but the die row should wrap at ~7 dice. The
   engineer implements wrapping; the spec does not define a cap.
-- **Swap an engraved d12**: d12 is max size; Swap is disabled. Only Engrave (if unengraved) or
-  the Engraved status label is shown.
+- **Swap an engraved d12**: d12 is max size; Swap is disabled. The inline area shows the current
+  engrave tier status and the next tier option (if any), or "max tier" if fully engraved.
 - **localStorage write failure mid-session**: same handling as feature 029 — fire-and-forget
   write; in-memory state continues. No mid-session failure crashes the session.
 
@@ -316,32 +335,43 @@ engraving, which is itself a gating factor.
 └─────────────────────────────┘
 ```
 
-#### Die selected (d4 Yellow — showing Swap + Engrave options):
+#### Die selected (d4 Yellow — unengraved, showing Swap + Engrave tier 1):
 
 ```
 │  [d6🔴]  [d6🟢]  ╔[d4🟡]╗  │  ← selected die: thin gold highlight ring
 │                             │
 │    Swap → d6   20 scraps    │  ← operation row; cost right-aligned
-│    Engrave min  15 scraps   │
+│    Engrave → min 2  30 sc   │
 │                             │
 ```
 
-#### After tapping Engrave → value picker (d6, showing 2 and 3):
+#### Die selected (d6 Green — at tier 1, min 2, showing tier 2 option):
 
 ```
 │  [d6🔴]  ╔[d6🟢]╗  [d4🟡]  │
 │                             │
-│    Engrave minimum face:    │
-│         [ 2 ]  [ 3 ]        │  ← tap targets; d4 shows only [ 2 ]
-│         Cancel              │
+│    Swap → d8   30 scraps    │
+│    Min: 2                   │  ← current floor status, --text-muted
+│    Engrave → min 3  50 sc   │  ← next tier; cost right-aligned
+│                             │
 ```
 
-#### After picking value → confirm:
+#### After tapping Engrave → confirm (no picker; next value is always +1):
 
 ```
-│    Lock minimum face to 3   │
-│    for 15 scraps?           │
+│    Raise minimum face to 3  │
+│    for 50 scraps?           │
 │    [Confirm]  Cancel        │
+```
+
+#### Die at max tier (d6 at min 3):
+
+```
+│  [d6🔴]  ╔[d6🟢]╗  [d4🟡]  │
+│                             │
+│    Swap → d8   30 scraps    │
+│    Min: 3 — max tier        │  ← --text-muted; no further engrave
+│                             │
 ```
 
 #### Add Die colour picker:
@@ -385,7 +415,8 @@ No new font sizes. New elements mapped to the established scale:
 | Operation cost | 12px | regular | `--gold` |
 | Value picker buttons | 14px | bold | `--text-primary` |
 | Confirm text | 13px | regular | `--text-primary` |
-| "Engraved: min N" status | 11px | regular | `--text-muted` |
+| "Min: N" current tier status | 11px | regular | `--text-muted` |
+| "Min: N — max tier" status | 11px | regular | `--text-muted` |
 
 ---
 
@@ -395,15 +426,15 @@ No blocking questions — the spec is **READY**.
 
 Calibration questions to watch during playtesting:
 
-- **Engrave value range**: is `floor(faces/2)` tight enough? A d6 engraved to min 3 has expected
-  value ~3.8 versus an un-engraved d6's ~3.5; worth monitoring for early-meta impact.
-- **Add Die cost**: does 50 scraps feel weighty enough for the first pool expansion (3→4 dice)
-  without being discouraging? The first Add is the biggest single upgrade; it should feel like an
-  event, not a grind.
-- **Scraps economy cross-check**: upgrade costs above must be tested against the actual gold-drop
-  rates from features 019 and 026. The calibration note in feature 029 applies: if the 1:1
-  gold-to-scraps conversion leaves players under-funded, adjust the conversion rate in 029, not
-  the costs here.
+- **Engrave tier costs**: the 30/50/75/100/125sc ladder is a proposal. Cross-check against
+  scraps-drop rates from features 019 and 026. The key tension to test: does tier 2 (50sc) feel
+  like a real sacrifice, or is it trivial once the player is running floor 2 consistently?
+- **Engrave value range**: is `floor(faces/2)` the right ceiling? A d6 at min 3 has expected
+  value ~3.8 versus un-engraved ~3.5; monitor for early-meta impact.
+- **Add Die cost**: does 50 scraps still feel weighty enough for pool expansion (3→4 dice) now
+  that tier-2 engrave costs the same? The "more pool vs. deeper die" tradeoff should feel genuine.
+- **Scraps economy cross-check**: all costs above must be tested against actual gold-drop rates.
+  Adjust conversion rate in feature 029 if the economy runs dry, not costs here.
 
 ---
 

@@ -118,6 +118,29 @@ as its blocker clears, not build all four at once:
   + the unified check panel (028). *Source:* Idea 074.
 **Depends on:** 051 (visitor framework, relationship loop) + the per-type blockers above.
 
+### 093 · Named Dice & Die Collection
+
+Transforms Pip's dice from a fixed statistical pool into a **personal collection of named objects
+with provenance**. Each die has an origin line ("Found near a rusted blade." "Left by a Tinker
+who came twice."). Dice are **earned** through achievements, boss kills, NPC events, and Marks of
+Descent — not purchased with scraps. Before each run, Pip selects a **loadout** from his
+collection (capped, growing with meta progress). This replaces the Swap and Add Die operations
+from feature 088: "upgrading" means finding or earning a better die. The workbench becomes a
+collection browser + engrave station + loadout selector. Also **redesigns the engrave tier
+system** shipped in 088 (sequential tiers, costs) in light of engraving now being a commitment
+to a specific named object — costs and tier model are provisional starting points pending this
+spec. Absorbs **Idea 050** (Named Dice).
+**Key design questions blocking the spec:**
+1. **Die acquisition**: what specific events grant which dice? (Boss kills → themed die? Marks →
+   colour/size unlocks? Tinker → leaves a die? Run loot?)
+2. **Starting collection**: what does Pip own at game start?
+3. **Loadout cap**: how many dice per run initially, and what increases the cap?
+4. **Engrave redesign**: how do tier costs and the tier ceiling change when engraving is a
+   commitment to a specific named die rather than a stat on a fungible pool entry?
+5. **Provenance generation**: origin lines seeded from the granting event (boss name, NPC name,
+   floor), or a fixed template set?
+**Depends on:** 052 (Marks of Descent — primary achievement gate for die acquisition).
+
 ### 041 · Rattled / Emboldened Combat States
 
 Transient per-fight modifiers that give combat texture and momentum without permanent complexity.

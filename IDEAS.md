@@ -43,6 +43,8 @@ code; the Designer writes those.
 > numbers; concept in `docs/concept/biomes.md`).
 > **Designer session 2026-06-08:** **070** (Unified Check Model) + **071** (NPC Social Checks) →
 > feature **028** (NPC Encounter); both folded into the unified check panel spec.
+> **Designer session 2026-06-11:** **050** (Named Dice) → backlog **093** (Named Dice & Die
+> Collection); absorbed and expanded with die acquisition, collection model, and loadout selection.
 
 ---
 
@@ -62,21 +64,9 @@ must be vague enough not to feel like promises if the player never reaches the b
 ---
 
 
-## Idea 050 — Named Dice
-
-**Area:** Meta / Character / World
-**Inspiration:** Thinker's own; the observation that "swap d6 for d8" is a mathematical
-transaction while "sharpen the old Red die" is a story.
-
-Give Pip's individual dice personal provenance — a brief origin line attached when a die
-enters the pool ("Found near a rusted blade." "Traded from a travelling merchant.").
-The die's name is generated from its origin. Engraving a face becomes a decision made about
-*that specific die*: "lock its worst outcome, the way Pip learned to never take that shortcut
-again." The workbench screen shows each die's line on hover/tap. No gameplay effect — purely
-flavour — but it transforms the upgrade system from number management into something that
-feels like Pip's history. Risk: requires a data model change (provenance string on die objects)
-and a workbench UI pass; worth deferring until after the base workbench is built, then
-retrofitting as a polish pass.
+*(Idea 050 — Named Dice — promoted to backlog **093** · Named Dice & Die Collection,
+Designer session 2026-06-11. Expanded beyond flavour provenance into a full die-as-object
+system with earned acquisition and per-run loadout selection.)*
 
 ---
 
