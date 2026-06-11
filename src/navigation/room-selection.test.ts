@@ -127,7 +127,7 @@ describe('placeRoom', () => {
     const base = initDungeon()
     const offering = { roomType: 'corridor' as const, exits: N | S }
     const next = placeRoom(base, offering, { col: 6, row: 5 })
-    expect(next.grid.cells[5][6]).toEqual({ roomType: 'corridor', exits: N | S })
+    expect(next.grid.cells[5][6]).toMatchObject({ roomType: 'corridor', exits: N | S })
   })
 
   it('moves pip to target position', () => {

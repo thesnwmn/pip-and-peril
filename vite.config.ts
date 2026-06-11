@@ -9,6 +9,7 @@ export default defineConfig({
       input: {
         main: path.resolve(__dirname, 'index.html'),
         game: path.resolve(__dirname, 'game.html'),
+        gallery: path.resolve(__dirname, 'gallery.html'),
       },
     },
   },

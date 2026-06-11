@@ -1,3 +1,5 @@
+export type Archetype = 'chamber' | 'passage' | 'cavern' | 'pillared' | 'rubble' | 'bridge' | 'well' | 'pool' | 'squeeze'
+
 export type RoomType = 'start' | 'corridor' | 'enemy' | 'shop' | 'npc' | 'item' | 'chest' | 'trap' | 'stairwell' | 'boss'
 
 export type ExitMask = number
@@ -16,6 +18,7 @@ export interface GridPos {
 export interface TileCell {
   roomType: RoomType
   exits: ExitMask
+  archetype?: Archetype
   cleared?: boolean
   fled?: boolean
   itemId?: string

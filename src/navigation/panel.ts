@@ -284,7 +284,7 @@ function drawCard(
 
   const tileY = y + 24
   const tileX = x + (CARD_W - CARD_TILE_SIZE) / 2
-  drawSingleTile(ctx, { roomType: offering.roomType, exits: offering.exits }, tileX, tileY, CARD_TILE_SIZE, DUNGEON)
+  drawSingleTile(ctx, { roomType: offering.roomType, exits: offering.exits, archetype: offering.archetype }, tileX, tileY, CARD_TILE_SIZE, DUNGEON)
 
   const sepY = y + 24 + CARD_TILE_SIZE + 4
   ctx.globalAlpha = parentAlpha * 0.4

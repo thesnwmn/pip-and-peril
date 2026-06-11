@@ -169,5 +169,6 @@ those slots. Proposed anchor zones:
 
 ---
 
-*Visual exploration:* **POC 6 — Tile & Prop Gallery** (`public/poc/tiles/`) renders the archetype
-catalogue, the props palette, and worked "props in use" examples in the established game style.
+*Visual exploration:* **Tile Gallery** (`gallery.html`) renders the full archetype catalogue using the
+real game renderer. Served in dev at `/gallery.html` and included in the production build. The
+POC (`public/poc/tiles/`) has been retired — the live gallery is now the single source of truth.
