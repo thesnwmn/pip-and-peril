@@ -975,7 +975,8 @@ export function createCamp(
         }
       }
 
-      if (state.activeSubPanel === 'notices' && !state.panelClosing && y < panelY) {
+      // Tap in the scene zone (above the panel) closes any open panel
+      if (!state.panelClosing && y < panelY) {
         closePanel()
         return
       }
