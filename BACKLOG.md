@@ -118,20 +118,28 @@ as its blocker clears, not build all four at once:
   + the unified check panel (028). *Source:* Idea 074.
 **Depends on:** 051 (visitor framework, relationship loop) + the per-type blockers above.
 
-### 093 · Engrave Tier Progression
+### 093 · Named Dice & Die Collection
 
-Turns engraving from a one-shot 15-scraps pick into a **multi-tier upgrade path**: a die must be
-engraved to min 2 before it can be engraved to min 3, and so on up to `floor(faces/2)`. Each tier
-costs more than the last (tier 1: 15sc; tier 2: 25sc; tier 3: 40sc; tier 4: 55sc — stepped, not
-doubling). Deepens investment in individual dice across runs; aligns with the Named Dice direction
-(Idea 050). Supersedes the engrave-operation section of feature **088** (not yet shipped); the
-Engineer building 088 must use this spec for engrave behaviour.
-**Blocking spec questions:**
-1. **Swap interaction**: when a min-3 die is swapped to a larger face count, can the player pay
-   tier-3 cost to continue to min 4 on the new die? (Preferred: yes — "carry and continue".)
-2. **Cost model**: manager said "double/triple"; recommendation is the stepped ladder above rather
-   than doubling (which makes tier-3 cost 60sc, rivalling Add Die at 50sc).
-**Depends on:** 088 (workbench engrave mechanic — this supersedes its engrave section).
+Transforms Pip's dice from a fixed statistical pool into a **personal collection of named objects
+with provenance**. Each die Pip owns has an origin line ("Found near a rusted blade." "Left by a
+Tinker who came twice."). Dice are **earned** through achievements, boss kills, NPC events, and
+Marks of Descent — not purchased with scraps. The workbench shows Pip's full collection; before
+each run, Pip selects a **loadout** of dice to take in (a cap, growing with meta progress). This
+replaces the Swap and Add Die operations from feature 088: "upgrading" means finding or earning a
+better die, not paying scraps for a stat change. Engraving (088, tier-cost model) becomes a
+commitment to a specific named die, not a fungible upgrade. Absorbs **Idea 050** (Named Dice).
+**Key design questions blocking the spec:**
+1. **Die acquisition**: what specific events grant which dice? (Boss kills → a die themed to that
+   boss? Marks → specific colour/size unlocks? Tinker visitor → leaves a die behind? Run loot?)
+2. **Starting collection**: what does Pip own at game start, and does it align with the current
+   088 starting pool?
+3. **Loadout cap**: how many dice per run initially, and what (if anything) increases the cap?
+4. **Workbench redesign**: with Swap and Add Die gone, what does the workbench screen show?
+   (Collection browser + engrave + loadout selection seems right — needs wireframe.)
+5. **Provenance generation**: how are origin lines generated? Seeded from the event that granted
+   the die (boss name, NPC name, floor found on), or a small fixed template set?
+**Depends on:** 088 (engrave tier model — survives into this system), 052 (Marks of Descent —
+the primary achievement gate for die acquisition).
 
 ### 041 · Rattled / Emboldened Combat States
 
