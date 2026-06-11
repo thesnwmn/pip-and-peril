@@ -42,6 +42,17 @@ named blockers.
 **Depends on:** 029 (camp hub, MetaState), 090 (Visitor activity button + stool), 053 (sibling pattern).
 See `docs/features/051-visitor-system.md` for the full spec.
 
+### 052 · Marks of Descent
+
+Milestone tokens earned from specific firsts and achievements — first boss kill, first floor 3
+reach, first full run without healing, and similar. Marks unlock **content rather than power**: new
+weapons appear on the rack, skill scrolls arrive, new visitor types become possible. Locked slots
+are visible but unrevealing; tapping a locked slot reveals the earn condition without spoiling the
+reward. Ships 6 starting Marks and one concrete unlock: the **Blue d4** added to the permanent pool
+on first reaching floor 2.
+**Depends on:** 029 (camp hub, MetaState), 024 (run summary), 090 (activity bar — adds Marks button).
+See `docs/features/052-marks-of-descent.md` for the full spec.
+
 ---
 
 ## NEEDS SPEC
@@ -65,16 +76,6 @@ See `docs/features/051-visitor-system.md` for the full spec.
 > offer kind* layered on the 051 framework and wrapped in a themed visitor — it depends on 051 + 052
 > + 054 (Destination Board), **not** on the deferred service types in 092. (086 · Larder unlocks via
 > the Wounded Traveller, already shipped in 051.)
-
-### 052 · Marks of Descent
-
-Milestone tokens earned from specific firsts and achievements — first boss kill, first floor 3
-reach, first full run without healing, and similar. Marks unlock **content rather than power**: new
-weapons appear on the rack, skill scrolls arrive, new visitor types become possible. Locked slots
-are visible but unrevealing; a light "show unlock condition" affordance addresses frustration
-without spoiling discovery.
-**Depends on:** 029 (camp hub), 024 (run summary — marks awarded at run end).
-**Related:** `docs/concept/meta-progression.md`.
 
 ### 091 · Skills System & Scroll Wall
 
