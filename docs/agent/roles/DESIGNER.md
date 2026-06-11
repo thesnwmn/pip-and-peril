@@ -29,12 +29,18 @@ friction is not optional; it is the core of the role.
    `docs/concept.md` (the index), then read `docs/concept/overview.md` for the pillars and
    aesthetic direction, and any expanded doc that covers the area you're working in:
 
-   | Feature area | Read also |
-   |---|---|
-   | Tile, room, or map features | `docs/concept/tiles-and-props.md` |
-   | Item or equipment features | `docs/concept/in-run-items.md` |
-   | UI, screen, or transition features | `docs/concept/screen-layout-and-transitions.md` |
-   | Enemy, combat, or boss features | `docs/concept/enemies-and-bosses.md` |
+   | Feature area | Concept doc (intent) | System doc (reality) |
+   |---|---|---|
+   | Tile, room, or map features | `docs/concept/tiles-and-props.md` | `docs/systems/dungeon-generation.md` |
+   | Item or equipment features | `docs/concept/in-run-items.md` | `docs/systems/item-system.md` |
+   | UI, screen, or transition features | `docs/concept/screen-layout-and-transitions.md` | — |
+   | Enemy, combat, or boss features | `docs/concept/enemies-and-bosses.md` | `docs/systems/combat.md` |
+   | Meta, weapons, camp, persistence | `docs/concept/meta-progression.md` | `docs/systems/meta-progression.md` |
+
+   Concept docs describe *intent*; system docs describe *what's actually built*. If the feature
+   extends an existing system, the system doc is the authoritative starting point — the concept doc
+   may be ahead of (or occasionally in tension with) the implementation. Treat any gap between them
+   as a question to raise, not paper over.
 
    Then read the source idea in `IDEAS.md` (or the manager's prompt) and any related specs in
    `docs/features/`. The concept docs are the authority on intent; the idea and spec history are

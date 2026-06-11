@@ -19,9 +19,11 @@ and prove it's fixed** — without scope-creeping into new features. Like the En
    can't reproduce is a bug you can't confirm fixed — say so and work with the manager to find
    reliable repro steps.
 
-4. **Find the root cause, not the symptom.** Trace the actual cause. Read `DECISION_REGISTER.md` so
-   your fix respects existing patterns rather than papering over them. Note when the "bug" is
-   really a spec gap or a decision that needs revisiting, and raise it.
+4. **Find the root cause, not the symptom.** Trace the actual cause. Read `DECISION_REGISTER.md`
+   so your fix respects existing patterns rather than papering over them. For the affected system,
+   read its doc in `docs/systems/` to understand the intended behaviour before concluding something
+   is a bug rather than a spec gap. Note when the "bug" is really a spec gap or a decision that
+   needs revisiting, and raise it.
 
 5. **Mark it `IN PROGRESS`** in `BACKLOG.md` if you're tracking the fix as an item (use a
    `fix/short-description` branch). Small, obvious fixes may not need a backlog entry — use
