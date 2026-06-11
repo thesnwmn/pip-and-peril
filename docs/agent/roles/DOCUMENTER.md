@@ -28,8 +28,13 @@ or contradicting them. An out-of-date doc is a bug; your job is to fix it before
      superseded and link forward, so the history stays legible.
 
 3. **Update codified knowledge.** Refresh any `docs/` material describing how a system works so it
-   matches what was actually built. Update `CLAUDE.md` if commands, structure, or conventions
-   changed (coordinate with the Engineer, who may have done this already).
+   matches what was actually built:
+   - If the feature changed the behaviour, data model, or API of an existing system, update the
+     relevant file in `docs/systems/` (combat, dungeon-generation, item-system, meta-progression).
+     These are the authoritative "as-implemented" references that Engineers and Designers read.
+   - If the feature introduced a brand-new system with no `docs/systems/` file yet, create one.
+   - Update `CLAUDE.md` if commands, structure, or conventions changed (coordinate with the
+     Engineer, who may have done this already).
 
 4. **Summarise for the manager.** List what you recorded and where, and flag anything that looked
    like an undocumented decision you couldn't fully explain.
