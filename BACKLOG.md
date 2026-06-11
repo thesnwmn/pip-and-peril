@@ -49,11 +49,31 @@ See `docs/features/052-marks-of-descent.md` for the full spec.
 Make the camp's **scroll wall** functional: five skills that change what decisions are interesting in
 combat (*Careful Eye*, *Counter-Strike* fully wired; *Desperate Swing*, *Battle Cry*, *Stout Heart*
 stubbed until 041). MetaState gains `unlockedSkillIds` + `activeLoadout`; loadout sub-panel in
-activity bar; `unlockSkill()` API for the Scholar (092). `mark-no-healing` stub wired to *Stout
+activity bar; `unlockSkill()` API for the Scholar (094). `mark-no-healing` stub wired to *Stout
 Heart*. Second slot auto-unlocks at `runCount ≥ 5`.
 **Depends on:** 029 (camp, scroll-wall element), 052 (mark-no-healing unlock wiring).
-**Related:** 037/046 (combat hooks), 041 (Rattled/Emboldened — 3 stubs activate here), 092 (Scholar calls unlockSkill).
+**Related:** 037/046 (combat hooks), 041 (Rattled/Emboldened — 3 stubs activate here), 094 (Scholar calls unlockSkill).
 See `docs/features/091-skills-system-scroll-wall.md` for the full spec.
+
+### 094 · Scholar Visitor
+
+Extends the visitor framework (051) with the **Scholar** type: a camp visitor who teaches skills
+through the NPC-gift channel. Offers one unteachable skill per visit (four Scholar-teachable skills
+from the 091 library; Stout Heart remains mark-exclusive), with a scraps cost that reduces to zero
+at Regular tier. Falls back to enemy lore flavour when Pip's teachable pool is exhausted. Adds a
+`scholarTeachable` flag to `SkillSpec` and calls `unlockSkill()` on Accept.
+**Depends on:** 051 (visitor framework), 091 (skills system — `unlockSkill()` API, `SkillSpec`).
+See `docs/features/094-scholar-visitor.md` for the full spec.
+
+### 095 · Trickster Visitor
+
+Extends the visitor framework (051) with the **Trickster** type: a push-your-luck camp visitor who
+offers scraps wagers resolved by a 🟡 dice check. All stakes are scraps-only (max downside 4 scraps;
+net-positive expected value) — the gamble-safety constraint that blocked this type. The offer text
+downplays failure at Stranger tier and becomes honest at Regular tier, where the penalty is also
+shaved. Uses the check panel (028) for the dice beat.
+**Depends on:** 051 (visitor framework), 028 (check panel).
+See `docs/features/095-trickster-visitor.md` for the full spec.
 
 ---
 
@@ -78,22 +98,6 @@ See `docs/features/091-skills-system-scroll-wall.md` for the full spec.
 > offer kind* layered on the 051 framework and wrapped in a themed visitor — it depends on 051 + 052
 > + 054 (Destination Board), **not** on the deferred service types in 092. (086 · Larder unlocks via
 > the Wounded Traveller, already shipped in 051.)
-
-### 092 · Additional Visitor Types
-
-Extend the visitor framework (051) with the four concept types deferred from it. The framework was
-built to take each as a data entry + one effect; the Designer should **split per-type** and spec each
-as its blocker clears, not build all four at once:
-- **Scholar** — teaches a skill cheaply. *Blocked on:* 091 (Skills System).
-- **Trader** — buys an in-run item Pip carried out, or offers a bulk scraps deal. *Blocked on:*
-  cross-run item persistence (items are cleared at run end today; no system owns this yet).
-- **Scout** — sells run information (floor bias, boss hint, item density). *Blocked on:* run-gen
-  exposing those signals at camp time (post-058; boss is drawn at run start); must beat what the
-  Notice Board (053) already gives free.
-- **Trickster / Gambler** — great deals with hidden costs; a push-your-luck flutter. *Blocked on:* a
-  gamble-safety rule (the permadeath economy must never let a player gamble their build into a hole)
-  + the unified check panel (028). *Source:* Idea 074.
-**Depends on:** 051 (visitor framework, relationship loop) + the per-type blockers above.
 
 ### 093 · Named Dice & Die Collection
 
@@ -257,6 +261,17 @@ Fox. Rare unlock: the **Shortbow** (Yellow dice, bypasses some Guard). Unlock vi
 **Depends on:** 058, 029, 051, 052, 085 (Wildwood boss kill — Marks gate).
 *(See `docs/concept/biomes.md` — Winter Fields section. Cold status mechanic may warrant a
 sub-spec; see also Idea 057.)*
+
+### 092 · Additional Visitor Types (tracking item)
+
+Two of the four deferred concept types are now specced and promoted: Scholar → **094**,
+Trickster → **095**. The remaining two stay blocked with no current plan to unblock them:
+- **Trader** — buys an in-run item Pip carried out, or offers a bulk scraps deal. *Blocked on:*
+  cross-run item persistence (items are cleared at run end today; no system owns this yet).
+- **Scout** — sells run information (floor bias, boss hint, item density). *Blocked on:* run-gen
+  exposing those signals at camp time (post-058; boss is drawn at run start); must beat what the
+  Notice Board (053) already gives free.
+**Depends on:** 051 (visitor framework, relationship loop) + the per-type blockers above.
 
 ---
 
