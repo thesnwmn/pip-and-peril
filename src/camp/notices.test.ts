@@ -1,17 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { generateNotices } from './notices'
 import type { MetaState } from '../meta/state'
+import { getDefaultMetaState } from '../meta/state'
 
 function makeMeta(overrides: Partial<MetaState> = {}): MetaState {
-  return {
-    version: 1,
-    scraps: 0,
-    permanentPool: [],
-    activeWeaponId: 'shortsword',
-    unlockedWeaponIds: ['shortsword'],
-    runCount: 0,
-    ...overrides,
-  }
+  return { ...getDefaultMetaState(), ...overrides }
 }
 
 describe('generateNotices', () => {

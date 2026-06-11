@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 051 · Visitor System
+
+**Shipped:** 2026-06-11 · **PR:** (pending) · **Spec:** [docs/features/history/051-visitor-system.md](docs/features/history/051-visitor-system.md)
+
+Procedurally generated visitors arrive at Pip's camp between runs (0–2, rarely 3), assembled from **type** × **condition** × **offer**, resolved in one tap-and-confirm. A relationship counter turns recurring faces into **named regulars** — Hades-style story texture with no authored dialogue. Ships the framework + relationship loop + two buildable types (**Tinker**, **Wounded Traveller**); the four concept types that need unbuilt systems (Scholar/Trader/Scout/Trickster) are deferred behind named blockers.
+
+---
+
 ### 089 · Scalable Dice Pool Display
 
 **Shipped:** 2026-06-11 · **PR:** (pending) · **Spec:** [docs/features/history/089-scalable-dice-pool-display.md](docs/features/history/089-scalable-dice-pool-display.md)

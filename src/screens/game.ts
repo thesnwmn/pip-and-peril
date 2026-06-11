@@ -48,9 +48,13 @@ export function createGame(
       ...(p.minFloor && p.minFloor > 1 ? { minFloor: p.minFloor } : {}),
     }))
     const weapon = WEAPON_SPECS[meta.activeWeaponId]
+    const boons = (meta.pendingRunBoons ?? []).map(b => ({
+      color: b.colour as any,
+      sides: b.faces,
+    }))
     if (!weapon) return starterPool()
     return {
-      dice: [...permanent, ...weapon.addedDice],
+      dice: [...permanent, ...weapon.addedDice, ...boons],
       rolls: [],
       totals: { red: 0, blue: 0, green: 0, yellow: 0 },
       state: 'idle',
