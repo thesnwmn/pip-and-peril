@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 089 · Scalable Dice Pool Display
+
+**Shipped:** 2026-06-11 · **PR:** (pending) · **Spec:** [docs/features/history/089-scalable-dice-pool-display.md](docs/features/history/089-scalable-dice-pool-display.md)
+
+Improve dice rendering to handle **variable pool sizes** (currently hard-coded for 4 dice) and **diverse die types** (D4, D6, D8, and larger). Sized dynamically to fit container; smaller die glyphs (or alternative notation) for higher face counts. Affects camp permanent pool display, weapon card pools, and run-time pool preview. Ships as visual refactor with no mechanical changes.
+
+---
+
 ### 081 · Interior Tile Archetypes
 
 **Shipped:** 2026-06-11 · **PR:** #TBD · **Spec:** [docs/features/history/081-interior-tile-archetypes.md](docs/features/history/081-interior-tile-archetypes.md)

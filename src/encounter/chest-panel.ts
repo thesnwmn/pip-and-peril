@@ -8,7 +8,7 @@ import { CATALOG_ITEMS } from '../satchel/catalog'
 import { iconGlyph } from '../satchel/icon'
 import { colors } from '../colors'
 import { PANEL_TOP, LOGICAL_W, LOGICAL_H, MAP_X, MAP_W } from '../screens/game-layout'
-import { PIP_SLOTS } from '../dice/pip-slots'
+import { drawDie } from '../dice/draw'
 
 // Trap damage calculation (for trapped variant)
 function computeTrapDamage(trapDifficulty: number): number {
@@ -52,13 +52,6 @@ const LOOT_CARD_W = BTN_W
 const LOOT_CARD_Y = DESC_CY + 30
 const COLLECT_BTN_Y = LOOT_CARD_Y + 140
 
-const DIE_FACE_BG: Record<string, string> = {
-  red: colors.dieFaceRed,
-  blue: colors.dieFaceBlue,
-  green: colors.dieFaceGreen,
-  yellow: colors.dieFaceYellow,
-}
-
 export interface ChestPanelContext {
   getPool: () => DicePool
   getPipHp: () => number
@@ -78,42 +71,7 @@ function drawDieFace(
 ): void {
   ctx.save()
   if (greyed) ctx.globalAlpha = 0.28
-
-  ctx.beginPath()
-  const ctxAny = ctx as unknown as { roundRect?: (...args: unknown[]) => void }
-  if (ctxAny.roundRect) {
-    ctxAny.roundRect(x, DIE_ROW_TOP, DIE_SIZE, DIE_SIZE, DIE_RADIUS)
-  } else {
-    ctx.rect(x, DIE_ROW_TOP, DIE_SIZE, DIE_SIZE)
-  }
-  ctx.fillStyle = DIE_FACE_BG[die.color] ?? colors.dieFaceGreen
-  ctx.fill()
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)'
-  ctx.lineWidth = 1
-  ctx.stroke()
-
-  if (value !== null) {
-    ctx.fillStyle = 'rgba(255,255,255,0.88)'
-    if (die.sides > 6) {
-      ctx.font = 'bold 18px monospace'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(String(value), x + DIE_SIZE / 2, DIE_ROW_TOP + DIE_SIZE / 2)
-    } else {
-      const slots = PIP_SLOTS[value] ?? []
-      const cellW = DIE_SIZE / 3
-      for (const slot of slots) {
-        const col = slot % 3
-        const row = Math.floor(slot / 3)
-        const cx = x + col * cellW + cellW / 2
-        const cy = DIE_ROW_TOP + row * cellW + cellW / 2
-        ctx.beginPath()
-        ctx.arc(cx, cy, PIP_DOT_R, 0, Math.PI * 2)
-        ctx.fill()
-      }
-    }
-  }
-
+  drawDie(ctx, x, DIE_ROW_TOP, DIE_SIZE, die.color as import('../dice/pool').DieColor, die.sides, value ?? undefined)
   ctx.restore()
 }
 

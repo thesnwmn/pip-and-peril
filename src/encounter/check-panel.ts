@@ -3,7 +3,7 @@ import { rollPool } from '../dice/pool'
 import type { ApproachColour, CheckSpec } from './npc-scripts'
 import { colors } from '../colors'
 import { LOGICAL_W, LOGICAL_H, PANEL_TOP, MAP_X, MAP_W } from '../screens/game-layout'
-import { PIP_SLOTS } from '../dice/pip-slots'
+import { drawDie, roundRect, DIE_FACE_BG } from '../dice/draw'
 
 export type CheckBand = 'critical' | 'success' | 'cost' | 'failure'
 
@@ -54,13 +54,6 @@ const OUTCOME_HOLD_MS = 1500
 
 // ── Colour lookups ────────────────────────────────────────────────────────────
 
-const DIE_FACE_BG: Record<string, string> = {
-  red: colors.dieFaceRed,
-  blue: colors.dieFaceBlue,
-  green: colors.dieFaceGreen,
-  yellow: colors.dieFaceYellow,
-}
-
 const COLOUR_GLYPH: Record<ApproachColour, string> = {
   red: '🔴', blue: '🔵', green: '🟢', yellow: '🟡',
 }
@@ -71,60 +64,10 @@ const COLOUR_LABEL: Record<ApproachColour, string> = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r: number,
-): void {
-  const ctxAny = ctx as unknown as { roundRect?: (...args: unknown[]) => void }
-  ctx.beginPath()
-  if (ctxAny.roundRect) ctxAny.roundRect(x, y, w, h, r)
-  else ctx.rect(x, y, w, h)
-}
-
 function dieCentresX(diceCount: number): number[] {
   const totalW = diceCount * DIE_SIZE + (diceCount - 1) * DIE_GAP
   const startX = MAP_X + (MAP_W - totalW) / 2
   return Array.from({ length: diceCount }, (_, i) => startX + i * (DIE_SIZE + DIE_GAP))
-}
-
-function drawDieFace(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  die: Die,
-  value: number | null,
-  chosen: boolean,
-): void {
-  ctx.save()
-  if (!chosen) ctx.globalAlpha = 0.28
-
-  roundRect(ctx, x, DIE_ROW_TOP, DIE_SIZE, DIE_SIZE, DIE_RADIUS)
-  ctx.fillStyle = DIE_FACE_BG[die.color] ?? colors.dieFaceGreen
-  ctx.fill()
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)'
-  ctx.lineWidth = 1
-  ctx.stroke()
-
-  if (value !== null) {
-    ctx.fillStyle = 'rgba(255,255,255,0.88)'
-    if (die.sides > 6) {
-      ctx.font = 'bold 18px monospace'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(String(value), x + DIE_SIZE / 2, DIE_ROW_TOP + DIE_SIZE / 2)
-    } else {
-      const slots = PIP_SLOTS[value] ?? []
-      const cellW = DIE_SIZE / 3
-      for (const slot of slots) {
-        const col = slot % 3
-        const row = Math.floor(slot / 3)
-        ctx.beginPath()
-        ctx.arc(x + col * cellW + cellW / 2, DIE_ROW_TOP + row * cellW + cellW / 2, PIP_DOT_R, 0, Math.PI * 2)
-        ctx.fill()
-      }
-    }
-  }
-
-  ctx.restore()
 }
 
 function approachBtnW(count: number): number {
@@ -305,13 +248,16 @@ export function createCheckPanel(
 
       pool.dice.forEach((die, i) => {
         const chosen = die.color === chosenApproach
-        let value: number | null = null
+        let value: number | undefined
         if (phase === 'rolling') {
-          value = scrambleValues[i] ?? null
+          value = scrambleValues[i] ?? undefined
         } else if (phase === 'outcome' && rolledPool) {
-          value = rolledPool.rolls[i]?.value ?? null
+          value = rolledPool.rolls[i]?.value ?? undefined
         }
-        drawDieFace(ctx, centres[i], die, value, chosen)
+        ctx.save()
+        if (!chosen) ctx.globalAlpha = 0.28
+        drawDie(ctx, centres[i]!, DIE_ROW_TOP, DIE_SIZE, die.color, die.sides, value)
+        ctx.restore()
       })
 
       if (phase === 'roll') {

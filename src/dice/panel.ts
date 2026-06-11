@@ -1,13 +1,12 @@
 import { colors } from '../colors'
-import type { DicePool, DieColor, PipCost } from './pool'
+import type { DicePool, DieColor, Die, PipCost } from './pool'
 import { canAfford, rollPool, spendPips } from './pool'
 import { iconGlyph } from '../satchel/icon'
-import { PIP_SLOTS } from './pip-slots'
+import { drawDie, roundRect, DIE_FACE_BG } from './draw'
+import { computePoolLayout, computeRowXPositions, colorGroupCenters, ROW_VERTICAL_GAP, type PoolLayout } from './pool-layout'
 
 // ── Layout constants ─────────────────────────────────────────────────────────
 
-// Panel occupies the map tile zone: MAP_X (10) to MAP_X + MAP_W (370), width 360 px.
-// Must match MAP_X and MAP_W (VIEWPORT_COLS × TILE_SIZE) in src/map/renderer.ts.
 const MAP_X = 10
 const MAP_W = 360
 const LOGICAL_H = 844
@@ -17,65 +16,82 @@ export const PANEL_TOP = 430
 const PANEL_CORNER = 8
 const SIDE_MARGIN = 16
 
+// Container zone for dice and buttons
+const CONTAINER_X = MAP_X + SIDE_MARGIN  // 26
+const CONTAINER_W = MAP_W - SIDE_MARGIN * 2  // 328
+
 // HP bars — two side-by-side columns within the 360 px panel
 const HP_BAR_H = 8
 const HP_BAR_EMPTY = '#2a2a3a'
 const ENEMY_RED = colors.logEnemy
 const HP_COL_GAP = 8
-const HP_COL_W = (MAP_W - SIDE_MARGIN * 2 - HP_COL_GAP) / 2  // = 160
-const HP_COL1_X = MAP_X + SIDE_MARGIN                          // = 26
-const HP_COL2_X = HP_COL1_X + HP_COL_W + HP_COL_GAP           // = 194
-const HP_LABEL_Y = PANEL_TOP + 10                                  // = 426, top of name/total text
-const HP_BAR_Y = HP_LABEL_Y + 14                                   // = 440, top of bar
-const HP_SECTION_BOTTOM = HP_BAR_Y + HP_BAR_H + 12                // = 460
+const HP_COL_W = (MAP_W - SIDE_MARGIN * 2 - HP_COL_GAP) / 2  // 160
+const HP_COL1_X = CONTAINER_X
+const HP_COL2_X = HP_COL1_X + HP_COL_W + HP_COL_GAP
+const HP_LABEL_Y = PANEL_TOP + 10
+const HP_BAR_Y = HP_LABEL_Y + 14
+const HP_SECTION_BOTTOM = HP_BAR_Y + HP_BAR_H + 12
 
-// Die faces (no heading label)
-const DIE_SIZE = 68
-const DIE_GAP = 10
-const DIE_RADIUS = 12
-const DIE_ROW_Y = HP_SECTION_BOTTOM + 8   // = 468
-const PIP_DOT_R = 4.5                     // pip circle radius
+// Dice row anchored below the HP section
+const DIE_ROW_Y = HP_SECTION_BOTTOM + 8
 
-// Colour label row
-const LABEL_Y = DIE_ROW_Y + DIE_SIZE + 6  // = 542
-
-// Badge row
-const BADGE_Y = LABEL_Y + 16              // = 558
-const BADGE_H = 26
-const BADGE_PAD_X = 8
+// Badge row constants
+const BADGE_H = 28
+const BADGE_PAD_X = 10
 
 // ROLL button
-const ROLL_BTN_Y = BADGE_Y + BADGE_H + 10  // = 594
 const ROLL_BTN_H = 44
-const ROLL_BTN_X = MAP_X + SIDE_MARGIN      // = 26
-const ROLL_BTN_W = MAP_W - SIDE_MARGIN * 2  // = 328
+const ROLL_BTN_X = CONTAINER_X
+const ROLL_BTN_W = CONTAINER_W
 
-// Action buttons (4-column grid, 1 row)
-const ACTION_Y = ROLL_BTN_Y + ROLL_BTN_H + 10  // = 648
+// Action buttons (4-column grid)
 const ACTION_BTN_H = 46
 const ACTION_GAP = 8
-const ACTION_BTN_W = (MAP_W - SIDE_MARGIN * 2 - ACTION_GAP * 3) / 4  // = 79
+const ACTION_BTN_W = (MAP_W - SIDE_MARGIN * 2 - ACTION_GAP * 3) / 4  // 79
 const ACTION_BTN_RADIUS = 8
 
-// Encounter log zone — below action buttons
+// Encounter log zone
 const ACTION_ROWS = 1
-const ACTIONS_BOTTOM = ACTION_Y + ACTION_ROWS * ACTION_BTN_H
-const LOG_RULE_Y = ACTIONS_BOTTOM + 6
 const LOG_LINE_H = 14
-const LOG_LINE1_Y = LOG_RULE_Y + 5
 
-// Item row — inline item selector that appears below action buttons
-const ITEM_ROW_Y = ACTION_Y + ACTION_BTN_H + 8  // = 702
-const ITEM_ROW_H = ACTION_BTN_H                   // = 46, same grid height
+// Item row
+const ITEM_ROW_H = ACTION_BTN_H
 
-// ── Die colour palette helpers ────────────────────────────────────────────────
+// ── Dynamic geometry ─────────────────────────────────────────────────────────
 
-const DIE_FACE_BG: Record<DieColor, string> = {
-  red: colors.dieFaceRed,
-  blue: colors.dieFaceBlue,
-  green: colors.dieFaceGreen,
-  yellow: colors.dieFaceYellow,
+interface DynamicGeom {
+  layout: PoolLayout
+  rowGeoms: Array<{ row: Die[]; xs: number[]; y: number }>
+  badgeY: number
+  rollBtnY: number
+  actionY: number
+  actionsBtm: number
+  logRuleY: number
+  logLine1Y: number
+  itemRowY: number
 }
+
+function computeDynamicGeom(pool: DicePool): DynamicGeom {
+  const layout = computePoolLayout(pool.dice, CONTAINER_W)
+  const rowGeoms = layout.rows.map((row, ri) => ({
+    row,
+    xs: computeRowXPositions(row, CONTAINER_X, CONTAINER_W, layout.size),
+    y: DIE_ROW_Y + ri * (layout.size + ROW_VERTICAL_GAP),
+  }))
+  const diceBottomY = layout.rows.length === 0
+    ? DIE_ROW_Y
+    : DIE_ROW_Y + layout.rows.length * layout.size + (layout.rows.length - 1) * ROW_VERTICAL_GAP
+  const badgeY = diceBottomY + 6
+  const rollBtnY = badgeY + BADGE_H + 10
+  const actionY = rollBtnY + ROLL_BTN_H + 10
+  const actionsBtm = actionY + ACTION_ROWS * ACTION_BTN_H
+  const logRuleY = actionsBtm + 6
+  const logLine1Y = logRuleY + 5
+  const itemRowY = actionY + ACTION_BTN_H + 8
+  return { layout, rowGeoms, badgeY, rollBtnY, actionY, actionsBtm, logRuleY, logLine1Y, itemRowY }
+}
+
+// ── Colour palette helpers ────────────────────────────────────────────────────
 
 const BADGE_BG: Record<DieColor, string> = {
   red: colors.pipBadgeRedBg,
@@ -96,13 +112,6 @@ const BADGE_BORDER: Record<DieColor, string> = {
   blue: '#1a2060',
   green: '#1a4a1a',
   yellow: '#4a3800',
-}
-
-const COLOR_LABEL: Record<DieColor, string> = {
-  red: 'RED',
-  blue: 'BLUE',
-  green: 'GREEN',
-  yellow: 'YELLOW',
 }
 
 const COLOR_EMOJI: Record<DieColor, string> = {
@@ -127,89 +136,26 @@ const ACTIONS: ActionDef[] = [
   { id: 'item',   label: 'ITEM',   cost: {} },
 ]
 
-// ── Utilities ─────────────────────────────────────────────────────────────────
-
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r: number,
-): void {
-  const ctxAny = ctx as unknown as { roundRect?: (x: number, y: number, w: number, h: number, r: number) => void }
-  ctx.beginPath()
-  if (ctxAny.roundRect) {
-    ctxAny.roundRect(x, y, w, h, r)
-  } else {
-    ctx.rect(x, y, w, h)
-  }
-}
-
-function dieCentres(diceCount: number): number[] {
-  const totalW = diceCount * DIE_SIZE + (diceCount - 1) * DIE_GAP
-  const startX = MAP_X + (MAP_W - totalW) / 2
-  return Array.from({ length: diceCount }, (_, i) => startX + i * (DIE_SIZE + DIE_GAP))
-}
-
 // ── Draw helpers ──────────────────────────────────────────────────────────────
-
-function drawDieFace(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  color: DieColor,
-  sides: number,
-  value: number | null,    // null = blank (idle)
-  scrambleValue: number | null,
-): void {
-  const bg = DIE_FACE_BG[color]
-  roundRect(ctx, x, DIE_ROW_Y, DIE_SIZE, DIE_SIZE, DIE_RADIUS)
-  ctx.fillStyle = bg
-  ctx.fill()
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)'
-  ctx.lineWidth = 1
-  ctx.stroke()
-
-  const displayValue = scrambleValue ?? value
-  if (displayValue === null) return
-
-  ctx.fillStyle = 'rgba(255,255,255,0.88)'
-
-  if (sides > 6) {
-    ctx.font = 'bold 20px monospace'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(String(displayValue), x + DIE_SIZE / 2, DIE_ROW_Y + DIE_SIZE / 2)
-    return
-  }
-
-  const slots = PIP_SLOTS[displayValue] ?? []
-  const cellW = DIE_SIZE / 3
-  for (const slot of slots) {
-    const col = slot % 3
-    const row = Math.floor(slot / 3)
-    const cx = x + col * cellW + cellW / 2
-    const cy = DIE_ROW_Y + row * cellW + cellW / 2
-    ctx.beginPath()
-    ctx.arc(cx, cy, PIP_DOT_R, 0, Math.PI * 2)
-    ctx.fill()
-  }
-}
 
 function drawBadge(
   ctx: CanvasRenderingContext2D,
   color: DieColor,
-  total: number | null,   // null = not yet rolled (show —)
+  total: number | null,
   cx: number,
+  y: number,
 ): void {
   const label = total === null ? '—' : String(total)
   const emoji = COLOR_EMOJI[color]
-  ctx.font = 'bold 14px monospace'
+  ctx.font = 'bold 15px monospace'
   const numW = ctx.measureText(label).width
   ctx.font = '12px monospace'
   const emojiW = ctx.measureText(emoji).width
   const innerW = emojiW + 4 + numW
   const badgeW = innerW + BADGE_PAD_X * 2
   const bx = cx - badgeW / 2
-  const by = BADGE_Y
 
-  roundRect(ctx, bx, by, badgeW, BADGE_H, 6)
+  roundRect(ctx, bx, y, badgeW, BADGE_H, 6)
   ctx.fillStyle = BADGE_BG[color]
   ctx.fill()
   ctx.strokeStyle = BADGE_BORDER[color]
@@ -218,21 +164,22 @@ function drawBadge(
 
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
-  const midY = by + BADGE_H / 2
+  const midY = y + BADGE_H / 2
   ctx.font = '12px monospace'
   ctx.fillStyle = BADGE_TEXT[color]
   ctx.fillText(emoji, bx + BADGE_PAD_X, midY)
-  ctx.font = 'bold 14px monospace'
+  ctx.font = 'bold 15px monospace'
   ctx.fillText(label, bx + BADGE_PAD_X + emojiW + 4, midY)
 }
 
 function drawRollButton(
   ctx: CanvasRenderingContext2D,
+  y: number,
   disabled: boolean,
   hovered: boolean,
 ): void {
   ctx.globalAlpha = disabled ? 0.4 : 1
-  roundRect(ctx, ROLL_BTN_X, ROLL_BTN_Y, ROLL_BTN_W, ROLL_BTN_H, 8)
+  roundRect(ctx, ROLL_BTN_X, y, ROLL_BTN_W, ROLL_BTN_H, 8)
   ctx.fillStyle = hovered && !disabled ? colors.surfaceRaised : colors.surface
   ctx.fill()
   ctx.strokeStyle = colors.gold
@@ -243,7 +190,7 @@ function drawRollButton(
   ctx.fillStyle = colors.gold
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('ROLL DICE', MAP_X + MAP_W / 2, ROLL_BTN_Y + ROLL_BTN_H / 2)
+  ctx.fillText('ROLL DICE', MAP_X + MAP_W / 2, y + ROLL_BTN_H / 2)
   ctx.globalAlpha = 1
 }
 
@@ -254,19 +201,16 @@ function drawCostPill(
   y: number,
 ): void {
   const entries = Object.entries(cost) as [DieColor, number][]
-  const pillParts = entries.map(([c, n]) => `${n}${COLOR_EMOJI[c]}`)
-  const label = pillParts.join(' ')
+  const label = entries.map(([c, n]) => `${n}${COLOR_EMOJI[c]}`).join(' ')
 
   ctx.font = 'bold 11px monospace'
   const textW = ctx.measureText(label).width
   const pw = textW + 12
   const ph = 18
   const px = cx - pw / 2
-  const py = y
 
-  // Use the first colour for the pill tint
-  const pillColor = entries[0][0]
-  roundRect(ctx, px, py, pw, ph, 4)
+  const pillColor = entries[0]![0]
+  roundRect(ctx, px, y, pw, ph, 4)
   ctx.fillStyle = BADGE_BG[pillColor]
   ctx.fill()
   ctx.strokeStyle = BADGE_BORDER[pillColor]
@@ -276,7 +220,7 @@ function drawCostPill(
   ctx.fillStyle = BADGE_TEXT[pillColor]
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText(label, cx, py + ph / 2)
+  ctx.fillText(label, cx, y + ph / 2)
 }
 
 function drawActionButton(
@@ -318,7 +262,6 @@ function drawActionButton(
 function drawHpBars(ctx: CanvasRenderingContext2D, info: HpInfo): void {
   ctx.textBaseline = 'top'
 
-  // PIP column (left half)
   ctx.font = 'bold 10px monospace'
   ctx.fillStyle = colors.textMuted
   ctx.textAlign = 'left'
@@ -334,7 +277,6 @@ function drawHpBars(ctx: CanvasRenderingContext2D, info: HpInfo): void {
   ctx.fillStyle = colors.gold
   ctx.fillRect(HP_COL1_X, HP_BAR_Y, Math.max(0, info.pipHp / info.pipMaxHp) * HP_COL_W, HP_BAR_H)
 
-  // Enemy column (right half)
   const enemyName = info.enemyName.toUpperCase()
   ctx.font = 'bold 10px monospace'
   ctx.fillStyle = ENEMY_RED
@@ -359,14 +301,15 @@ const LOG_OPACITIES = [1.00, 0.70, 0.50, 0.30, 0.15]
 function drawEncounterLogZone(
   ctx: CanvasRenderingContext2D,
   entries: CombatLogEntry[],
+  ruleY: number,
+  line1Y: number,
 ): void {
-  // Hairline rule always visible (separates HP bars from log/dice area)
   ctx.globalAlpha = 0.5
   ctx.strokeStyle = colors.logNormal
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(MAP_X + SIDE_MARGIN, LOG_RULE_Y)
-  ctx.lineTo(MAP_X + MAP_W - SIDE_MARGIN, LOG_RULE_Y)
+  ctx.moveTo(CONTAINER_X, ruleY)
+  ctx.lineTo(CONTAINER_X + CONTAINER_W, ruleY)
   ctx.stroke()
   ctx.globalAlpha = 1
 
@@ -375,11 +318,10 @@ function drawEncounterLogZone(
   ctx.font = '11px monospace'
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
-
   for (let i = 0; i < entries.length; i++) {
     ctx.globalAlpha = LOG_OPACITIES[i] ?? 1
     ctx.fillStyle = colors.textPrimary
-    ctx.fillText(entries[i].message, MAP_X + SIDE_MARGIN, LOG_LINE1_Y + i * LOG_LINE_H)
+    ctx.fillText(entries[i]!.message, CONTAINER_X, line1Y + i * LOG_LINE_H)
   }
   ctx.globalAlpha = 1
 }
@@ -411,7 +353,7 @@ function drawItemRow(
       const idx = row * ITEMS_PER_ROW + col
       if (idx >= combatItems.length) break
       const item = combatItems[idx]
-      const x = MAP_X + SIDE_MARGIN + col * (ACTION_BTN_W + ACTION_GAP)
+      const x = CONTAINER_X + col * (ACTION_BTN_W + ACTION_GAP)
       const hovered = idx === hoveredIndex
 
       roundRect(ctx, x, y, ACTION_BTN_W, ITEM_ROW_H, ACTION_BTN_RADIUS)
@@ -421,14 +363,12 @@ function drawItemRow(
       ctx.lineWidth = 1
       ctx.stroke()
 
-      // Icon glyph
       ctx.font = '14px monospace'
       ctx.fillStyle = colors.textPrimary
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(iconGlyph(item.iconType), x + ACTION_BTN_W / 2, y + ITEM_ROW_H / 2 - 7)
 
-      // Item name (truncated to fit button width)
       ctx.font = '8px system-ui, -apple-system, sans-serif'
       const name = truncateText(ctx, item.name, ACTION_BTN_W - 6)
       ctx.fillStyle = colors.textMuted
@@ -436,7 +376,6 @@ function drawItemRow(
       ctx.textBaseline = 'middle'
       ctx.fillText(name, x + ACTION_BTN_W / 2, y + ITEM_ROW_H - 9)
 
-      // Quantity badge (top-right corner)
       ctx.font = 'bold 8px monospace'
       ctx.fillStyle = colors.gold
       ctx.textAlign = 'right'
@@ -457,7 +396,7 @@ interface HitRect {
 interface AnimState {
   startTime: number | null
   lastTickTime: number
-  scramble: number[]   // one random value per die (shown during scramble)
+  scramble: number[]
 }
 
 // ── Factory ───────────────────────────────────────────────────────────────────
@@ -505,26 +444,24 @@ export function createDicePanel(
 
   function yOffset(): number { return getPanelTop() - PANEL_TOP }
 
-  function actionButtonPos(i: number): { x: number; y: number } {
+  function actionButtonPos(i: number, actionY: number): { x: number; y: number } {
     const col = i % 4
-    return {
-      x: MAP_X + SIDE_MARGIN + col * (ACTION_BTN_W + ACTION_GAP),
-      y: ACTION_Y,
-    }
+    return { x: CONTAINER_X + col * (ACTION_BTN_W + ACTION_GAP), y: actionY }
   }
 
   function buildHitRects(pool: DicePool): HitRect[] {
     const rects: HitRect[] = []
     const off = yOffset()
+    const geom = computeDynamicGeom(pool)
 
     if (pool.state !== 'rolling') {
-      rects.push({ x: ROLL_BTN_X, y: ROLL_BTN_Y + off, w: ROLL_BTN_W, h: ROLL_BTN_H, id: 'roll' })
+      rects.push({ x: ROLL_BTN_X, y: geom.rollBtnY + off, w: ROLL_BTN_W, h: ROLL_BTN_H, id: 'roll' })
     }
 
     if (pool.state === 'rolled') {
       for (let i = 0; i < ACTIONS.length; i++) {
-        const { x, y } = actionButtonPos(i)
-        rects.push({ x, y: y + off, w: ACTION_BTN_W, h: ACTION_BTN_H, id: `action-${ACTIONS[i].id}` })
+        const { x, y } = actionButtonPos(i, geom.actionY)
+        rects.push({ x, y: y + off, w: ACTION_BTN_W, h: ACTION_BTN_H, id: `action-${ACTIONS[i]!.id}` })
       }
     }
 
@@ -541,34 +478,29 @@ export function createDicePanel(
   function draw(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp): void {
     let pool = getPool()
 
-    // Tick animation
     if (pool.state === 'rolling' && anim.startTime !== null) {
       const elapsed = timestamp - anim.startTime
-
       if (elapsed >= 500) {
-        // Animation done — transition to 'rolled' and draw the final state this frame
         anim.startTime = null
         pool = { ...pool, state: 'rolled' }
         callbacks.onStateChange(pool)
       } else if (timestamp - anim.lastTickTime >= 50) {
-        // Scramble tick every ~50 ms
         anim.lastTickTime = timestamp
         anim.scramble = pool.dice.map(d => Math.floor(Math.random() * d.sides) + 1)
       }
     }
 
-    // Clear flash when expired
     if (flashEndTime !== null && timestamp > flashEndTime) {
       flashingAction = null
       flashEndTime = null
     }
 
-    // Translate so panel content renders at the animated panel position
+    const geom = computeDynamicGeom(pool)
     const off = yOffset()
     ctx.save()
     ctx.translate(0, off)
 
-    // Panel background — extend height to cover screen bottom regardless of offset
+    // Panel background
     const extraH = Math.max(0, -off)
     const panelH = LOGICAL_H - PANEL_TOP + extraH
     roundRect(ctx, MAP_X, PANEL_TOP, MAP_W, panelH, PANEL_CORNER)
@@ -587,36 +519,76 @@ export function createDicePanel(
       if (hpInfo) drawHpBars(ctx, hpInfo)
     }
 
-    // Die faces
-    const centres = dieCentres(pool.dice.length)
-    for (let i = 0; i < pool.dice.length; i++) {
-      const die = pool.dice[i]
-      const roll = pool.rolls[i] ?? null
-      const scramble = pool.state === 'rolling' && anim.scramble[i] != null
-        ? anim.scramble[i]
-        : null
-      drawDieFace(ctx, centres[i], die.color, die.sides, roll?.value ?? null, scramble)
+    // Die faces — iterate over rows from pool-layout
+    for (const { row, xs, y } of geom.rowGeoms) {
+      for (let i = 0; i < row.length; i++) {
+        const die = row[i]!
+        const globalIdx = pool.dice.findIndex(
+          (pd, gi) => pd.color === die.color && pd.sides === die.sides &&
+            !geom.rowGeoms.some((rg, ri) => ri < geom.rowGeoms.indexOf({ row, xs, y } as typeof geom.rowGeoms[0]) &&
+              rg.row.slice(0, i).some(rd => rd.color === die.color && rd.sides === die.sides))
+        )
+        // Look up roll value by matching sorted position to original pool
+        // We use the sorted die array — find the corresponding roll value by color+sides match
+        const sortedIdx = geom.layout.rows.flat().slice(
+          geom.layout.rows.slice(0, geom.rowGeoms.indexOf({ row, xs, y } as typeof geom.rowGeoms[0])).reduce((sum, r) => sum + r.length, 0),
+          geom.layout.rows.slice(0, geom.rowGeoms.indexOf({ row, xs, y } as typeof geom.rowGeoms[0])).reduce((sum, r) => sum + r.length, 0) + i + 1,
+        ).length - 1
+
+        void globalIdx
+        void sortedIdx
+
+        // Map sorted die back to roll by finding the roll in pool.rolls
+        // The sorted die corresponds to a roll by (color, sides) — find matching roll
+        const rollValue = (() => {
+          if (pool.state === 'idle') return undefined
+          // Count how many of this color/sides we've seen so far in this sorted order
+          const sortedAll = geom.layout.rows.flat()
+          const posInSorted = geom.layout.rows
+            .slice(0, geom.rowGeoms.findIndex(rg => rg.row === row))
+            .reduce((s, r) => s + r.length, 0) + i
+          // The original pool dice have been sorted — map position back to roll
+          // Find the roll that corresponds to the posInSorted-th die of this color
+          const colorIdx = sortedAll.slice(0, posInSorted)
+            .filter(sd => sd.color === die.color && sd.sides === die.sides).length
+          const matchingRolls = pool.rolls.filter(r => r.color === die.color && r.sides === die.sides)
+          return matchingRolls[colorIdx]?.value
+        })()
+
+        const scramble = pool.state === 'rolling' && anim.scramble[
+          geom.layout.rows.slice(0, geom.rowGeoms.findIndex(rg => rg.row === row))
+            .reduce((s, r) => s + r.length, 0) + i
+        ] != null
+          ? anim.scramble[
+            geom.layout.rows.slice(0, geom.rowGeoms.findIndex(rg => rg.row === row))
+              .reduce((s, r) => s + r.length, 0) + i
+          ]
+          : undefined
+
+        drawDie(ctx, xs[i]!, y, geom.layout.size, die.color, die.sides,
+          scramble ?? rollValue)
+      }
     }
 
-    // Colour labels
-    ctx.font = '10px monospace'
-    ctx.fillStyle = colors.textMuted
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'top'
-    for (let i = 0; i < pool.dice.length; i++) {
-      ctx.fillText(COLOR_LABEL[pool.dice[i].color], centres[i] + DIE_SIZE / 2, LABEL_Y)
+    // Pip badges — one per colour, centred on its colour group
+    const canonicalColors = (['red', 'green', 'yellow', 'blue'] as DieColor[])
+      .filter(c => pool.dice.some(d => d.color === c))
+
+    const badgeCenters = new Map<DieColor, number>()
+    for (const { row, xs } of geom.rowGeoms) {
+      for (const [c, cx] of colorGroupCenters(row, xs, geom.layout.size)) {
+        badgeCenters.set(c, cx)
+      }
     }
 
-    // Pip badges
-    for (let i = 0; i < pool.dice.length; i++) {
-      const color = pool.dice[i].color
+    for (const color of canonicalColors) {
+      const cx = badgeCenters.get(color) ?? (MAP_X + MAP_W / 2)
       const total = pool.state === 'idle' ? null : pool.totals[color]
-      drawBadge(ctx, color, total, centres[i] + DIE_SIZE / 2)
+      drawBadge(ctx, color, total, cx, geom.badgeY)
     }
 
     // ROLL button
-    const rollDisabled = pool.state === 'rolling'
-    drawRollButton(ctx, rollDisabled, hoveredElement === 'roll')
+    drawRollButton(ctx, geom.rollBtnY, pool.state === 'rolling', hoveredElement === 'roll')
 
     // Action buttons (only in rolled state)
     if (pool.state === 'rolled') {
@@ -625,30 +597,31 @@ export function createDicePanel(
       const hasCombatItems = inventory && inventory.items.some((i: any) => i.usableInCombat)
 
       for (let i = 0; i < ACTIONS.length; i++) {
-        const action = ACTIONS[i]
-        const { x, y } = actionButtonPos(i)
-
+        const action = ACTIONS[i]!
+        const { x, y } = actionButtonPos(i, geom.actionY)
         let affordable: boolean
         if (action.id === 'item') {
           affordable = hasCombatItems && !itemUsedThisTurn
         } else {
           affordable = canAfford(pool, action.cost)
         }
-
-        const hovered = hoveredElement === `action-${action.id}`
-        const flashing = flashingAction === action.id
-
-        drawActionButton(ctx, action, x, y, affordable, hovered, flashing)
+        drawActionButton(ctx, action, x, y, affordable,
+          hoveredElement === `action-${action.id}`,
+          flashingAction === action.id)
       }
     }
 
-    // Encounter log zone (below action buttons)
-    drawEncounterLogZone(ctx, callbacks.getCombatLog ? callbacks.getCombatLog() : [])
+    // Encounter log zone
+    drawEncounterLogZone(
+      ctx,
+      callbacks.getCombatLog ? callbacks.getCombatLog() : [],
+      geom.logRuleY, geom.logLine1Y,
+    )
 
-    // Item row drawn on top of log zone so it remains fully visible when open
+    // Item row
     if (pool.state === 'rolled' && showItemPicker) {
       const itemInv = callbacks.getInventory ? callbacks.getInventory() : null
-      if (itemInv) drawItemRow(ctx, itemInv, ITEM_ROW_Y, itemPickerHovered)
+      if (itemInv) drawItemRow(ctx, itemInv, geom.itemRowY, itemPickerHovered)
     }
 
     ctx.restore()
@@ -658,8 +631,8 @@ export function createDicePanel(
     const pool = getPool()
     const inventory = callbacks.getInventory ? callbacks.getInventory() : null
     const off = yOffset()
+    const geom = computeDynamicGeom(pool)
 
-    // Handle item row clicks
     if (showItemPicker && inventory) {
       const combatItems = inventory.items.filter((i: any) => i.usableInCombat)
       const ITEMS_PER_ROW = 4
@@ -667,11 +640,11 @@ export function createDicePanel(
 
       let hitItem: any = null
       for (let row = 0; row < rows && hitItem === null; row++) {
-        const rowY = ITEM_ROW_Y + off + row * (ITEM_ROW_H + ACTION_GAP)
+        const rowY = geom.itemRowY + off + row * (ITEM_ROW_H + ACTION_GAP)
         for (let col = 0; col < ITEMS_PER_ROW; col++) {
           const idx = row * ITEMS_PER_ROW + col
           if (idx >= combatItems.length) break
-          const btnX = MAP_X + SIDE_MARGIN + col * (ACTION_BTN_W + ACTION_GAP)
+          const btnX = CONTAINER_X + col * (ACTION_BTN_W + ACTION_GAP)
           if (x >= btnX && x <= btnX + ACTION_BTN_W && y >= rowY && y <= rowY + ITEM_ROW_H) {
             hitItem = combatItems[idx]
             break
@@ -705,7 +678,6 @@ export function createDicePanel(
       if (!action) return
 
       if (action.id === 'item') {
-        const inventory = callbacks.getInventory ? callbacks.getInventory() : null
         const itemUsedThisTurn = callbacks.getItemUsedThisTurn ? callbacks.getItemUsedThisTurn() : false
         const hasCombatItems = inventory && inventory.items.some((i: any) => i.usableInCombat)
         if (!hasCombatItems || itemUsedThisTurn) {
@@ -741,8 +713,8 @@ export function createDicePanel(
     const pool = getPool()
     const inventory = callbacks.getInventory ? callbacks.getInventory() : null
     const off = yOffset()
+    const geom = computeDynamicGeom(pool)
 
-    // Track item row hovers
     if (showItemPicker && inventory) {
       const combatItems = inventory.items.filter((i: any) => i.usableInCombat)
       const ITEMS_PER_ROW = 4
@@ -750,11 +722,11 @@ export function createDicePanel(
 
       itemPickerHovered = null
       for (let row = 0; row < rows && itemPickerHovered === null; row++) {
-        const rowY = ITEM_ROW_Y + off + row * (ITEM_ROW_H + ACTION_GAP)
+        const rowY = geom.itemRowY + off + row * (ITEM_ROW_H + ACTION_GAP)
         for (let col = 0; col < ITEMS_PER_ROW; col++) {
           const idx = row * ITEMS_PER_ROW + col
           if (idx >= combatItems.length) break
-          const btnX = MAP_X + SIDE_MARGIN + col * (ACTION_BTN_W + ACTION_GAP)
+          const btnX = CONTAINER_X + col * (ACTION_BTN_W + ACTION_GAP)
           if (x >= btnX && x <= btnX + ACTION_BTN_W && y >= rowY && y <= rowY + ITEM_ROW_H) {
             itemPickerHovered = idx
             break

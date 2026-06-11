@@ -20,16 +20,7 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-## READY
-
-### 089 · Scalable Dice Pool Display
-
-Improve dice rendering to handle **variable pool sizes** (currently hard-coded for 4 dice) and
-**diverse die types** (D4, D6, D8, and larger). Sized dynamically to fit container; smaller die
-glyphs (or alternative notation) for higher face counts. Affects camp permanent pool display,
-weapon card pools, and run-time pool preview. Ships as visual refactor with no mechanical changes.
-**Depends on:** 029 (camp screen), 088 (workbench upgrades — unlocks larger pools).
-See `docs/features/089-scalable-dice-pool-display.md` for the full spec.
+## IN PROGRESS
 
 ### 051 · Visitor System
 
