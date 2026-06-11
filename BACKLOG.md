@@ -53,6 +53,17 @@ on first reaching floor 2.
 **Depends on:** 029 (camp hub, MetaState), 024 (run summary), 090 (activity bar — adds Marks button).
 See `docs/features/052-marks-of-descent.md` for the full spec.
 
+### 091 · Skills System & Scroll Wall
+
+Make the camp's **scroll wall** functional: five skills that change what decisions are interesting in
+combat (*Careful Eye*, *Counter-Strike* fully wired; *Desperate Swing*, *Battle Cry*, *Stout Heart*
+stubbed until 041). MetaState gains `unlockedSkillIds` + `activeLoadout`; loadout sub-panel in
+activity bar; `unlockSkill()` API for the Scholar (092). `mark-no-healing` stub wired to *Stout
+Heart*. Second slot auto-unlocks at `runCount ≥ 5`.
+**Depends on:** 029 (camp, scroll-wall element), 052 (mark-no-healing unlock wiring).
+**Related:** 037/046 (combat hooks), 041 (Rattled/Emboldened — 3 stubs activate here), 092 (Scholar calls unlockSkill).
+See `docs/features/091-skills-system-scroll-wall.md` for the full spec.
+
 ---
 
 ## NEEDS SPEC
@@ -76,19 +87,6 @@ See `docs/features/052-marks-of-descent.md` for the full spec.
 > offer kind* layered on the 051 framework and wrapped in a themed visitor — it depends on 051 + 052
 > + 054 (Destination Board), **not** on the deferred service types in 092. (086 · Larder unlocks via
 > the Wounded Traveller, already shipped in 051.)
-
-### 091 · Skills System & Scroll Wall
-
-Make the camp's **scroll wall** functional: a library of **skills** (examples in
-`docs/concept/combat-system.md` — *Counter-Strike*, *Careful Eye*, *Desperate Swing*, *Battle Cry*,
-*Stout Heart*) that change what decisions are interesting in combat rather than adding flat numbers.
-Skills are unlocked through Marks and NPC gifts (never bought with scraps) and equipped via a
-**loadout** chosen before each run — 1 slot early, a 2nd around run 5–6. Corrects feature 029's scope
-line that mis-deferred skills to 051: skills are their own system, and they **gate the Scholar
-visitor** (092). Foundational meta work.
-**Depends on:** 029 (camp, scroll-wall element).
-**Related:** 052 (Marks unlock scrolls), 037/046 (combat actions skills modify),
-`docs/concept/meta-progression.md` (Skills section), `docs/concept/combat-system.md` (skill library).
 
 ### 092 · Additional Visitor Types
 
