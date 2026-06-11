@@ -118,6 +118,21 @@ as its blocker clears, not build all four at once:
   + the unified check panel (028). *Source:* Idea 074.
 **Depends on:** 051 (visitor framework, relationship loop) + the per-type blockers above.
 
+### 093 · Engrave Tier Progression
+
+Turns engraving from a one-shot 15-scraps pick into a **multi-tier upgrade path**: a die must be
+engraved to min 2 before it can be engraved to min 3, and so on up to `floor(faces/2)`. Each tier
+costs more than the last (tier 1: 15sc; tier 2: 25sc; tier 3: 40sc; tier 4: 55sc — stepped, not
+doubling). Deepens investment in individual dice across runs; aligns with the Named Dice direction
+(Idea 050). Supersedes the engrave-operation section of feature **088** (not yet shipped); the
+Engineer building 088 must use this spec for engrave behaviour.
+**Blocking spec questions:**
+1. **Swap interaction**: when a min-3 die is swapped to a larger face count, can the player pay
+   tier-3 cost to continue to min 4 on the new die? (Preferred: yes — "carry and continue".)
+2. **Cost model**: manager said "double/triple"; recommendation is the stepped ladder above rather
+   than doubling (which makes tier-3 cost 60sc, rivalling Add Die at 50sc).
+**Depends on:** 088 (workbench engrave mechanic — this supersedes its engrave section).
+
 ### 041 · Rattled / Emboldened Combat States
 
 Transient per-fight modifiers that give combat texture and momentum without permanent complexity.
