@@ -22,8 +22,10 @@ inline before opening any PR**.
    criteria — they are your contract.
 
 4. **Read the ground rules.** Skim `DECISION_REGISTER.md` for patterns and constraints this work
-   must follow. If the feature forces a new architectural choice, note it for the Documenter (or
-   record it yourself if the manager agrees) — don't bury it.
+   must follow. If the feature touches an existing system (combat, dungeon generation, items, meta
+   progression), read its doc in `docs/systems/` — that file describes the actual implementation
+   shape you must build consistently with. If the feature forces a new architectural choice, note
+   it for the Documenter (or record it yourself if the manager agrees) — don't bury it.
 
 5. **Check for prior work.** Look for an existing branch/PR for this item with unresolved Reviewer
    feedback before starting fresh.

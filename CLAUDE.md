@@ -8,10 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 mouse explorer. It is dice-driven and turn-based, with procedural tile-based dungeon exploration
 resolved through a coloured dice-pool system. Read `docs/concept.md` for the concept doc index; start with `docs/concept/overview.md` for the full design brief.
 
-The game is built to run in the browser. It currently exists as a set of static HTML
-proof-of-concepts (`poc/`) and a landing page (`index.html`), deployed to GitHub Pages. There is
-no build system or test harness yet — these will be introduced by the Engineer as the first
-implemented features require them.
+The game is built to run in the browser using a **Vite + TypeScript + Vitest** stack and deployed
+to GitHub Pages from `dist/`. The `poc/` directory contains archived static HTML proof-of-concepts
+from the pre-scaffold phase.
 
 ## Commands
 
@@ -75,6 +74,7 @@ The harness keeps a clear paper trail from concept → decision → backlog → 
 | **Feature backlog** | `BACKLOG.md` (active) · `BACKLOG_HISTORY.md` (completed, summary + link) |
 | **Feature details** | `docs/features/` (active specs) · `docs/features/history/` (archived specs with evidence) |
 | **Decisions** | `DECISION_REGISTER.md` (index) · `docs/decisions/` (detailed rationale by area) |
+| **System references** | `docs/systems/` (as-implemented descriptions of major systems — authoritative on what the code does; updated by the Documenter after features ship) |
 | **Implementation evidence** | Appended as `## Shipped` to the archived spec in `docs/features/history/` (tests, play-test steps, PR link) |
 | **Role instructions** | `docs/agent/roles/` |
 

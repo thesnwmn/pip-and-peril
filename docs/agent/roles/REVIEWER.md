@@ -25,8 +25,9 @@ You **never modify code**. You report findings; the Engineer fixes them.
 2. **Tests** — there are unit tests covering the acceptance criteria end-to-end (not just that a
    function exists). They pass. Nothing is skipped or commented out. If the change added the first
    test harness, confirm it actually runs.
-3. **Architecture compliance** — the change respects `DECISION_REGISTER.md`. New choices it
-   introduces are recorded (or flagged for the Documenter), not smuggled in silently.
+3. **Architecture compliance** — the change respects `DECISION_REGISTER.md` and, for features
+   touching an existing system, is consistent with the relevant `docs/systems/` doc. New choices
+   it introduces are recorded (or flagged for the Documenter), not smuggled in silently.
 4. **Scope** — the change stays within the spec's scope and doesn't quietly do something the
    non-goals excluded.
 5. **Evidence & play-test** — the archived spec in `docs/features/history/` has a `## Shipped`
