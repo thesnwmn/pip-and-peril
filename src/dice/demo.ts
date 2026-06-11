@@ -17,7 +17,7 @@ function compactRowWidth(dice: Array<{ colour: string }>): number {
   return w
 }
 import {
-  computePoolLayout, computeRowXPositions, colorGroupCenters,
+  computePoolLayout, computeRowXPositions,
   WITHIN_GAP, BETWEEN_GAP, ROW_VERTICAL_GAP,
 } from './pool-layout'
 
@@ -108,9 +108,6 @@ function drawPoolSection(ctx: CanvasRenderingContext2D): number {
       drawDie(ctx, xs[i]!, rowY, layout.size, die.color, die.sides, value)
     }
 
-    // Color group centers for gap indicators
-    const centers = colorGroupCenters(row, xs, layout.size)
-
     // Draw gap indicators between groups
     for (let i = 0; i < row.length - 1; i++) {
       const thisColor = row[i]!.color
@@ -122,16 +119,7 @@ function drawPoolSection(ctx: CanvasRenderingContext2D): number {
       }
     }
 
-    // Color labels below each group
-    ctx.font = '9px monospace'
-    ctx.fillStyle = MUTED
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'top'
-    for (const [color, cx] of centers) {
-      ctx.fillText(COLOR_LABEL[color].toUpperCase(), cx, rowY + layout.size + 2)
-    }
-
-    sectionBottom = Math.max(sectionBottom, rowY + layout.size + 14)
+    sectionBottom = Math.max(sectionBottom, rowY + layout.size + 4)
   })
 
   // Layout info line
