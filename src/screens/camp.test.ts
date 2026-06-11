@@ -41,15 +41,15 @@ describe('activity buttons', () => {
     expect(ACTIVITY_BTN_H).toBeGreaterThanOrEqual(44)
   })
 
-  it('four buttons span full canvas width', () => {
+  it('five buttons span full canvas width', () => {
     const btn0 = getActivityButtonRect(0)
-    const btn3 = getActivityButtonRect(3)
+    const btn4 = getActivityButtonRect(4)
     expect(btn0.x).toBe(0)
-    expect(btn3.x + btn3.w).toBeGreaterThanOrEqual(LOGICAL_W - 4)  // allow rounding
+    expect(btn4.x + btn4.w).toBeGreaterThanOrEqual(LOGICAL_W - 4)  // allow rounding
   })
 
   it('buttons do not overlap horizontally', () => {
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       const a = getActivityButtonRect(i)
       const b = getActivityButtonRect(i + 1)
       expect(a.x + a.w).toBeLessThanOrEqual(b.x + 1)  // allow rounding
@@ -57,12 +57,12 @@ describe('activity buttons', () => {
   })
 
   it('all buttons have the same height', () => {
-    const heights = [0, 1, 2, 3].map((i) => getActivityButtonRect(i).h)
+    const heights = [0, 1, 2, 3, 4].map((i) => getActivityButtonRect(i).h)
     expect(heights.every((h) => h === heights[0])).toBe(true)
   })
 
   it('buttons are positioned below SCENE_BOTTOM', () => {
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
       const r = getActivityButtonRect(i)
       expect(r.y).toBeGreaterThanOrEqual(SCENE_BOTTOM)
     }
@@ -93,7 +93,7 @@ describe('Descend strip', () => {
 describe('activity buttons do not overlap Descend strip', () => {
   it('button bottoms are above Descend strip top', () => {
     const strip = getDescendStripRect()
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
       const r = getActivityButtonRect(i)
       expect(r.y + r.h).toBeLessThanOrEqual(strip.y)
     }

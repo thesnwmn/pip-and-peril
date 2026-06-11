@@ -31,13 +31,15 @@ import {
   VIEWPORT_ROWS,
 } from './game-layout'
 import type { MetaState } from '../meta/state'
+import { saveMetaState } from '../meta/state'
 import { WEAPON_SPECS } from '../meta/weapons'
+import { evaluateMarks, applyMarkUnlocks } from '../meta/marks'
 
 export function createGame(
   transitionTo: (screen: string, summary?: RunSummary) => void,
   metaState: MetaState,
 ): ScreenController {
-  let state: DungeonState = initDungeon()
+  let state: DungeonState = { ...initDungeon(), weaponId: metaState.activeWeaponId }
   let hoveredElement: string | null = null
   let isMouseDevice = false
 
@@ -97,13 +99,16 @@ export function createGame(
           : `${item.name} used. +${hpChange} HP.`
         navPanel.triggerWhisper(whisperText)
       }
-
       if (result.poolAfter !== undefined) {
         dicePool = result.poolAfter
       }
 
       if (result.dungeonStateAfter !== undefined) {
         state = result.dungeonStateAfter
+      }
+
+      if (item.effect.type === 'heal' || item.effect.type === 'heal-full') {
+        state = { ...state, healingItemsUsed: state.healingItemsUsed + 1 }
       }
 
       // Consume item (handles charges or quantity)
@@ -129,8 +134,8 @@ export function createGame(
     inventory = newInventory
   }
 
-  function buildRunSummary(outcome: 'victory' | 'defeat'): RunSummary {
-    return {
+  function buildRunSummary(outcome: 'victory' | 'defeat', abandoned: boolean = false): RunSummary {
+    const base: RunSummary = {
       outcome,
       floorReached: state.floor,
       enemiesDefeated: state.enemiesDefeated,
@@ -138,13 +143,25 @@ export function createGame(
       killedBy: state.killedBy,
       killedByFloor: state.killedByFloor,
     }
+    if (abandoned) return { ...base, metaWithMarks: metaState }
+    const runRecord = {
+      floorsReached: state.floor,
+      victory: outcome === 'victory',
+      healingItemsUsed: state.healingItemsUsed,
+      rattledKillingBlow: state.rattledKillingBlow,
+      weaponId: state.weaponId,
+    }
+    const newMarkIds = evaluateMarks(runRecord, metaState)
+    const metaWithMarks = applyMarkUnlocks(newMarkIds, metaState)
+    saveMetaState(metaWithMarks)
+    return { ...base, newMarkIds, metaWithMarks }
   }
 
   const menuModal = createMenuModal('game', (screen) => {
     resetRunState()
     if (screen === 'home') {
-      // User clicked "End Run" — show run summary with no rewards
-      const abandonedSummary = buildRunSummary('defeat')
+      // User clicked "End Run" — show run summary with no rewards (no marks for abandoned)
+      const abandonedSummary = buildRunSummary('defeat', true)
       transitionTo('run-summary', { ...abandonedSummary, abandoned: true })
     } else {
       transitionTo(screen)

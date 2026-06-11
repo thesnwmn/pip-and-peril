@@ -3,6 +3,7 @@ import type { RunSummary } from './types'
 import type { ScreenController } from './main-menu'
 import type { MetaState } from '../meta/state'
 import { loadMetaState, saveMetaState } from '../meta/state'
+import { MARK_SPECS } from '../meta/marks'
 
 const LOGICAL_W = 390
 const LOGICAL_H = 844
@@ -29,8 +30,9 @@ export function createRunSummary(
   let isMouseDevice = false
   let fadeInStartTime: DOMHighResTimeStamp | null = null
   let animationStartTime: DOMHighResTimeStamp | null = null
-  const metaState = loadMetaState()
+  const metaState: MetaState = summary.metaWithMarks ?? loadMetaState()
   const wasAbandoned = summary.abandoned ?? false
+  const newMarkIds = summary.newMarkIds ?? []
 
   const FADE_IN_DURATION = 600
   const STATS_ANIMATION_DURATION = 1000
@@ -257,6 +259,67 @@ export function createRunSummary(
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
       ctx.fillText(felledByText, CARD_X + CARD_PADDING, currentY + 20)
+    }
+
+    // Marks Earned section — appears after stats count-up completes
+    if (!wasAbandoned && newMarkIds.length > 0 && animationStartTime !== null) {
+      const marksFadeProgress = Math.max(0, Math.min(1,
+        (timestamp - animationStartTime - STATS_ANIMATION_DURATION) / 300,
+      ))
+      if (marksFadeProgress > 0) {
+        ctx.globalAlpha = cardOpacity * marksFadeProgress
+
+        const marksX = CARD_X
+        const marksW = CARD_WIDTH
+        let marksY = CARD_TOP + CARD_HEIGHT + 16
+
+        // Rule separator
+        ctx.strokeStyle = colors.parchmentRule
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.moveTo(marksX + CARD_PADDING, marksY)
+        ctx.lineTo(marksX + marksW - CARD_PADDING, marksY)
+        ctx.stroke()
+        marksY += 10
+
+        // Section header
+        ctx.font = '10px monospace'
+        ctx.fillStyle = colors.textMuted
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'top'
+        ctx.fillText('MARKS EARNED', marksX + CARD_PADDING, marksY)
+        marksY += 22
+
+        for (const id of newMarkIds) {
+          const spec = MARK_SPECS.find(m => m.id === id)
+          if (!spec) continue
+
+          // Stamp icon
+          ctx.font = '14px monospace'
+          ctx.fillStyle = '#c8a96e'
+          ctx.textAlign = 'left'
+          ctx.textBaseline = 'top'
+          ctx.fillText('✦', marksX + CARD_PADDING, marksY)
+
+          // Mark name
+          ctx.font = '13px system-ui, -apple-system, sans-serif'
+          ctx.fillStyle = colors.textPrimary
+          ctx.fillText(spec.name, marksX + CARD_PADDING + 20, marksY)
+          marksY += 20
+
+          // Die unlock note
+          if (spec.unlock.kind === 'die') {
+            const colourName = spec.unlock.colour.charAt(0).toUpperCase() + spec.unlock.colour.slice(1)
+            ctx.font = '11px system-ui, -apple-system, sans-serif'
+            ctx.fillStyle = '#5c4a36'
+            ctx.fillText(`${colourName} die added to your pool.`, marksX + CARD_PADDING + 20, marksY)
+            marksY += 18
+          }
+          marksY += 4
+        }
+
+        ctx.globalAlpha = cardOpacity
+      }
     }
 
     // Button with delayed fade-in

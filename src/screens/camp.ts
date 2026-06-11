@@ -21,6 +21,7 @@ import {
   ADD_COST,
   ENGRAVE_COST,
 } from '../camp/workbench'
+import { MARK_SPECS } from '../meta/marks'
 import { easeOut } from '../animation/easing'
 import { STATUS_BAR_H } from './game-layout'
 import { createMenuModal, drawMenuButton, isInMenuButton } from '../menu/modal'
@@ -46,7 +47,7 @@ export const SCENE_BOTTOM = Math.round(0.56 * LOGICAL_H)  // ≈ 473
 const ACTIVITY_BAR_PAD_TOP = 20
 export const ACTIVITY_BTN_H = 68   // icon(28)+gap(8)+label(14)+padding(18) → always ≥44
 export const ACTIVITY_BTN_Y = SCENE_BOTTOM + ACTIVITY_BAR_PAD_TOP
-const ACTIVITY_BTN_W = Math.floor(LOGICAL_W / 4)  // 97
+const ACTIVITY_BTN_W = Math.floor(LOGICAL_W / 5)  // 78
 export const DESCEND_H = 64                        // always ≥56
 export const DESCEND_Y = LOGICAL_H - DESCEND_H
 
@@ -209,7 +210,7 @@ const WEAPON_SILS = [
 
 // ── State ──────────────────────────────────────────────────────────────────────
 
-export type SubPanelName = 'weapons' | 'workbench' | 'notices' | 'visitor'
+export type SubPanelName = 'weapons' | 'workbench' | 'notices' | 'visitor' | 'marks'
 
 type WorkbenchMode =
   | 'idle'
@@ -250,6 +251,8 @@ interface CampState {
   visitorFeedback: string | null
   visitorFeedbackEnd: number
   visitorFeedbackSubject: VisitorInstance | null  // snapshot of the accepted visitor for feedback display
+  // Marks panel session state
+  marksRevealedIds: Set<string>    // locked marks whose conditions have been revealed this session
 }
 
 function initVisitorState(base: MetaState): MetaState {
@@ -289,6 +292,7 @@ export function createCamp(
     visitorFeedback: null,
     visitorFeedbackEnd: 0,
     visitorFeedbackSubject: null,
+    marksRevealedIds: new Set(),
   }
 
   // ── Visitor helpers ──────────────────────────────────────────────────────────
@@ -715,6 +719,16 @@ export function createCamp(
       ctx.arc(cx, cy - s + 4, 4, 0, Math.PI * 2)
       ctx.fill()
       ctx.fillRect(cx - 4, cy - s + 10, 8, 10)
+    } else if (name === 'marks') {
+      // Wax-seal outline: circle with ✦ inside
+      ctx.beginPath()
+      ctx.arc(cx, cy, s, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.font = `${Math.round(s * 1.1)}px monospace`
+      ctx.fillStyle = '#c8781e'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('✦', cx, cy)
     }
 
     ctx.globalAlpha = 1
@@ -736,6 +750,7 @@ export function createCamp(
       { name: 'workbench', label: 'Workbench' },
       { name: 'notices', label: 'Notices' },
       { name: 'visitor', label: 'Visitor' },
+      { name: 'marks', label: 'Marks' },
     ]
 
     const unresolvedCount = getUnresolvedCount()
@@ -745,10 +760,11 @@ export function createCamp(
       const r = getActivityButtonRect(i)
       const isVisitor = btn.name === 'visitor'
       const visitorActive = isVisitor && unresolvedCount > 0
+      const isMarks = btn.name === 'marks'
       const alpha = isVisitor && !visitorActive ? 0.4 : 1
       const hovered = state.isMouseDevice && state.hoveredElement === `activity-${btn.name}`
 
-      if (hovered && (!isVisitor || visitorActive)) {
+      if (hovered && (!isVisitor || visitorActive || isMarks)) {
         ctx.fillStyle = 'rgba(90, 61, 26, 0.4)'
         ctx.fillRect(r.x, r.y, r.w, r.h)
       }
@@ -767,7 +783,7 @@ export function createCamp(
       drawActivityIcon(ctx, btn.name, cx, iconCY, alpha)
 
       ctx.globalAlpha = alpha
-      ctx.font = '12px system-ui, -apple-system, sans-serif'
+      ctx.font = '11px system-ui, -apple-system, sans-serif'
       ctx.fillStyle = isVisitor && !visitorActive ? colors.textMuted : colors.textPrimary
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
@@ -1472,6 +1488,107 @@ export function createCamp(
     ctx.fillText('Send Away', sendRect.x + sendRect.w / 2, sendRect.y + sendRect.h / 2)
   }
 
+  // ── Marks panel ──────────────────────────────────────────────────────────────
+
+  const MARK_STAMP_EARNED = '#c8a96e'
+  const MARK_STAMP_LOCKED = '#8a7c6a'
+  const MARK_FLAVOUR_TEXT = '#5c4a36'
+  const MARKS_EARNED_ROW_H = 72
+  const MARKS_LOCKED_ROW_H = 44
+  const MARKS_LEFT_PAD = 20
+  const MARKS_ICON_W = 24
+  const MARKS_SECTION_H = 26
+
+  function getMarksLockedRects(panelY: number): Array<{ id: string; rect: Rect }> {
+    const meta = state.metaState
+    const earnedIds = new Set(meta.marksEarned ?? [])
+    const earnedMarks = MARK_SPECS.filter(m => earnedIds.has(m.id))
+    const lockedMarks = MARK_SPECS.filter(m => !earnedIds.has(m.id))
+    let y = panelY + 56
+    if (earnedMarks.length > 0) {
+      y += MARKS_SECTION_H
+      y += earnedMarks.length * MARKS_EARNED_ROW_H
+    }
+    if (lockedMarks.length === 0) return []
+    y += MARKS_SECTION_H
+    return lockedMarks.map(mark => {
+      const rect: Rect = { x: 0, y, w: LOGICAL_W, h: MARKS_LOCKED_ROW_H }
+      y += MARKS_LOCKED_ROW_H
+      return { id: mark.id, rect }
+    })
+  }
+
+  function drawMarksPanel(ctx: CanvasRenderingContext2D, panelY: number): void {
+    drawSubPanelBase(ctx, panelY, 'Descent Record')
+
+    const meta = state.metaState
+    const earnedIds = new Set(meta.marksEarned ?? [])
+    const earnedMarks = MARK_SPECS.filter(m => earnedIds.has(m.id))
+    const lockedMarks = MARK_SPECS.filter(m => !earnedIds.has(m.id))
+
+    let y = panelY + 56
+
+    // Earned section
+    if (earnedMarks.length > 0) {
+      ctx.font = 'bold 12px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = colors.textMuted
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      ctx.fillText(`Earned (${earnedMarks.length})`, MARKS_LEFT_PAD, y)
+      y += MARKS_SECTION_H
+
+      for (const mark of earnedMarks) {
+        ctx.font = '16px monospace'
+        ctx.fillStyle = MARK_STAMP_EARNED
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'top'
+        ctx.fillText('✦', MARKS_LEFT_PAD, y + 2)
+
+        ctx.font = 'bold 14px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = colors.textPrimary
+        ctx.fillText(mark.name, MARKS_LEFT_PAD + MARKS_ICON_W, y)
+        y += 20
+
+        ctx.font = 'italic 12px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = MARK_FLAVOUR_TEXT
+        const lines = wrapText(ctx, mark.flavourLine, LOGICAL_W - MARKS_LEFT_PAD * 2 - MARKS_ICON_W)
+        for (const line of lines) {
+          ctx.fillText(line, MARKS_LEFT_PAD + MARKS_ICON_W, y)
+          y += 17
+        }
+        y += MARKS_EARNED_ROW_H - 20 - lines.length * 17
+      }
+    }
+
+    // Locked section
+    if (lockedMarks.length > 0) {
+      ctx.font = 'bold 12px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = colors.textMuted
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      ctx.fillText(`Locked (${lockedMarks.length})`, MARKS_LEFT_PAD, y)
+      y += MARKS_SECTION_H
+
+      for (const mark of lockedMarks) {
+        const isRevealed = state.marksRevealedIds.has(mark.id)
+        const rowMidY = y + MARKS_LOCKED_ROW_H / 2 - 8
+
+        ctx.font = '14px monospace'
+        ctx.fillStyle = MARK_STAMP_LOCKED
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'top'
+        ctx.fillText('○', MARKS_LEFT_PAD, rowMidY)
+
+        ctx.font = '13px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = isRevealed ? MARK_FLAVOUR_TEXT : colors.textMuted
+        const text = isRevealed ? mark.conditionText : '[Tap to reveal]'
+        ctx.fillText(text, MARKS_LEFT_PAD + MARKS_ICON_W, rowMidY)
+
+        y += MARKS_LOCKED_ROW_H
+      }
+    }
+  }
+
   // ── Panel open/close helpers ─────────────────────────────────────────────────
 
   function resetWorkbenchState(): void {
@@ -1568,6 +1685,7 @@ export function createCamp(
       else if (state.activeSubPanel === 'notices') drawNoticesPanel(ctx, panelY)
       else if (state.activeSubPanel === 'workbench') drawWorkbenchPanel(ctx, panelY)
       else if (state.activeSubPanel === 'visitor') drawVisitorPanel(ctx, panelY)
+      else if (state.activeSubPanel === 'marks') drawMarksPanel(ctx, panelY)
     }
 
     // Status bar always on top of scene and panels
@@ -1966,6 +2084,15 @@ export function createCamp(
         }
       }
 
+      if (state.activeSubPanel === 'marks' && !state.panelClosing && state.panelProgress >= 1) {
+        for (const { id, rect } of getMarksLockedRects(panelY)) {
+          if (inRect(rect, x, y)) {
+            state.marksRevealedIds.add(id)
+            return
+          }
+        }
+      }
+
       // Tap in the scene zone (above the panel) closes any open panel
       if (!state.panelClosing && y < panelY) {
         closePanel()
@@ -1976,7 +2103,7 @@ export function createCamp(
     }
 
     // Activity bar buttons
-    const buttons: SubPanelName[] = ['weapons', 'workbench', 'notices', 'visitor']
+    const buttons: SubPanelName[] = ['weapons', 'workbench', 'notices', 'visitor', 'marks']
     for (let i = 0; i < buttons.length; i++) {
       const r = getActivityButtonRect(i)
       if (inRect(r, x, y)) {
@@ -2041,7 +2168,7 @@ export function createCamp(
       return
     }
 
-    const buttons: SubPanelName[] = ['weapons', 'workbench', 'notices', 'visitor']
+    const buttons: SubPanelName[] = ['weapons', 'workbench', 'notices', 'visitor', 'marks']
     for (let i = 0; i < buttons.length; i++) {
       const r = getActivityButtonRect(i)
       if (inRect(r, x, y)) {

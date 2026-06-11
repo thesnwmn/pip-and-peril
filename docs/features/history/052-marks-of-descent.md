@@ -387,10 +387,32 @@ None blocking this spec. The following are noted as future threads:
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-11 · **PR:** (pending)
 
 ### What was built
 
+- `src/meta/marks.ts` — `MarkSpec[]`, `evaluateMarks()`, `applyMarkUnlocks()`, full type definitions
+- `src/meta/marks.test.ts` — 30 unit tests covering all 6 mark conditions (positive, idempotency, negative) and `applyMarkUnlocks`
+- `src/meta/state.ts` — added `marksEarned: string[]` to `MetaState`
+- `src/navigation/dungeon-state.ts` — added `healingItemsUsed`, `rattledKillingBlow`, `weaponId` to `DungeonState`
+- `src/navigation/dungeon-state.test.ts` — added test assertions for new run-tracking fields
+- `src/screens/types.ts` — added `newMarkIds?` and `metaWithMarks?` to `RunSummary`
+- `src/screens/game.ts` — wired `evaluateMarks`/`applyMarkUnlocks` at run end; tracks healing item uses and weapon ID; passes `metaWithMarks` via `RunSummary`
+- `src/screens/run-summary.ts` — Marks Earned ceremony (fades in after count-up, stamp icon + name + optional die note)
+- `src/screens/camp.ts` — fifth activity bar button (Marks); Descent Record sub-panel (Earned/Locked sections, tap-to-reveal locked conditions); `getMarksLockedRects()` pure geometry helper
+- `src/game-app.ts` — threads `metaWithMarks` into `this.metaState` on run-summary transition
+
 ### Evidence
 
+- `npm run typecheck` — clean (no errors)
+- `npm run test` — 648/648 tests pass (30 new marks tests + 1 new `initDungeon` test)
+- `npm run build` — succeeds
+
 ### Play-test
+
+1. Start a new run; descend to floor 2. End the run.
+2. Run summary should show **"Marks Earned"** section with "Into the Dark" and a note "Blue die added to your pool."
+3. Return to camp; open the Workbench — confirm a Blue d4 is now present in the permanent pool.
+4. Open the Marks panel from the activity bar; confirm "Into the Dark" appears in the Earned section.
+5. Tap a locked slot — confirm the condition text appears in-place (icon remains ○, label changes).
+6. Abandon a run via the menu — run summary should show no Marks section.
