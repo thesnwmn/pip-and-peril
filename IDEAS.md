@@ -45,6 +45,8 @@ code; the Designer writes those.
 > feature **028** (NPC Encounter); both folded into the unified check panel spec.
 > **Designer session 2026-06-11:** **050** (Named Dice) → backlog **093** (Named Dice & Die
 > Collection); absorbed and expanded with die acquisition, collection model, and loadout selection.
+> Backlog **092** (Additional Visitor Types) partially specced: Scholar → **094**, Trickster → **095**
+> (both READY); Trader and Scout remain blocked in 092.
 
 ---
 
