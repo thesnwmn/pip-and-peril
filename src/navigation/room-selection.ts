@@ -1,11 +1,12 @@
 import { computeFog } from '../map/fog'
-import type { ExitMask, GridPos, RoomType, TileCell } from '../map/types'
+import type { Archetype, ExitMask, GridPos, RoomType, TileCell } from '../map/types'
 import { E, N, S, W } from '../map/types'
 import { chebyshev, DIR_DELTA, OPP, updateCamera } from './dungeon-state'
 import type { DungeonState, RoomOffering } from './dungeon-state'
 import { pickRandom, CARD_TEASES, getRoomWeights, getDepthPhase } from './room-pool'
 import { CATALOG_ITEMS } from '../satchel/catalog'
 import { DUNGEON_TUNING } from '../dungeon/tuning'
+import type { DepthPhase } from '../dungeon/tuning'
 import { ENEMY_ROSTER } from '../combat/roster'
 
 export { CARD_TEASES }
@@ -105,7 +106,27 @@ export function generateOfferings(
     pickedConfigs.push(remaining.length > 0 ? remaining[0] : configs[0])
   }
 
-  return types.map((roomType, i) => ({ roomType, exits: pickedConfigs[i] }))
+  return types.map((roomType, i) => ({
+    roomType,
+    exits: pickedConfigs[i],
+    archetype: pickArchetype(roomType, state.floor, state.floorTilesPlaced),
+  }))
+}
+
+export function pickArchetype(roomType: RoomType, floor: 1 | 2 | 3, floorTilesPlaced: number): Archetype {
+  const phase: DepthPhase = getDepthPhase(floor, floorTilesPlaced)
+  const typeWeights = DUNGEON_TUNING.archetypeWeights[roomType]
+  if (!typeWeights) return 'chamber'
+  const phaseWeights = typeWeights[phase]
+  const entries = Object.entries(phaseWeights) as [Archetype, number][]
+  const total = entries.reduce((s, [, w]) => s + w, 0)
+  if (total <= 0) return 'chamber'
+  let rand = Math.random() * total
+  for (const [arch, weight] of entries) {
+    rand -= weight
+    if (rand <= 0) return arch
+  }
+  return entries[0]?.[0] ?? 'chamber'
 }
 
 function getTrapDifficulty(floor: 1 | 2 | 3, floorTilesPlaced: number): number {
@@ -165,7 +186,11 @@ export function placeRoom(
   targetPos: GridPos,
 ): DungeonState {
   const newCells = state.grid.cells.map(row => [...row])
-  const cell: TileCell = { roomType: offering.roomType, exits: offering.exits }
+  const cell: TileCell = {
+    roomType: offering.roomType,
+    exits: offering.exits,
+    archetype: offering.archetype ?? pickArchetype(offering.roomType, state.floor, state.floorTilesPlaced),
+  }
 
   if (offering.roomType === 'item') {
     // Exclude items that don't appear in item rooms per spec sourcing table

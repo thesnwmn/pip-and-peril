@@ -24,6 +24,10 @@ npm run test       # Run Vitest unit tests
 npm run typecheck  # Run tsc --noEmit for type-checking
 ```
 
+The dev server also serves the **Tile Gallery** at `http://localhost:5173/gallery.html` — a
+code-backed page that renders the full archetype catalogue using the real renderer. Use it to
+review tile art and verify new archetypes or biome palettes.
+
 Deployment is automatic:
 
 - **`main` branch** → builds and publishes `dist/` to GitHub Pages via `.github/workflows/deploy-pages.yml`.

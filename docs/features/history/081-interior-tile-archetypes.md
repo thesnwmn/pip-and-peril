@@ -244,10 +244,31 @@ None blocking — this is `READY`. Notes for the Engineer / future items:
 
 ## Shipped
 
-**Date:** YYYY-MM-DD · **PR:** #NN
+**Date:** 2026-06-11 · **PR:** #TBD
 
 ### What was built
 
+- `Archetype` union type + `archetype?: Archetype` on `TileCell`; `RoomOffering` carries `archetype` so card previews reflect the real interior.
+- Nine archetype renderers in `src/map/renderer.ts`: `chamber` (3 variants: plain/cracked/dais), `passage` (2: clean/worn), `cavern` (3: grotto/narrow/stalagmite), `pillared` (2: four-col/two-col+aisle), `rubble` (2: scattered/cave-in), `bridge`, `well`, `pool`, `squeeze`.
+- `variantFor(archetype, col, row)` — deterministic, position-stable, no `Math.random()`.
+- `drawInteriorArchetype()` dispatches to the archetype renderer; both `drawCell` (live map) and `drawSingleTile` (cards + gallery) call it.
+- Archetype assigned at offering-generation time (`generateOfferings`) so room-selection cards preview the real archetype; `placeRoom` uses the pre-assigned value.
+- `DUNGEON_TUNING.archetypeWeights` — depth-phased weights per room type (9 room types × 3 phases).
+- Five new `BiomePalette` tokens: `voidDrop`, `chasmRim`, `featureStone`, `wellWater`, `magicGlow`.
+- **Tile Gallery** at `gallery.html` / `src/gallery.ts` — Archetype Catalogue, Room-Type Layer, Exit Layouts, Props placeholder. Registered in `vite.config.ts`, included in production build.
+- POC `public/poc/tiles/` retired; POC index card repointed to the live gallery; `docs/concept/tiles-and-props.md` forward-pointer updated.
+- `CLAUDE.md` Commands updated with gallery URL.
+
 ### Evidence
 
+- 29 test files, 564 tests, all passing (`npm run test`)
+- `npm run typecheck` clean
+- `npm run build` produces `dist/gallery.html` + `dist/assets/gallery-*.js`
+- New test file `src/map/archetype.test.ts`: covers `variantFor` determinism, distribution across 10×10 grid, all variants in range; `ARCHETYPE_VARIANT_COUNTS` minimums; `pickArchetype` valid output, chamber default, corridor/boss weighting, all floors/phases.
+
 ### Play-test
+
+1. `npm run dev`, open `http://localhost:5173/game.html`
+2. Start a new run. Explore several tiles — corridors should render as narrow passages, enemy rooms as caverns or rubble, boss rooms as pillared halls. Adjacent tiles of the same archetype should look different (stable variant, not flickering).
+3. Before placing a tile, inspect the three room-selection cards — each card should show its actual archetype interior (not all plain chamber).
+4. Open `http://localhost:5173/gallery.html` — verify all 9 archetypes render correctly, variant labels are correct (chamber v0/v1/v2, passage v0/v1, etc.), sections are labelled, Props placeholder is visible.

@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 081 · Interior Tile Archetypes
+
+**Shipped:** 2026-06-11 · **PR:** #TBD · **Spec:** [docs/features/history/081-interior-tile-archetypes.md](docs/features/history/081-interior-tile-archetypes.md)
+
+Add the missing interior-shape layer (layer 2 of the four-layer tile model) to the renderer: Chamber (default), Passage, Cavern, Pillared Hall, Rubble, Chasm + Bridge, Well, Magic Pool, and Squeeze. Each archetype is a family of seeded variants chosen deterministically by grid position. Ships as a pure visual skin plus a Tile Gallery dev run mode (`gallery.html`) built to host props (082) and biomes later. POC `public/poc/tiles/` retired.
+
+---
+
 ### 088 · Workbench — Dice Upgrades
 
 **Shipped:** 2026-06-11 · **PR:** (pending) · **Spec:** [docs/features/history/088-workbench-dice-upgrades.md](docs/features/history/088-workbench-dice-upgrades.md)

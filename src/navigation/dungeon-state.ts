@@ -1,5 +1,5 @@
 import { computeFog } from '../map/fog'
-import type { ExitMask, FogState, GameMap, GridPos } from '../map/types'
+import type { Archetype, ExitMask, FogState, GameMap, GridPos } from '../map/types'
 import { E, N, S, W } from '../map/types'
 
 export type LogStyle = 'system' | 'enemy' | 'boss' | 'shop' | 'npc' | 'item' | 'chest' | 'normal'
@@ -12,6 +12,7 @@ export interface LogEntry {
 export interface RoomOffering {
   roomType: import('../map/types').RoomType
   exits: ExitMask
+  archetype?: Archetype
 }
 
 export const DEAD_ZONE = 3

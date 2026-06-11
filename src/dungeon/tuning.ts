@@ -1,3 +1,7 @@
+import type { Archetype, RoomType } from '../map/types'
+
+export type DepthPhase = 'early' | 'mid' | 'late'
+
 export interface DungeonTuning {
   // Phase thresholds (tiles placed on floor before phase advances)
   phaseThresholds: Record<1 | 2 | 3, { mid: number; late: number }>
@@ -49,6 +53,9 @@ export interface DungeonTuning {
 
   // NPC item reward pool weights
   npcItemPoolWeights: Record<string, number>
+
+  // Archetype weights per room type and depth phase
+  archetypeWeights: Partial<Record<RoomType, Record<DepthPhase, Partial<Record<Archetype, number>>>>>
 }
 
 export const DUNGEON_TUNING: DungeonTuning = {
@@ -264,5 +271,53 @@ export const DUNGEON_TUNING: DungeonTuning = {
     'lucky-acorn': 3,
     'smoke-pellet': 3,
     'glowstone-dust': 2,
+  },
+
+  archetypeWeights: {
+    corridor: {
+      early: { passage: 60, chamber: 20, cavern: 15, squeeze: 5 },
+      mid:   { passage: 50, chamber: 12, cavern: 22, squeeze: 8, rubble: 4, bridge: 4 },
+      late:  { passage: 40, chamber: 8,  cavern: 26, squeeze: 10, rubble: 8, bridge: 8 },
+    },
+    enemy: {
+      early: { chamber: 55, cavern: 30, rubble: 10, passage: 5 },
+      mid:   { chamber: 35, cavern: 35, rubble: 20, bridge: 5, pool: 5 },
+      late:  { chamber: 18, cavern: 35, rubble: 30, bridge: 8, pool: 9 },
+    },
+    chest: {
+      early: { chamber: 60, cavern: 20, rubble: 10, pillared: 10 },
+      mid:   { chamber: 40, cavern: 30, rubble: 20, pillared: 10 },
+      late:  { chamber: 20, cavern: 30, rubble: 35, pillared: 10, bridge: 5 },
+    },
+    shop: {
+      early: { chamber: 60, pillared: 40 },
+      mid:   { chamber: 55, pillared: 45 },
+      late:  { chamber: 50, pillared: 50 },
+    },
+    npc: {
+      early: { chamber: 60, pillared: 30, well: 10 },
+      mid:   { chamber: 55, pillared: 30, well: 10, pool: 5 },
+      late:  { chamber: 45, pillared: 35, well: 10, pool: 10 },
+    },
+    boss: {
+      early: { pillared: 70, chamber: 30 },
+      mid:   { pillared: 75, chamber: 25 },
+      late:  { pillared: 80, chamber: 20 },
+    },
+    item: {
+      early: { chamber: 60, cavern: 30, pool: 10 },
+      mid:   { chamber: 50, cavern: 35, pool: 12, well: 3 },
+      late:  { chamber: 35, cavern: 35, pool: 18, well: 7, rubble: 5 },
+    },
+    trap: {
+      early: { chamber: 50, cavern: 30, rubble: 20 },
+      mid:   { chamber: 40, cavern: 35, rubble: 25 },
+      late:  { chamber: 30, cavern: 35, rubble: 30, bridge: 5 },
+    },
+    stairwell: {
+      early: { chamber: 70, pillared: 20, well: 10 },
+      mid:   { chamber: 65, pillared: 25, well: 10 },
+      late:  { chamber: 60, pillared: 30, well: 10 },
+    },
   },
 }

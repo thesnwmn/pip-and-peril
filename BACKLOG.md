@@ -22,19 +22,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-### 081 · Interior Tile Archetypes
-
-Add the missing interior-shape layer (layer 2 of the four-layer tile model) to the renderer:
-Chamber (default), Passage, Cavern, Pillared Hall, Rubble, Chasm + Bridge, Well, Magic Pool, and
-Squeeze. Each archetype is a **family of seeded variants** (a few types per style, chosen
-deterministically by grid position) so the dungeon stops repeating itself, while doorway positions
-and the snapping invariant are unchanged. Ships as a pure visual skin before any rule changes, and
-adds a **Tile Gallery** dev run mode (`gallery.html`) that renders the whole catalogue from the real
-renderer — built to host props (082) and biomes later.
-**Depends on:** 003 (Tile Map Core — renderer).
-See `docs/features/081-interior-tile-archetypes.md` for the full spec.
-*(Promotes Idea 008.)*
-
 ### 089 · Scalable Dice Pool Display
 
 Improve dice rendering to handle **variable pool sizes** (currently hard-coded for 4 dice) and

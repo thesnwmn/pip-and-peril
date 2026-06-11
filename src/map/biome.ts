@@ -11,6 +11,11 @@ export interface BiomePalette {
   floorFlagLo: string
   voidFill: string
   fogOverlay: string
+  voidDrop: string
+  chasmRim: string
+  featureStone: string
+  wellWater: string
+  magicGlow: string
 }
 
 export const DUNGEON: BiomePalette = {
@@ -23,6 +28,11 @@ export const DUNGEON: BiomePalette = {
   floorFlagLo: '#2a241c',
   voidFill: '#080810',
   fogOverlay: 'rgba(8,8,16,0.65)',
+  voidDrop: '#0a0a14',
+  chasmRim: '#000000',
+  featureStone: '#3a342c',
+  wellWater: '#10202c',
+  magicGlow: 'rgba(150,90,230,0.55)',
 }
 
 export const ROOM_ACCENTS: Partial<Record<RoomType, string>> = {
