@@ -46,6 +46,7 @@ export interface MetaState {
   currentVisitors: VisitorInstance[]
   visitorEpoch: number
   pendingRunBoons: BoonDie[]
+  marksEarned: string[]  // list of earned mark IDs, in order of earning (feature 052)
 }
 
 const DEFAULT_META_STATE: MetaState = {
@@ -63,6 +64,7 @@ const DEFAULT_META_STATE: MetaState = {
   currentVisitors: [],
   visitorEpoch: -1,
   pendingRunBoons: [],
+  marksEarned: [],
 }
 
 export function loadMetaState(): MetaState {

@@ -22,17 +22,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## IN PROGRESS
 
-### 052 · Marks of Descent
-
-Milestone tokens earned from specific firsts and achievements — first boss kill, first floor 3
-reach, first full run without healing, and similar. Marks unlock **content rather than power**: new
-weapons appear on the rack, skill scrolls arrive, new visitor types become possible. Locked slots
-are visible but unrevealing; tapping a locked slot reveals the earn condition without spoiling the
-reward. Ships 6 starting Marks and one concrete unlock: the **Blue d4** added to the permanent pool
-on first reaching floor 2.
-**Depends on:** 029 (camp hub, MetaState), 024 (run summary), 090 (activity bar — adds Marks button).
-See `docs/features/052-marks-of-descent.md` for the full spec.
-
 ### 091 · Skills System & Scroll Wall
 
 Make the camp's **scroll wall** functional: five skills that change what decisions are interesting in

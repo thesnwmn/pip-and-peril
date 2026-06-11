@@ -58,6 +58,13 @@ describe('initDungeon', () => {
     const state = initDungeon()
     expect(state.stepCount).toBe(0)
   })
+
+  it('initialises run-tracking fields to zero/false/empty', () => {
+    const state = initDungeon()
+    expect(state.healingItemsUsed).toBe(0)
+    expect(state.rattledKillingBlow).toBe(false)
+    expect(state.weaponId).toBe('')
+  })
 })
 
 describe('chebyshev', () => {

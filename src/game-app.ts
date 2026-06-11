@@ -150,6 +150,10 @@ export class GameApp {
     if (next === this.currentScreen) return
     if (next === 'run-summary' && summary) {
       this.pendingRunSummary = summary
+      // Apply mark-updated MetaState immediately so camp creation uses it
+      if (summary.metaWithMarks) {
+        this.metaState = summary.metaWithMarks
+      }
       this.screens['run-summary'] = createRunSummary(
         (screen, metaState) => {
           if (metaState) {

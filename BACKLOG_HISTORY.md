@@ -16,6 +16,19 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 052 · Marks of Descent
+
+**Shipped:** 2026-06-11 · **PR:** (pending) · **Spec:** [docs/features/history/052-marks-of-descent.md](docs/features/history/052-marks-of-descent.md)
+
+Milestone tokens earned from specific firsts and achievements — first boss kill, first floor 3
+reach, first full run without healing, and similar. Marks unlock **content rather than power**: new
+weapons appear on the rack, skill scrolls arrive, new visitor types become possible. Locked slots
+are visible but unrevealing; tapping a locked slot reveals the earn condition without spoiling the
+reward. Ships 6 starting Marks and one concrete unlock: the **Blue d4** added to the permanent pool
+on first reaching floor 2.
+
+---
+
 ### 051 · Visitor System
 
 **Shipped:** 2026-06-11 · **PR:** (pending) · **Spec:** [docs/features/history/051-visitor-system.md](docs/features/history/051-visitor-system.md)

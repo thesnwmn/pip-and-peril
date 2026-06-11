@@ -37,6 +37,10 @@ export interface DungeonState {
   goldEarned: number
   killedBy: string | null
   killedByFloor: number | null
+  // Run-tracking fields for Marks of Descent evaluation (feature 052)
+  healingItemsUsed: number
+  rattledKillingBlow: boolean
+  weaponId: string
 }
 
 const GRID_W = 13
@@ -79,6 +83,9 @@ export function initDungeon(): DungeonState {
     goldEarned: 0,
     killedBy: null,
     killedByFloor: null,
+    healingItemsUsed: 0,
+    rattledKillingBlow: false,
+    weaponId: '',
   }
 }
 
