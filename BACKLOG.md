@@ -22,6 +22,19 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
+### 081 · Interior Tile Archetypes
+
+Add the missing interior-shape layer (layer 2 of the four-layer tile model) to the renderer:
+Chamber (default), Passage, Cavern, Pillared Hall, Rubble, Chasm + Bridge, Well, Magic Pool, and
+Squeeze. Each archetype is a **family of seeded variants** (a few types per style, chosen
+deterministically by grid position) so the dungeon stops repeating itself, while doorway positions
+and the snapping invariant are unchanged. Ships as a pure visual skin before any rule changes, and
+adds a **Tile Gallery** dev run mode (`gallery.html`) that renders the whole catalogue from the real
+renderer — built to host props (082) and biomes later.
+**Depends on:** 003 (Tile Map Core — renderer).
+See `docs/features/081-interior-tile-archetypes.md` for the full spec.
+*(Promotes Idea 008.)*
+
 ### 088 · Workbench — Dice Upgrades
 
 The second half of the meta-progression foundation: Pip sits at his workbench and spends shiny
@@ -84,15 +97,6 @@ locks to its minimum face until Pip lands an attack. **Emboldened** triggers on 
 next combat starts with one free virtual Yellow pip on the first roll. Both clear naturally and hook
 into items and meta skills.
 **Depends on:** 037 (Combat Overhaul — turn loop).
-
-### 081 · Interior Tile Archetypes
-
-Add the missing interior-shape layer to the tile model: Chamber (current default), Passage (floor
-only between connecting exits), Cavern (rough, narrow, rubble-edged), Pillared Hall, and
-Rubble / Collapse. Pure visual additions to the `drawCell()` renderer; exit positions and the
-snapping invariant are unchanged. Ships as skin before any rule changes.
-**Depends on:** 003 (Tile Map Core — renderer).
-*(Promotes Idea 008.)*
 
 ### 082 · Prop Layer
 
