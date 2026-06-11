@@ -5,6 +5,7 @@ export interface PermanentDie {
   id: string
   colour: DiceColour
   faces: DiceFaces
+  minFloor?: number   // absent = 1; present = 2..Math.floor(faces/2)
 }
 
 export interface MetaState {
@@ -64,10 +65,18 @@ export function loadMetaState(): MetaState {
     const runCount =
       typeof runCountRaw === 'number' && !isNaN(runCountRaw) ? runCountRaw : 0
 
+    const permanentPool = (parsed.permanentPool as PermanentDie[]).map(die => {
+      const mf = die.minFloor
+      if (typeof mf !== 'number' || mf <= 1) return die
+      const maxFloor = Math.floor(die.faces / 2)
+      const clamped = Math.max(2, Math.min(Math.floor(mf), maxFloor))
+      return { ...die, minFloor: clamped }
+    })
+
     const result: MetaState = {
       version: 1,
       scraps: parsed.scraps as number,
-      permanentPool: parsed.permanentPool as MetaState['permanentPool'],
+      permanentPool,
       activeWeaponId: parsed.activeWeaponId as string,
       unlockedWeaponIds: parsed.unlockedWeaponIds as string[],
       runCount,

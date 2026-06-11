@@ -20,19 +20,7 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-## READY
-
-### 088 · Workbench — Dice Upgrades
-
-The second half of the meta-progression foundation: Pip sits at his workbench and spends shiny
-scraps to modify his **permanent dice pool**. Three operations — **Swap** (replace a die with a
-larger face-count, raising ceiling and variance), **Add** (grow the pool by one die of a chosen
-colour and type), and **Engrave** (permanently lock the minimum face of a specific die to tame
-variance) — each costing scraps from `MetaState`. The workbench sub-screen is the camp's hero
-interaction: tappable die objects, inline upgrade options, scrap costs, and confirmation. Together
-with 029 this delivers the full "Shiny Scraps & Dice Upgrades" loop.
-**Depends on:** 029 (MetaState, camp screen, workbench tap target).
-See `docs/features/088-workbench-dice-upgrades.md` for the full spec.
+## IN PROGRESS
 
 ### 089 · Scalable Dice Pool Display
 

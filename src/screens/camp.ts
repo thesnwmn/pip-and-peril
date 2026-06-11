@@ -1,11 +1,19 @@
 import { colors } from '../colors'
 import type { ScreenController } from './main-menu'
-import type { MetaState } from '../meta/state'
+import type { MetaState, DiceColour, DiceFaces } from '../meta/state'
 import { loadMetaState, saveMetaState } from '../meta/state'
 import { WEAPON_SPECS } from '../meta/weapons'
 import type { Die } from '../dice/pool'
 import { generateNotices } from '../camp/notices'
 import type { NoticeState } from '../camp/notices'
+import {
+  getNextFaces,
+  getSwapCost,
+  getEngraveValues,
+  makeNewDieId,
+  ADD_COST,
+  ENGRAVE_COST,
+} from '../camp/workbench'
 import { easeOut } from '../animation/easing'
 import { STATUS_BAR_H } from './game-layout'
 import { createMenuModal, drawMenuButton, isInMenuButton } from '../menu/modal'
@@ -57,6 +65,59 @@ export function getAnimatedPanelY(progress: number): number {
 
 export function getCloseBtnRect(panelY: number): Rect {
   return { x: LOGICAL_W - CLOSE_BTN_SIZE, y: panelY, w: CLOSE_BTN_SIZE, h: CLOSE_BTN_SIZE }
+}
+
+// ── Workbench panel geometry ───────────────────────────────────────────────────
+export const WB_DIE_SIZE = 52          // >= 44px tap target
+export const WB_DICE_PER_ROW = 6      // wrap threshold
+const WB_HEADER_H = 56
+const WB_DIE_ROW_TOP = 72             // offset from panelY (header + 16px gap)
+const WB_DIE_GAP = 8
+const WB_OPS_GAP = 12
+const WB_DONE_STRIP_H = 54
+const WB_ADD_BTN_H = 40
+const WB_ADD_BTN_W = 180
+const WB_PANEL_H = LOGICAL_H - Math.round(0.56 * LOGICAL_H)  // panel height when fully open
+const WB_DONE_OFFSET = WB_PANEL_H - WB_DONE_STRIP_H
+const WB_ADD_BTN_OFFSET = WB_DONE_OFFSET - 8 - WB_ADD_BTN_H
+const WB_CAMP_ACCENT = '#c8781e'
+const WB_CONFIRM_BTN_W = 140
+const WB_CONFIRM_BTN_H = 40
+const WB_VALUE_BTN_SIZE = 44
+const WB_VALUE_BTN_GAP = 8
+
+export function getWbOpsTop(panelY: number, poolSize: number): number {
+  const numRows = Math.ceil(Math.max(1, poolSize) / WB_DICE_PER_ROW)
+  const dieRowH = numRows * WB_DIE_SIZE + (numRows - 1) * WB_DIE_GAP
+  return panelY + WB_DIE_ROW_TOP + dieRowH + WB_OPS_GAP
+}
+
+export function getWbDieRect(dieIndex: number, panelY: number, poolSize: number): Rect {
+  const col = dieIndex % WB_DICE_PER_ROW
+  const row = Math.floor(dieIndex / WB_DICE_PER_ROW)
+  const rowStart = row * WB_DICE_PER_ROW
+  const rowDieCount = Math.min(WB_DICE_PER_ROW, poolSize - rowStart)
+  const rowWidth = rowDieCount * WB_DIE_SIZE + (rowDieCount - 1) * WB_DIE_GAP
+  const startX = (LOGICAL_W - rowWidth) / 2
+  return {
+    x: Math.round(startX + col * (WB_DIE_SIZE + WB_DIE_GAP)),
+    y: panelY + WB_DIE_ROW_TOP + row * (WB_DIE_SIZE + WB_DIE_GAP),
+    w: WB_DIE_SIZE,
+    h: WB_DIE_SIZE,
+  }
+}
+
+export function getWbDoneRect(panelY: number): Rect {
+  return { x: 0, y: panelY + WB_DONE_OFFSET, w: LOGICAL_W, h: WB_DONE_STRIP_H }
+}
+
+export function getWbAddBtnRect(panelY: number): Rect {
+  return {
+    x: (LOGICAL_W - WB_ADD_BTN_W) / 2,
+    y: panelY + WB_ADD_BTN_OFFSET,
+    w: WB_ADD_BTN_W,
+    h: WB_ADD_BTN_H,
+  }
 }
 
 // ── Weapon-card layout (relative to animated panelY) ──────────────────────────
@@ -126,6 +187,15 @@ const WEAPON_SILS = [
 
 export type SubPanelName = 'weapons' | 'workbench' | 'notices' | 'visitor'
 
+type WorkbenchMode =
+  | 'idle'
+  | 'die-selected'
+  | 'swap-confirm'
+  | 'engrave-picker'
+  | 'engrave-confirm'
+  | 'add-picker'
+  | 'add-confirm'
+
 interface CampState {
   metaState: MetaState
   menuModal: MenuModal
@@ -144,6 +214,11 @@ interface CampState {
   // Campfire animation
   fireFlameHeights: [number, number, number]
   fireNextFrameTime: number
+  // Workbench panel state
+  workbenchMode: WorkbenchMode
+  workbenchSelectedDie: number       // index in permanentPool, -1 if none
+  workbenchEngraveValue: number      // chosen value during engrave confirm
+  workbenchAddColour: DiceColour | null
   // Hover feedback (mouse devices)
   hoveredElement: string | null
   isMouseDevice: boolean
@@ -168,6 +243,10 @@ export function createCamp(
     noticeDismissStart: 0,
     fireFlameHeights: [16, 18, 14],
     fireNextFrameTime: 0,
+    workbenchMode: 'idle',
+    workbenchSelectedDie: -1,
+    workbenchEngraveValue: 0,
+    workbenchAddColour: null,
     hoveredElement: null,
     isMouseDevice: false,
   }
@@ -207,6 +286,7 @@ export function createCamp(
     const permanent: Die[] = state.metaState.permanentPool.map((p) => ({
       color: p.colour as Die['color'],
       sides: p.faces,
+      ...(p.minFloor && p.minFloor > 1 ? { minFloor: p.minFloor } : {}),
     }))
     const weapon = WEAPON_SPECS[state.selectedWeaponId]
     return weapon ? [...permanent, ...weapon.addedDice] : permanent
@@ -247,6 +327,7 @@ export function createCamp(
     sides: number,
     color: string,
     size: number,
+    engraved = false,
   ): void {
     ctx.fillStyle = DIE_COLOR_MAP[color] || '#999'
     ctx.fillRect(x, y, size, size)
@@ -258,6 +339,13 @@ export function createCamp(
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(sides.toString(), x + size / 2, y + size / 2)
+    if (engraved) {
+      const markerH = Math.max(4, Math.round(size / 10))
+      ctx.globalAlpha = 0.6
+      ctx.fillStyle = DIE_COLOR_MAP[color] || '#999'
+      ctx.fillRect(x + 2, y + size - markerH - 1, size - 4, markerH)
+      ctx.globalAlpha = 1
+    }
   }
 
   function drawCloseButton(ctx: CanvasRenderingContext2D, panelY: number): void {
@@ -776,7 +864,7 @@ export function createCamp(
     let poolDieX = (LOGICAL_W - poolTotalW) / 2
     const poolDieY = panelY + POOL_DICE_OFFSET
     for (const die of poolDice) {
-      drawDie(ctx, poolDieX, poolDieY, die.sides, die.color, POOL_DIE_SIZE)
+      drawDie(ctx, poolDieX, poolDieY, die.sides, die.color, POOL_DIE_SIZE, !!(die.minFloor && die.minFloor > 1))
       poolDieX += POOL_DIE_SIZE + poolDieGap
     }
 
@@ -845,17 +933,325 @@ export function createCamp(
     }
   }
 
-  function drawWorkbenchPanel(ctx: CanvasRenderingContext2D, panelY: number): void {
-    drawSubPanelBase(ctx, panelY, 'Workbench')
-    ctx.font = '13px system-ui, -apple-system, sans-serif'
-    ctx.fillStyle = colors.textMuted
+  // ── Workbench panel drawing helpers ─────────────────────────────────────────
+
+  function drawWbConfirmBtn(
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    y: number,
+    label: string,
+    hoverKey: string,
+  ): void {
+    const btnRect: Rect = { x: cx - WB_CONFIRM_BTN_W / 2, y, w: WB_CONFIRM_BTN_W, h: WB_CONFIRM_BTN_H }
+    const hovered = state.isMouseDevice && state.hoveredElement === hoverKey
+    ctx.globalAlpha = hovered ? 1 : 0.9
+    ctx.fillStyle = WB_CAMP_ACCENT
+    ctx.fillRect(btnRect.x, btnRect.y, btnRect.w, btnRect.h)
+    ctx.globalAlpha = 1
+    ctx.font = 'bold 14px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = '#1a1208'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('Pip tinkers with his dice.', LOGICAL_W / 2, panelY + 80)
-    ctx.fillText('Upgrades coming soon.', LOGICAL_W / 2, panelY + 100)
+    ctx.fillText(label, cx, y + WB_CONFIRM_BTN_H / 2)
+  }
+
+  function drawWbCancelLink(
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    y: number,
+    hoverKey: string,
+  ): void {
+    const hovered = state.isMouseDevice && state.hoveredElement === hoverKey
+    ctx.font = '12px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = hovered ? colors.textPrimary : colors.textMuted
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+    ctx.fillText('Cancel', cx, y)
+  }
+
+  function drawWbDivider(ctx: CanvasRenderingContext2D, y: number): void {
+    ctx.strokeStyle = '#3a2818'
+    ctx.lineWidth = 1
+    ctx.setLineDash([4, 6])
+    ctx.beginPath()
+    ctx.moveTo(16, y)
+    ctx.lineTo(LOGICAL_W - 16, y)
+    ctx.stroke()
+    ctx.setLineDash([])
+  }
+
+  function drawWbDieOpsArea(ctx: CanvasRenderingContext2D, opsTop: number): void {
+    const pool = state.metaState.permanentPool
+    const selectedIdx = state.workbenchSelectedDie
+    const mode = state.workbenchMode
+    const cx = LOGICAL_W / 2
+
+    if (mode === 'die-selected') {
+      if (selectedIdx < 0 || selectedIdx >= pool.length) return
+      const die = pool[selectedIdx]
+      const nextFaces = getNextFaces(die.faces as DiceFaces)
+      const swapCost = getSwapCost(die.faces as DiceFaces)
+      const scraps = state.metaState.scraps
+
+      const swapY = opsTop + 8
+      if (nextFaces !== null && swapCost !== null) {
+        const canAffordSwap = scraps >= swapCost
+        ctx.globalAlpha = canAffordSwap ? 1 : 0.4
+        ctx.font = '13px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = colors.textPrimary
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(`Swap → d${nextFaces}`, 24, swapY + 14)
+        ctx.font = '12px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = colors.gold
+        ctx.textAlign = 'right'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(`${swapCost} sc`, LOGICAL_W - 24, swapY + 14)
+        ctx.globalAlpha = 1
+      } else {
+        ctx.globalAlpha = 0.4
+        ctx.font = '13px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = colors.textMuted
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('Max size', 24, swapY + 14)
+        ctx.globalAlpha = 1
+      }
+
+      const engraveY = opsTop + 48
+      if (!die.minFloor || die.minFloor <= 1) {
+        const canAffordEngrave = scraps >= ENGRAVE_COST
+        ctx.globalAlpha = canAffordEngrave ? 1 : 0.4
+        ctx.font = '13px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = colors.textPrimary
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('Engrave minimum face', 24, engraveY + 14)
+        ctx.font = '12px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = colors.gold
+        ctx.textAlign = 'right'
+        ctx.fillText(`${ENGRAVE_COST} sc`, LOGICAL_W - 24, engraveY + 14)
+        ctx.globalAlpha = 1
+      } else {
+        ctx.font = '11px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = colors.textMuted
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(`Engraved: min ${die.minFloor}`, 24, engraveY + 14)
+      }
+    } else if (mode === 'swap-confirm') {
+      if (selectedIdx < 0 || selectedIdx >= pool.length) return
+      const die = pool[selectedIdx]
+      const nextFaces = getNextFaces(die.faces as DiceFaces)!
+      const cost = getSwapCost(die.faces as DiceFaces)!
+      ctx.font = '13px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = colors.textPrimary
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText(`Swap to d${nextFaces} for ${cost} scraps?`, cx, opsTop + 10)
+      drawWbConfirmBtn(ctx, cx, opsTop + 36, 'Confirm', 'wb-swap-confirm')
+      drawWbCancelLink(ctx, cx, opsTop + 84, 'wb-cancel')
+    } else if (mode === 'engrave-picker') {
+      if (selectedIdx < 0 || selectedIdx >= pool.length) return
+      const die = pool[selectedIdx]
+      const values = getEngraveValues(die.faces as DiceFaces)
+      const totalW = values.length * WB_VALUE_BTN_SIZE + (values.length - 1) * WB_VALUE_BTN_GAP
+      const startX = Math.round((LOGICAL_W - totalW) / 2)
+      const btnY = opsTop + 36
+      ctx.font = '13px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = colors.textPrimary
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText('Engrave minimum face:', cx, opsTop + 10)
+      for (let vi = 0; vi < values.length; vi++) {
+        const v = values[vi]
+        const bx = startX + vi * (WB_VALUE_BTN_SIZE + WB_VALUE_BTN_GAP)
+        const hkey = `wb-engrave-val-${v}`
+        const hovered = state.isMouseDevice && state.hoveredElement === hkey
+        ctx.fillStyle = hovered ? '#3a2818' : '#241608'
+        ctx.fillRect(bx, btnY, WB_VALUE_BTN_SIZE, WB_VALUE_BTN_SIZE)
+        ctx.strokeStyle = hovered ? colors.gold : '#5a3d1a'
+        ctx.lineWidth = 1
+        ctx.strokeRect(bx, btnY, WB_VALUE_BTN_SIZE, WB_VALUE_BTN_SIZE)
+        ctx.font = 'bold 14px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = colors.textPrimary
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(String(v), bx + WB_VALUE_BTN_SIZE / 2, btnY + WB_VALUE_BTN_SIZE / 2)
+      }
+      drawWbCancelLink(ctx, cx, btnY + WB_VALUE_BTN_SIZE + 10, 'wb-cancel')
+    } else if (mode === 'engrave-confirm') {
+      const v = state.workbenchEngraveValue
+      ctx.font = '13px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = colors.textPrimary
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText(`Lock minimum face to ${v}`, cx, opsTop + 10)
+      ctx.fillText(`for ${ENGRAVE_COST} scraps?`, cx, opsTop + 28)
+      drawWbConfirmBtn(ctx, cx, opsTop + 54, 'Confirm', 'wb-engrave-confirm')
+      drawWbCancelLink(ctx, cx, opsTop + 102, 'wb-cancel')
+    }
+  }
+
+  function drawWbAddPickerArea(ctx: CanvasRenderingContext2D, opsTop: number): void {
+    const meta = state.metaState
+    const mode = state.workbenchMode
+    const cx = LOGICAL_W / 2
+    const hasBlue = meta.permanentPool.some(d => d.colour === 'blue')
+
+    if (mode === 'add-picker') {
+      ctx.font = '13px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = colors.textPrimary
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText('Add a d4 die to your pool', cx, opsTop + 12)
+
+      const availableColours: DiceColour[] = ['red', 'green', 'yellow']
+      if (hasBlue) availableColours.push('blue')
+      const dieSize = WB_VALUE_BTN_SIZE
+      const dieGap = 10
+      const totalW = availableColours.length * dieSize + (availableColours.length - 1) * dieGap
+      const startX = Math.round((LOGICAL_W - totalW) / 2)
+      const dieY = opsTop + 40
+
+      for (let ci = 0; ci < availableColours.length; ci++) {
+        const colour = availableColours[ci]
+        const bx = startX + ci * (dieSize + dieGap)
+        const canAfford = meta.scraps >= ADD_COST
+        const hkey = `wb-add-${colour}`
+        const hovered = state.isMouseDevice && state.hoveredElement === hkey && canAfford
+        ctx.globalAlpha = hovered ? 0.8 : canAfford ? 1 : 0.4
+        drawDie(ctx, bx, dieY, 4, colour, dieSize)
+        ctx.globalAlpha = canAfford ? 1 : 0.4
+        ctx.font = '12px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = colors.gold
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'top'
+        ctx.fillText(`${ADD_COST} sc`, bx + dieSize / 2, dieY + dieSize + 4)
+        ctx.globalAlpha = 1
+      }
+      drawWbCancelLink(ctx, cx, dieY + dieSize + 22, 'wb-cancel')
+    } else if (mode === 'add-confirm') {
+      const colour = state.workbenchAddColour!
+      ctx.font = '13px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = colors.textPrimary
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText(`Add d4 ${colour} for ${ADD_COST} scraps?`, cx, opsTop + 12)
+      drawWbConfirmBtn(ctx, cx, opsTop + 40, 'Confirm', 'wb-add-confirm')
+      drawWbCancelLink(ctx, cx, opsTop + 88, 'wb-cancel')
+    }
+  }
+
+  function drawWorkbenchPanel(ctx: CanvasRenderingContext2D, panelY: number): void {
+    const meta = state.metaState
+    const pool = meta.permanentPool
+    const mode = state.workbenchMode
+    const cx = LOGICAL_W / 2
+
+    ctx.globalAlpha = 0.40
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, STATUS_BAR_H, LOGICAL_W, panelY - STATUS_BAR_H)
+    ctx.globalAlpha = 1
+
+    ctx.fillStyle = '#2e1d0d'
+    ctx.fillRect(0, panelY, LOGICAL_W, LOGICAL_H - panelY)
+
+    ctx.strokeStyle = '#5a3d1a'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(0, panelY)
+    ctx.lineTo(LOGICAL_W, panelY)
+    ctx.stroke()
+
+    // Header
+    const headerMidY = panelY + WB_HEADER_H / 2
+    ctx.font = 'bold 16px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.textPrimary
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText("Pip's Dice", cx, headerMidY)
+
+    ctx.font = 'bold 16px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.gold
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(`◈ ${meta.scraps}`, LOGICAL_W - CLOSE_BTN_SIZE - 10, headerMidY)
+
+    drawCloseButton(ctx, panelY)
+
+    ctx.strokeStyle = '#5a3d1a'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(0, panelY + WB_HEADER_H)
+    ctx.lineTo(LOGICAL_W, panelY + WB_HEADER_H)
+    ctx.stroke()
+
+    // Die row
+    const poolSize = pool.length
+    for (let i = 0; i < poolSize; i++) {
+      const die = pool[i]
+      const r = getWbDieRect(i, panelY, poolSize)
+      const isSelected = mode !== 'add-picker' && mode !== 'add-confirm' && state.workbenchSelectedDie === i
+      if (isSelected) {
+        ctx.strokeStyle = colors.gold
+        ctx.lineWidth = 2
+        ctx.strokeRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4)
+      }
+      const hovered = state.isMouseDevice && state.hoveredElement === `wb-die-${i}` && !isSelected
+      ctx.globalAlpha = hovered ? 0.8 : 1
+      drawDie(ctx, r.x, r.y, die.faces, die.colour, WB_DIE_SIZE, !!(die.minFloor && die.minFloor > 1))
+      ctx.globalAlpha = 1
+    }
+
+    // Operations / add-picker area
+    const opsTop = getWbOpsTop(panelY, poolSize)
+
+    if (mode === 'add-picker' || mode === 'add-confirm') {
+      drawWbAddPickerArea(ctx, opsTop)
+    } else {
+      if (mode !== 'idle') {
+        drawWbDivider(ctx, opsTop - 6)
+        drawWbDieOpsArea(ctx, opsTop)
+      }
+
+      // "+ Add Die" button
+      const addRect = getWbAddBtnRect(panelY)
+      const addHovered = state.isMouseDevice && state.hoveredElement === 'wb-add-die'
+      ctx.strokeStyle = addHovered ? colors.textPrimary : '#5a3d1a'
+      ctx.lineWidth = 1
+      ctx.strokeRect(addRect.x, addRect.y, addRect.w, addRect.h)
+      ctx.font = '13px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = addHovered ? colors.textPrimary : colors.textMuted
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('+ Add Die', cx, addRect.y + addRect.h / 2)
+    }
+
+    // Done strip
+    const doneRect = getWbDoneRect(panelY)
+    ctx.strokeStyle = '#5a3d1a'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(0, doneRect.y)
+    ctx.lineTo(LOGICAL_W, doneRect.y)
+    ctx.stroke()
+    const doneHovered = state.isMouseDevice && state.hoveredElement === 'wb-done'
+    ctx.font = 'bold 15px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = doneHovered ? colors.textPrimary : colors.gold
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('Done', cx, doneRect.y + doneRect.h / 2)
   }
 
   // ── Panel open/close helpers ─────────────────────────────────────────────────
+
+  function resetWorkbenchState(): void {
+    state.workbenchMode = 'idle'
+    state.workbenchSelectedDie = -1
+    state.workbenchEngraveValue = 0
+    state.workbenchAddColour = null
+  }
 
   function openPanel(name: SubPanelName): void {
     state.activeSubPanel = name
@@ -866,6 +1262,9 @@ export function createCamp(
       state.noticeDismissVisible = false
       state.noticeDismissAlpha = 0
     }
+    if (name === 'workbench') {
+      resetWorkbenchState()
+    }
   }
 
   function closePanel(): void {
@@ -873,6 +1272,7 @@ export function createCamp(
     // Continue from current progress rather than snapping to top
     state.panelAnimStart = performance.now() - (1 - state.panelProgress) * SUB_PANEL_SINK_MS
     state.noticeDismissVisible = false
+    resetWorkbenchState()
     // activeSubPanel stays set until panelProgress reaches 0 (draw loop clears it)
   }
 
@@ -940,6 +1340,287 @@ export function createCamp(
 
   // ── Input ────────────────────────────────────────────────────────────────────
 
+  function handleWorkbenchClick(x: number, y: number, panelY: number): void {
+    const meta = state.metaState
+    const pool = meta.permanentPool
+    const mode = state.workbenchMode
+    const opsTop = getWbOpsTop(panelY, pool.length)
+    const cx = LOGICAL_W / 2
+
+    if (inRect(getWbDoneRect(panelY), x, y)) {
+      closePanel()
+      return
+    }
+
+    if (mode !== 'add-picker' && mode !== 'add-confirm') {
+      for (let i = 0; i < pool.length; i++) {
+        if (inRect(getWbDieRect(i, panelY, pool.length), x, y)) {
+          if (state.workbenchSelectedDie === i) {
+            state.workbenchMode = 'idle'
+            state.workbenchSelectedDie = -1
+          } else {
+            state.workbenchMode = 'die-selected'
+            state.workbenchSelectedDie = i
+          }
+          return
+        }
+      }
+    }
+
+    if (mode === 'idle' || mode === 'die-selected') {
+      if (inRect(getWbAddBtnRect(panelY), x, y)) {
+        state.workbenchMode = 'add-picker'
+        state.workbenchSelectedDie = -1
+        return
+      }
+    }
+
+    if (mode === 'die-selected') {
+      const selectedIdx = state.workbenchSelectedDie
+      if (selectedIdx < 0 || selectedIdx >= pool.length) return
+      const die = pool[selectedIdx]
+      const swapY = opsTop + 10
+      const engraveY = opsTop + 48
+      const swapCost = getSwapCost(die.faces as DiceFaces)
+      if (swapCost !== null && meta.scraps >= swapCost) {
+        if (y >= swapY && y <= swapY + 28) {
+          state.workbenchMode = 'swap-confirm'
+          return
+        }
+      }
+      if (!die.minFloor || die.minFloor <= 1) {
+        if (meta.scraps >= ENGRAVE_COST && y >= engraveY && y <= engraveY + 28) {
+          state.workbenchMode = 'engrave-picker'
+          return
+        }
+      }
+    }
+
+    if (mode === 'swap-confirm') {
+      const confirmRect: Rect = {
+        x: cx - WB_CONFIRM_BTN_W / 2, y: opsTop + 36,
+        w: WB_CONFIRM_BTN_W, h: WB_CONFIRM_BTN_H,
+      }
+      if (inRect(confirmRect, x, y)) {
+        const selectedIdx = state.workbenchSelectedDie
+        if (selectedIdx < 0 || selectedIdx >= pool.length) return
+        const die = pool[selectedIdx]
+        const nextFaces = getNextFaces(die.faces as DiceFaces)!
+        const cost = getSwapCost(die.faces as DiceFaces)!
+        const newPool = pool.map((d, i) => i === selectedIdx ? { ...d, faces: nextFaces } : d)
+        const newMeta: MetaState = { ...meta, scraps: meta.scraps - cost, permanentPool: newPool }
+        saveMetaState(newMeta)
+        state.metaState = newMeta
+        state.workbenchMode = 'idle'
+        state.workbenchSelectedDie = -1
+        return
+      }
+      const cancelRect: Rect = { x: cx - 40, y: opsTop + 84, w: 80, h: 28 }
+      if (inRect(cancelRect, x, y)) {
+        state.workbenchMode = 'die-selected'
+        return
+      }
+    }
+
+    if (mode === 'engrave-picker') {
+      const selectedIdx = state.workbenchSelectedDie
+      if (selectedIdx < 0 || selectedIdx >= pool.length) return
+      const die = pool[selectedIdx]
+      const values = getEngraveValues(die.faces as DiceFaces)
+      const totalW = values.length * WB_VALUE_BTN_SIZE + (values.length - 1) * WB_VALUE_BTN_GAP
+      const startX = Math.round((LOGICAL_W - totalW) / 2)
+      const btnY = opsTop + 36
+      for (let vi = 0; vi < values.length; vi++) {
+        const bx = startX + vi * (WB_VALUE_BTN_SIZE + WB_VALUE_BTN_GAP)
+        if (x >= bx && x <= bx + WB_VALUE_BTN_SIZE && y >= btnY && y <= btnY + WB_VALUE_BTN_SIZE) {
+          state.workbenchEngraveValue = values[vi]
+          state.workbenchMode = 'engrave-confirm'
+          return
+        }
+      }
+      const cancelRect: Rect = { x: cx - 40, y: btnY + WB_VALUE_BTN_SIZE + 10, w: 80, h: 28 }
+      if (inRect(cancelRect, x, y)) {
+        state.workbenchMode = 'die-selected'
+        return
+      }
+    }
+
+    if (mode === 'engrave-confirm') {
+      const confirmRect: Rect = {
+        x: cx - WB_CONFIRM_BTN_W / 2, y: opsTop + 54,
+        w: WB_CONFIRM_BTN_W, h: WB_CONFIRM_BTN_H,
+      }
+      if (inRect(confirmRect, x, y)) {
+        const selectedIdx = state.workbenchSelectedDie
+        if (selectedIdx < 0 || selectedIdx >= pool.length) return
+        const v = state.workbenchEngraveValue
+        const newPool = pool.map((d, i) => i === selectedIdx ? { ...d, minFloor: v } : d)
+        const newMeta: MetaState = { ...meta, scraps: meta.scraps - ENGRAVE_COST, permanentPool: newPool }
+        saveMetaState(newMeta)
+        state.metaState = newMeta
+        state.workbenchMode = 'idle'
+        state.workbenchSelectedDie = -1
+        state.workbenchEngraveValue = 0
+        return
+      }
+      const cancelRect: Rect = { x: cx - 40, y: opsTop + 102, w: 80, h: 28 }
+      if (inRect(cancelRect, x, y)) {
+        state.workbenchMode = 'engrave-picker'
+        return
+      }
+    }
+
+    if (mode === 'add-picker') {
+      const hasBlue = meta.permanentPool.some(d => d.colour === 'blue')
+      const availableColours: DiceColour[] = ['red', 'green', 'yellow']
+      if (hasBlue) availableColours.push('blue')
+      const dieSize = WB_VALUE_BTN_SIZE
+      const dieGap = 10
+      const totalW = availableColours.length * dieSize + (availableColours.length - 1) * dieGap
+      const startX = Math.round((LOGICAL_W - totalW) / 2)
+      const dieY = opsTop + 40
+      for (let ci = 0; ci < availableColours.length; ci++) {
+        const colour = availableColours[ci]
+        const bx = startX + ci * (dieSize + dieGap)
+        if (meta.scraps >= ADD_COST && x >= bx && x <= bx + dieSize && y >= dieY && y <= dieY + dieSize) {
+          state.workbenchAddColour = colour
+          state.workbenchMode = 'add-confirm'
+          return
+        }
+      }
+      const cancelRect: Rect = { x: cx - 40, y: dieY + dieSize + 22, w: 80, h: 28 }
+      if (inRect(cancelRect, x, y)) {
+        state.workbenchMode = 'idle'
+        state.workbenchAddColour = null
+        return
+      }
+    }
+
+    if (mode === 'add-confirm') {
+      const confirmRect: Rect = {
+        x: cx - WB_CONFIRM_BTN_W / 2, y: opsTop + 40,
+        w: WB_CONFIRM_BTN_W, h: WB_CONFIRM_BTN_H,
+      }
+      if (inRect(confirmRect, x, y)) {
+        const colour = state.workbenchAddColour!
+        const newDie = { id: makeNewDieId(pool, colour), colour, faces: 4 as DiceFaces }
+        const newPool = [...pool, newDie]
+        const newMeta: MetaState = { ...meta, scraps: meta.scraps - ADD_COST, permanentPool: newPool }
+        saveMetaState(newMeta)
+        state.metaState = newMeta
+        state.workbenchMode = 'idle'
+        state.workbenchAddColour = null
+        return
+      }
+      const cancelRect: Rect = { x: cx - 40, y: opsTop + 88, w: 80, h: 28 }
+      if (inRect(cancelRect, x, y)) {
+        state.workbenchMode = 'add-picker'
+        state.workbenchAddColour = null
+        return
+      }
+    }
+  }
+
+  function getWorkbenchHoverTarget(x: number, y: number, panelY: number): string | null {
+    const meta = state.metaState
+    const pool = meta.permanentPool
+    const mode = state.workbenchMode
+    const opsTop = getWbOpsTop(panelY, pool.length)
+    const cx = LOGICAL_W / 2
+
+    if (inRect(getWbDoneRect(panelY), x, y)) return 'wb-done'
+
+    if (mode !== 'add-picker' && mode !== 'add-confirm') {
+      for (let i = 0; i < pool.length; i++) {
+        if (inRect(getWbDieRect(i, panelY, pool.length), x, y)) return `wb-die-${i}`
+      }
+    }
+
+    if (mode === 'idle' || mode === 'die-selected') {
+      if (inRect(getWbAddBtnRect(panelY), x, y)) return 'wb-add-die'
+    }
+
+    if (mode === 'die-selected') {
+      const selectedIdx = state.workbenchSelectedDie
+      if (selectedIdx >= 0 && selectedIdx < pool.length) {
+        const die = pool[selectedIdx]
+        const swapY = opsTop + 10
+        const engraveY = opsTop + 48
+        const swapCost = getSwapCost(die.faces as DiceFaces)
+        if (swapCost !== null && meta.scraps >= swapCost && y >= swapY && y <= swapY + 28) {
+          return 'wb-swap'
+        }
+        if (!die.minFloor || die.minFloor <= 1) {
+          if (meta.scraps >= ENGRAVE_COST && y >= engraveY && y <= engraveY + 28) return 'wb-engrave'
+        }
+      }
+    }
+
+    if (mode === 'swap-confirm') {
+      const confirmRect: Rect = { x: cx - WB_CONFIRM_BTN_W / 2, y: opsTop + 36, w: WB_CONFIRM_BTN_W, h: WB_CONFIRM_BTN_H }
+      if (inRect(confirmRect, x, y)) return 'wb-swap-confirm'
+      const cancelRect: Rect = { x: cx - 40, y: opsTop + 84, w: 80, h: 28 }
+      if (inRect(cancelRect, x, y)) return 'wb-cancel'
+    }
+
+    if (mode === 'engrave-picker') {
+      const selectedIdx = state.workbenchSelectedDie
+      if (selectedIdx >= 0 && selectedIdx < pool.length) {
+        const die = pool[selectedIdx]
+        const values = getEngraveValues(die.faces as DiceFaces)
+        const totalW = values.length * WB_VALUE_BTN_SIZE + (values.length - 1) * WB_VALUE_BTN_GAP
+        const startX = Math.round((LOGICAL_W - totalW) / 2)
+        const btnY = opsTop + 36
+        for (let vi = 0; vi < values.length; vi++) {
+          const v = values[vi]
+          const bx = startX + vi * (WB_VALUE_BTN_SIZE + WB_VALUE_BTN_GAP)
+          if (x >= bx && x <= bx + WB_VALUE_BTN_SIZE && y >= btnY && y <= btnY + WB_VALUE_BTN_SIZE) {
+            return `wb-engrave-val-${v}`
+          }
+        }
+        const btnY2 = opsTop + 36
+        const cancelRect: Rect = { x: cx - 40, y: btnY2 + WB_VALUE_BTN_SIZE + 10, w: 80, h: 28 }
+        if (inRect(cancelRect, x, y)) return 'wb-cancel'
+      }
+    }
+
+    if (mode === 'engrave-confirm') {
+      const confirmRect: Rect = { x: cx - WB_CONFIRM_BTN_W / 2, y: opsTop + 54, w: WB_CONFIRM_BTN_W, h: WB_CONFIRM_BTN_H }
+      if (inRect(confirmRect, x, y)) return 'wb-engrave-confirm'
+      const cancelRect: Rect = { x: cx - 40, y: opsTop + 102, w: 80, h: 28 }
+      if (inRect(cancelRect, x, y)) return 'wb-cancel'
+    }
+
+    if (mode === 'add-picker') {
+      const hasBlue = meta.permanentPool.some(d => d.colour === 'blue')
+      const availableColours: DiceColour[] = ['red', 'green', 'yellow']
+      if (hasBlue) availableColours.push('blue')
+      const dieSize = WB_VALUE_BTN_SIZE
+      const dieGap = 10
+      const totalW = availableColours.length * dieSize + (availableColours.length - 1) * dieGap
+      const startX = Math.round((LOGICAL_W - totalW) / 2)
+      const dieY = opsTop + 40
+      for (let ci = 0; ci < availableColours.length; ci++) {
+        const colour = availableColours[ci]
+        const bx = startX + ci * (dieSize + dieGap)
+        if (meta.scraps >= ADD_COST && x >= bx && x <= bx + dieSize && y >= dieY && y <= dieY + dieSize) {
+          return `wb-add-${colour}`
+        }
+      }
+      const cancelRect: Rect = { x: cx - 40, y: dieY + dieSize + 22, w: 80, h: 28 }
+      if (inRect(cancelRect, x, y)) return 'wb-cancel'
+    }
+
+    if (mode === 'add-confirm') {
+      const confirmRect: Rect = { x: cx - WB_CONFIRM_BTN_W / 2, y: opsTop + 40, w: WB_CONFIRM_BTN_W, h: WB_CONFIRM_BTN_H }
+      if (inRect(confirmRect, x, y)) return 'wb-add-confirm'
+      const cancelRect: Rect = { x: cx - 40, y: opsTop + 88, w: 80, h: 28 }
+      if (inRect(cancelRect, x, y)) return 'wb-cancel'
+    }
+
+    return null
+  }
+
   function handleClick(x: number, y: number): void {
     // Menu modal takes priority
     if (state.menuModal.handleClick(x, y)) return
@@ -973,6 +1654,11 @@ export function createCamp(
           onStartRun(newState)
           return
         }
+      }
+
+      if (state.activeSubPanel === 'workbench' && !state.panelClosing) {
+        handleWorkbenchClick(x, y, panelY)
+        return
       }
 
       // Tap in the scene zone (above the panel) closes any open panel
@@ -1025,6 +1711,8 @@ export function createCamp(
       } else if (state.activeSubPanel === 'weapons' && !state.panelClosing) {
         const w = weaponAt(x, y, panelY)
         state.hoveredElement = w
+      } else if (state.activeSubPanel === 'workbench' && !state.panelClosing) {
+        state.hoveredElement = getWorkbenchHoverTarget(x, y, panelY)
       } else {
         state.hoveredElement = null
       }

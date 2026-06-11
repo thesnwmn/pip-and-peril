@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 088 · Workbench — Dice Upgrades
+
+**Shipped:** 2026-06-11 · **PR:** pending · **Spec:** [docs/features/history/088-workbench-dice-upgrades.md](docs/features/history/088-workbench-dice-upgrades.md)
+
+The second half of the meta-progression foundation: Pip sits at his workbench and spends shiny scraps to modify his **permanent dice pool**. Three operations — **Swap** (replace a die with a larger face-count, raising ceiling and variance), **Add** (grow the pool by one die of a chosen colour and type), and **Engrave** (permanently lock the minimum face of a specific die to tame variance) — each costing scraps from `MetaState`. Together with 029 this delivers the full "Shiny Scraps & Dice Upgrades" loop.
+
+---
+
 ### 090 · Camp Screen Redesign — Scene & Activity Bar
 
 **Shipped:** 2026-06-10 · **PR:** (pending) · **Spec:** [docs/features/history/090-camp-screen-redesign.md](docs/features/history/090-camp-screen-redesign.md)

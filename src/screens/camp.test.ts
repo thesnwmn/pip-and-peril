@@ -12,6 +12,12 @@ import {
   getAnimatedPanelY,
   getCloseBtnRect,
   inRect,
+  WB_DIE_SIZE,
+  WB_DICE_PER_ROW,
+  getWbDieRect,
+  getWbOpsTop,
+  getWbDoneRect,
+  getWbAddBtnRect,
 } from './camp'
 
 // ── Layout invariants ──────────────────────────────────────────────────────────
@@ -138,6 +144,103 @@ describe('getCloseBtnRect', () => {
 })
 
 // ── inRect helper ──────────────────────────────────────────────────────────────
+
+// ── Workbench geometry ─────────────────────────────────────────────────────────
+
+describe('WB_DIE_SIZE', () => {
+  it('is at least 44px (minimum tap target)', () => {
+    expect(WB_DIE_SIZE).toBeGreaterThanOrEqual(44)
+  })
+})
+
+describe('getWbDieRect', () => {
+  const panelY = 400
+
+  it('first die is within panel bounds', () => {
+    const r = getWbDieRect(0, panelY, 4)
+    expect(r.x).toBeGreaterThanOrEqual(0)
+    expect(r.y).toBeGreaterThanOrEqual(panelY)
+    expect(r.w).toBe(WB_DIE_SIZE)
+    expect(r.h).toBe(WB_DIE_SIZE)
+  })
+
+  it('adjacent dice in same row do not overlap', () => {
+    const r0 = getWbDieRect(0, panelY, 4)
+    const r1 = getWbDieRect(1, panelY, 4)
+    expect(r0.x + r0.w).toBeLessThanOrEqual(r1.x)
+  })
+
+  it('all dice fit within canvas width', () => {
+    for (let i = 0; i < 4; i++) {
+      const r = getWbDieRect(i, panelY, 4)
+      expect(r.x).toBeGreaterThanOrEqual(0)
+      expect(r.x + r.w).toBeLessThanOrEqual(LOGICAL_W)
+    }
+  })
+
+  it('wraps to next row after WB_DICE_PER_ROW dice', () => {
+    const r0 = getWbDieRect(0, panelY, WB_DICE_PER_ROW + 1)
+    const rWrap = getWbDieRect(WB_DICE_PER_ROW, panelY, WB_DICE_PER_ROW + 1)
+    expect(rWrap.y).toBeGreaterThan(r0.y)
+  })
+
+  it('die rects move down as panelY increases', () => {
+    const r1 = getWbDieRect(0, 300, 4)
+    const r2 = getWbDieRect(0, 400, 4)
+    expect(r2.y).toBeGreaterThan(r1.y)
+  })
+})
+
+describe('getWbOpsTop', () => {
+  it('returns a y-value below the die row', () => {
+    const panelY = 400
+    const opsTop = getWbOpsTop(panelY, 4)
+    const lastDie = getWbDieRect(3, panelY, 4)
+    expect(opsTop).toBeGreaterThanOrEqual(lastDie.y + lastDie.h)
+  })
+
+  it('is inside the panel (above LOGICAL_H)', () => {
+    const opsTop = getWbOpsTop(400, 4)
+    expect(opsTop).toBeLessThan(LOGICAL_H)
+  })
+})
+
+describe('getWbDoneRect', () => {
+  it('is at least 44px tall', () => {
+    const r = getWbDoneRect(SCENE_BOTTOM)
+    expect(r.h).toBeGreaterThanOrEqual(44)
+  })
+
+  it('is full canvas width', () => {
+    const r = getWbDoneRect(SCENE_BOTTOM)
+    expect(r.x).toBe(0)
+    expect(r.w).toBe(LOGICAL_W)
+  })
+
+  it('bottom edge reaches LOGICAL_H when panel is fully open', () => {
+    const r = getWbDoneRect(SCENE_BOTTOM)
+    expect(r.y + r.h).toBe(LOGICAL_H)
+  })
+})
+
+describe('getWbAddBtnRect', () => {
+  it('has positive height', () => {
+    const r = getWbAddBtnRect(SCENE_BOTTOM)
+    expect(r.h).toBeGreaterThan(0)
+  })
+
+  it('is above the Done strip', () => {
+    const addBtn = getWbAddBtnRect(SCENE_BOTTOM)
+    const done = getWbDoneRect(SCENE_BOTTOM)
+    expect(addBtn.y + addBtn.h).toBeLessThanOrEqual(done.y)
+  })
+
+  it('fits within canvas width', () => {
+    const r = getWbAddBtnRect(SCENE_BOTTOM)
+    expect(r.x).toBeGreaterThanOrEqual(0)
+    expect(r.x + r.w).toBeLessThanOrEqual(LOGICAL_W)
+  })
+})
 
 describe('inRect', () => {
   const r = { x: 10, y: 20, w: 50, h: 30 }
