@@ -1,6 +1,6 @@
 # 088 · Workbench — Dice Upgrades
 
-**Status:** READY
+**Status:** SHIPPED
 **Source idea:** Backlog item 088; concept in `docs/concept/meta-progression.md`
 **Depends on:** 029 (MetaState schema, camp screen, workbench tap target, die visual language from feature 005)
 
@@ -16,10 +16,6 @@ new die of a chosen colour (grows the pool), and **Engrave** a die's minimum fac
 requiring the previous tier before the next can be purchased. Each operation deducts scraps and
 persists immediately. Together with 029, this closes the full "Shiny Scraps & Dice Upgrades" loop:
 earn scraps in a run, return to camp, make targeted choices about the dice Pip carries forward.
-
-> **Note:** Feature 093 (Named Dice & Die Collection) will supersede the Swap and Add Die
-> operations here and change the die acquisition model entirely. The engrave tier system in this
-> spec is designed to survive that transition unchanged.
 
 ---
 
@@ -119,9 +115,7 @@ earn scraps in a run, return to camp, make targeted choices about the dice Pip c
 15. Swapping an engraved die **preserves `minFloor`**. A d6 with `minFloor: 3` (tier 2) swapped
     to d8 becomes a d8 with `minFloor: 3` — the tier-2 engrave carries. The next available tier
     on the d8 is tier 3 (raise min to 4, 75 scraps). The inline area shows the carried floor status
-    and the tier-3 option immediately after the swap. *Note: feature 093 will change die acquisition
-    so that Swap is replaced by earning dice through achievements; at that point this carry-through
-    rule may be revisited.*
+    and the tier-3 option immediately after the swap.
 
 ### Add Die operation
 
@@ -180,9 +174,8 @@ earn scraps in a run, return to camp, make targeted choices about the dice Pip c
 
 - **Blue's first die**: cannot be added via Add until it is already in the permanent pool. That
   arrival is feature 052's responsibility.
-- **Named dice / die provenance / die collection / per-run loadout** (Idea 050): captured as
-  feature **093** (Named Dice & Die Collection). When 093 ships, Swap and Add Die operations in
-  this spec become obsolete; engrave tiers survive unchanged.
+- **Named dice / die provenance / die collection / per-run loadout / engrave tier redesign**:
+  captured as feature **093** (Named Dice & Die Collection).
 - **Downward swap / die removal**: A die cannot be swapped to a smaller face count or removed
   from the pool. Once added, a die is permanent.
 - **Engrave any face**: this spec locks only the minimum face. Arbitrary-face engraving is a more

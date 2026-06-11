@@ -121,25 +121,25 @@ as its blocker clears, not build all four at once:
 ### 093 · Named Dice & Die Collection
 
 Transforms Pip's dice from a fixed statistical pool into a **personal collection of named objects
-with provenance**. Each die Pip owns has an origin line ("Found near a rusted blade." "Left by a
-Tinker who came twice."). Dice are **earned** through achievements, boss kills, NPC events, and
-Marks of Descent — not purchased with scraps. The workbench shows Pip's full collection; before
-each run, Pip selects a **loadout** of dice to take in (a cap, growing with meta progress). This
-replaces the Swap and Add Die operations from feature 088: "upgrading" means finding or earning a
-better die, not paying scraps for a stat change. Engraving (088, tier-cost model) becomes a
-commitment to a specific named die, not a fungible upgrade. Absorbs **Idea 050** (Named Dice).
+with provenance**. Each die has an origin line ("Found near a rusted blade." "Left by a Tinker
+who came twice."). Dice are **earned** through achievements, boss kills, NPC events, and Marks of
+Descent — not purchased with scraps. Before each run, Pip selects a **loadout** from his
+collection (capped, growing with meta progress). This replaces the Swap and Add Die operations
+from feature 088: "upgrading" means finding or earning a better die. The workbench becomes a
+collection browser + engrave station + loadout selector. Also **redesigns the engrave tier
+system** shipped in 088 (sequential tiers, costs) in light of engraving now being a commitment
+to a specific named object — costs and tier model are provisional starting points pending this
+spec. Absorbs **Idea 050** (Named Dice).
 **Key design questions blocking the spec:**
-1. **Die acquisition**: what specific events grant which dice? (Boss kills → a die themed to that
-   boss? Marks → specific colour/size unlocks? Tinker visitor → leaves a die behind? Run loot?)
-2. **Starting collection**: what does Pip own at game start, and does it align with the current
-   088 starting pool?
-3. **Loadout cap**: how many dice per run initially, and what (if anything) increases the cap?
-4. **Workbench redesign**: with Swap and Add Die gone, what does the workbench screen show?
-   (Collection browser + engrave + loadout selection seems right — needs wireframe.)
-5. **Provenance generation**: how are origin lines generated? Seeded from the event that granted
-   the die (boss name, NPC name, floor found on), or a small fixed template set?
-**Depends on:** 088 (engrave tier model — survives into this system), 052 (Marks of Descent —
-the primary achievement gate for die acquisition).
+1. **Die acquisition**: what specific events grant which dice? (Boss kills → themed die? Marks →
+   colour/size unlocks? Tinker → leaves a die? Run loot?)
+2. **Starting collection**: what does Pip own at game start?
+3. **Loadout cap**: how many dice per run initially, and what increases the cap?
+4. **Engrave redesign**: how do tier costs and the tier ceiling change when engraving is a
+   commitment to a specific named die rather than a stat on a fungible pool entry?
+5. **Provenance generation**: origin lines seeded from the granting event (boss name, NPC name,
+   floor), or a fixed template set?
+**Depends on:** 052 (Marks of Descent — primary achievement gate for die acquisition).
 
 ### 041 · Rattled / Emboldened Combat States
 
