@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390, initial-scale=1.0, user-scalable=no">
+  <title>Pip &amp; Peril — Dice Pool Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d0d1a;
+      color: #e8d5b0;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 12px 12px 48px;
+      gap: 12px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 390px;
+      padding: 0 4px;
+    }
+    header h1 { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #e8d5b0; }
+    header a { color: #c8941e; font-size: 10px; text-decoration: none; }
+    header a:hover { text-decoration: underline; }
+
+    canvas {
+      display: block;
+      border: 1px solid rgba(200,180,150,0.15);
+      border-radius: 4px;
+    }
+
+    .controls {
+      width: 390px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .label {
+      font-size: 10px;
+      color: #7a7a9a;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      width: 60px;
+      flex-shrink: 0;
+    }
+
+    button {
+      background: #1e1e32;
+      border: 1px solid #3a3a5a;
+      border-radius: 4px;
+      color: #e8d5b0;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    button:hover { background: #2a2a48; border-color: #c8941e; color: #c8941e; }
+
+    button.hero {
+      background: rgba(200,148,30,0.15);
+      border-color: #c8941e;
+      color: #c8941e;
+      font-weight: bold;
+      padding: 7px 18px;
+    }
+    button.hero:hover { background: rgba(200,148,30,0.3); }
+
+    button.red-btn  { border-color: #8b3030; color: #d08080; }
+    button.grn-btn  { border-color: #2a6a2a; color: #80c880; }
+    button.yel-btn  { border-color: #6a5a00; color: #d4b040; }
+    button.blu-btn  { border-color: #2a3a80; color: #8098d0; }
+
+    button.red-btn:hover  { background: rgba(139,48,48,0.25); }
+    button.grn-btn:hover  { background: rgba(42,106,42,0.25); }
+    button.yel-btn:hover  { background: rgba(106,90,0,0.25); }
+    button.blu-btn:hover  { background: rgba(42,58,128,0.25); }
+
+    .divider { height: 1px; background: rgba(255,255,255,0.06); }
+
+    .note {
+      font-size: 10px;
+      color: #5a5a7a;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Dice Pool Demo — 089</h1>
+    <a href="index.html">← back</a>
+  </header>
+
+  <canvas id="demo-canvas"></canvas>
+
+  <div class="controls">
+
+    <!-- Roll / Reset -->
+    <div class="row">
+      <button class="hero" id="btn-roll">Roll Pool</button>
+      <button id="btn-reset">Reset</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Presets -->
+    <div class="row">
+      <span class="label">Preset</span>
+      <button data-preset="starter">4d — Starter</button>
+      <button data-preset="5-mixed">5d — Mixed</button>
+      <button data-preset="6-wrap">6d — Wrap</button>
+      <button data-preset="7-wrap">7d — 2 rows</button>
+      <button data-preset="8-big">8d — Big</button>
+      <button data-preset="empty">Empty</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Add Red -->
+    <div class="row">
+      <span class="label">+Red</span>
+      <button class="red-btn" data-add="red-4">d4</button>
+      <button class="red-btn" data-add="red-6">d6</button>
+      <button class="red-btn" data-add="red-8">d8</button>
+      <button class="red-btn" data-add="red-10">d10</button>
+      <button class="red-btn" data-add="red-12">d12</button>
+      <button data-remove="red">−1</button>
+      <button data-remove-all="red">×0</button>
+    </div>
+
+    <!-- Add Green -->
+    <div class="row">
+      <span class="label">+Green</span>
+      <button class="grn-btn" data-add="green-4">d4</button>
+      <button class="grn-btn" data-add="green-6">d6</button>
+      <button class="grn-btn" data-add="green-8">d8</button>
+      <button class="grn-btn" data-add="green-10">d10</button>
+      <button class="grn-btn" data-add="green-12">d12</button>
+      <button data-remove="green">−1</button>
+      <button data-remove-all="green">×0</button>
+    </div>
+
+    <!-- Add Yellow -->
+    <div class="row">
+      <span class="label">+Yellow</span>
+      <button class="yel-btn" data-add="yellow-4">d4</button>
+      <button class="yel-btn" data-add="yellow-6">d6</button>
+      <button class="yel-btn" data-add="yellow-8">d8</button>
+      <button class="yel-btn" data-add="yellow-10">d10</button>
+      <button class="yel-btn" data-add="yellow-12">d12</button>
+      <button data-remove="yellow">−1</button>
+      <button data-remove-all="yellow">×0</button>
+    </div>
+
+    <!-- Add Blue -->
+    <div class="row">
+      <span class="label">+Blue</span>
+      <button class="blu-btn" data-add="blue-4">d4</button>
+      <button class="blu-btn" data-add="blue-6">d6</button>
+      <button class="blu-btn" data-add="blue-8">d8</button>
+      <button class="blu-btn" data-add="blue-10">d10</button>
+      <button class="blu-btn" data-add="blue-12">d12</button>
+      <button data-remove="blue">−1</button>
+      <button data-remove-all="blue">×0</button>
+    </div>
+
+    <div class="note">
+      Size range [44, 68]px. Wraps to 2 rows at 44px when single row overflows.
+      8px gap within same colour · 16px gap between colour groups.
+      d6 at size ≥52px shows pip dots; smaller or non-d6 shows numeral.
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { initDemo } from './src/dice/demo.ts'
+    initDemo()
+  </script>
+</body>
+</html>

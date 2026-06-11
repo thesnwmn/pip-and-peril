@@ -295,10 +295,39 @@ Post-ship calibration notes:
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-11 · **PR:** (pending)
 
 ### What was built
 
+- **`src/dice/draw.ts`** — Shared die-drawing primitive (`drawDie`), compact glyph helpers (`drawCompactDie`, `drawCompactDiceRow`, `COMPACT_SIZE`), and `roundRect` utility. Handles pip dots (d6 ≥52 px), numerals, and engraved notch markers.
+- **`src/dice/pool-layout.ts`** — Pool layout algorithm (`computePoolLayout`), x-position helper (`computeRowXPositions`), color-group center helper (`colorGroupCenters`), and gap constants (`WITHIN_GAP`, `BETWEEN_GAP`, `ROW_VERTICAL_GAP`).
+- **`src/dice/pool-layout.test.ts`** — 578 tests covering 4/5/6/7/8-dice layouts, sizing, wrapping, color ordering, x-positions, and group centers.
+- **`src/dice/panel.ts`** — Rewired to use `computePoolLayout` / `drawDie`; `computeDynamicGeom` drives all Y positions.
+- **`src/combat/panel.ts`** — Rewired; `computeCombatGeom` replaces all hardcoded DIE_SIZE/position constants; pip-btn and submenu Y positions derived from pool height.
+- **`src/encounter/check-panel.ts`**, **`trap-panel.ts`**, **`chest-panel.ts`** — Local `drawDieFace` implementations replaced with delegation to `drawDie`; `roundRect` and `DIE_FACE_BG` removed from each.
+- **`src/dice/demo.ts`** — Interactive demo canvas (390×600 px): roll, reset, 6 presets, per-color add/remove buttons (d4–d12). Uses `compactRowWidth` pure helper to measure compact row width without side effects.
+- **`dice-pool-demo.html`** — Demo HTML page wiring canvas + controls.
+- **`vite.config.ts`** — Added `demo` entry for `dice-pool-demo.html`.
+- **`index.html`** — Added "Dice Pool Demo" card linking to `dice-pool-demo.html`.
+
+One spec table discrepancy noted: the 5-dice example in the spec table shows size 52 but the formula produces 54. Tests assert 54 (correct per formula). The algorithm is the authority.
+
 ### Evidence
 
+- `npm run typecheck` → 0 errors
+- `npm run test` → 578 tests passed (30 test files)
+
 ### Play-test
+
+1. Open `dice-pool-demo.html` (dev server or `npm run build` + static serve).
+2. Click **4d — Starter**: confirm 4 dice at 68 px in one row, d6 faces show pip dots.
+3. Click **Roll Pool**: each die shows a rolled value (pips for d6 at 68 px, numerals otherwise). Totals line appears.
+4. Click **Reset**: dice return to face-count labels.
+5. Click **5d — Mixed**: 5 dice at 54 px, single row.
+6. Click **6d — Wrap**: 6 dice at 44 px, single row, all numerals.
+7. Click **7d — 2 rows**: 7 dice wrapping to 2 rows (R+G top / Y+B bottom), both at 44 px.
+8. Click **8d — Big**: 8 dice in 2 rows.
+9. Use per-color +d4/d6/d8/d10/d12 buttons to build a custom pool; verify size scales down as pool grows.
+10. Use −1 and ×0 buttons to shrink; verify size scales back up.
+11. Check combat panel in-game with a 4-die pool: die sizes and pip badges match original layout at 68 px.
+12. Check that adding dice via the workbench produces correct multi-die layouts in the combat panel.

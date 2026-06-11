@@ -6,7 +6,7 @@ import type { Item, Inventory } from '../satchel/types'
 import { consumeItem } from '../satchel/items'
 import { colors } from '../colors'
 import { PANEL_TOP, LOGICAL_W, LOGICAL_H, MAP_X, MAP_W } from '../screens/game-layout'
-import { PIP_SLOTS } from '../dice/pip-slots'
+import { drawDie } from '../dice/draw'
 
 // Trap flavour variants — same mechanic, different labels and outcome lines
 export const TRAP_FLAVOURS = [
@@ -56,13 +56,6 @@ const LUCK_TIMER_Y = LUCK_PASS_BTN_Y + LUCK_PASS_BTN_H + 14  // timer bar top
 const LUCK_TIMER_H = 8
 const LUCK_TIMER_DURATION = 3000                        // ms
 
-const DIE_FACE_BG: Record<string, string> = {
-  red: colors.dieFaceRed,
-  blue: colors.dieFaceBlue,
-  green: colors.dieFaceGreen,
-  yellow: colors.dieFaceYellow,
-}
-
 export interface TrapPanelContext {
   getPool: () => DicePool
   getPipHp: () => number
@@ -73,53 +66,6 @@ export interface TrapPanelContext {
   setDungeonState: (s: import('../navigation/dungeon-state').DungeonState) => void
 }
 
-function drawDieFace(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  die: Die,
-  value: number | null,
-  greyed: boolean,
-): void {
-  ctx.save()
-  if (greyed) ctx.globalAlpha = 0.28
-
-  ctx.beginPath()
-  const ctxAny = ctx as unknown as { roundRect?: (...args: unknown[]) => void }
-  if (ctxAny.roundRect) {
-    ctxAny.roundRect(x, DIE_ROW_TOP, DIE_SIZE, DIE_SIZE, DIE_RADIUS)
-  } else {
-    ctx.rect(x, DIE_ROW_TOP, DIE_SIZE, DIE_SIZE)
-  }
-  ctx.fillStyle = DIE_FACE_BG[die.color] ?? colors.dieFaceGreen
-  ctx.fill()
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)'
-  ctx.lineWidth = 1
-  ctx.stroke()
-
-  if (value !== null) {
-    ctx.fillStyle = 'rgba(255,255,255,0.88)'
-    if (die.sides > 6) {
-      ctx.font = 'bold 18px monospace'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(String(value), x + DIE_SIZE / 2, DIE_ROW_TOP + DIE_SIZE / 2)
-    } else {
-      const slots = PIP_SLOTS[value] ?? []
-      const cellW = DIE_SIZE / 3
-      for (const slot of slots) {
-        const col = slot % 3
-        const row = Math.floor(slot / 3)
-        const cx = x + col * cellW + cellW / 2
-        const cy = DIE_ROW_TOP + row * cellW + cellW / 2
-        ctx.beginPath()
-        ctx.arc(cx, cy, PIP_DOT_R, 0, Math.PI * 2)
-        ctx.fill()
-      }
-    }
-  }
-
-  ctx.restore()
-}
 
 export function createTrapEncounterPanel(
   onComplete: (outcome: string) => void,
@@ -227,6 +173,19 @@ export function createTrapEncounterPanel(
     const totalW = diceCount * DIE_SIZE + (diceCount - 1) * DIE_GAP
     const startX = MAP_X + (MAP_W - totalW) / 2
     return Array.from({ length: diceCount }, (_, i) => startX + i * (DIE_SIZE + DIE_GAP))
+  }
+
+  function drawDieFace(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    die: Die,
+    value: number | null,
+    greyed: boolean,
+  ): void {
+    ctx.save()
+    if (greyed) ctx.globalAlpha = 0.28
+    drawDie(ctx, x, DIE_ROW_TOP, DIE_SIZE, die.color, die.sides, value ?? undefined)
+    ctx.restore()
   }
 
   function drawLuckPrompt(ctx: CanvasRenderingContext2D, timestamp: DOMHighResTimeStamp, item: Item): void {

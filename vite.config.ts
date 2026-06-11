@@ -10,6 +10,7 @@ export default defineConfig({
         main: path.resolve(__dirname, 'index.html'),
         game: path.resolve(__dirname, 'game.html'),
         gallery: path.resolve(__dirname, 'gallery.html'),
+        demo: path.resolve(__dirname, 'dice-pool-demo.html'),
       },
     },
   },
