@@ -43,6 +43,17 @@ weapon card pools, and run-time pool preview. Ships as visual refactor with no m
 **Depends on:** 029 (camp screen), 088 (workbench upgrades — unlocks larger pools).
 See `docs/features/089-scalable-dice-pool-display.md` for the full spec.
 
+### 051 · Visitor System
+
+Procedurally generated visitors arrive at Pip's camp between runs (0–2, rarely 3), assembled from
+**type** × **condition** × **offer**, resolved in one tap-and-confirm. A relationship counter turns
+recurring faces into **named regulars** — Hades-style story texture with no authored dialogue. Ships
+the framework + relationship loop + two buildable types (**Tinker**, **Wounded Traveller**); the
+four concept types that need unbuilt systems (Scholar/Trader/Scout/Trickster) are deferred behind
+named blockers.
+**Depends on:** 029 (camp hub, MetaState), 090 (Visitor activity button + stool), 053 (sibling pattern).
+See `docs/features/051-visitor-system.md` for the full spec.
+
 ---
 
 ## NEEDS SPEC
@@ -56,15 +67,6 @@ See `docs/features/089-scalable-dice-pool-display.md` for the full spec.
 > 058 (authored-procedural floors) — a biome's architectural identity (floor shapes, roaming
 > enemies, boss motif) only lands when the floor is pre-authored. Building biome content on the
 > current drafting model would require full rework.
-
-### 051 · Visitor System
-
-Procedurally generated visitors arrive at Pip's camp between runs (0–2, rarely 3), assembled from
-**type** (Tinker, Scout, Scholar, Trader, Wounded Traveller, Trickster) × **condition** (flavour
-line) × **offer**. One tap-and-confirm interaction. Relationship counters on recurring visitors
-produce named regulars over time — Hades-style story texture without authored dialogue.
-**Depends on:** 029 (camp hub).
-**Related:** `docs/concept/meta-progression.md`.
 
 ### 052 · Marks of Descent
 
