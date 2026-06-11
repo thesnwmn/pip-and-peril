@@ -137,11 +137,15 @@ inform valid anchor positions).
 Replace player tile-drafting (feature 004) with floors generated complete and hidden under fog
 before Pip enters — navigational agency moves from *conjuring tiles* to *choosing routes through a
 real place*. The renderer, fog, snapping invariant, camera, and multi-floor structure are unchanged;
-only the room-selection card UI and on-choice placement logic retire. **Large item** — the Designer
-should consider splitting: floor-generator core, shape-template population, fog/entry migration,
-NPC and roamer positioning hooks. All biome architecture, floor objectives, and roaming enemies
-depend on this foundation.
-**Depends on:** 022 (multi-floor structure), 003 (renderer).
+only the room-selection card UI and on-choice placement logic retire. Ships the **generator engine +
+navigation/fog migration + a validity contract**, two contrasting shapes (Gauntlet, Hub), and a new
+**four-tier fog knowledge model** (hidden → glimpsed → live → remembered): geometry is glimpsed, type
+and contents are earned by entering, departed rooms go stale-dimmed. The wider shape catalogue (059),
+living floors (060), Stirs (061), gates (064), and the boss motif (062) are deferred — 058 leaves
+each seam open. All biome architecture, floor objectives, and roaming enemies depend on this
+foundation.
+**Depends on:** 022 (multi-floor structure), 003 (renderer). Ratifies a new navigation-model decision.
+See `docs/features/058-authored-procedural-floors.md` for the full spec.
 *(Promotes Idea 058; see `docs/concept/run-architecture.md` for full direction.)*
 
 ### 059 · Floor Shape Catalogue
