@@ -87,6 +87,7 @@ export class GameApp {
           )
           this.transitionTo('game')
         },
+        this.metaState,
       ),
       'game': createGame(
         (screen, summary) => this.transitionTo(screen as Screen, summary),
@@ -109,6 +110,7 @@ export class GameApp {
                 )
                 this.transitionTo('game')
               },
+              this.metaState,
             )
           }
           this.transitionTo(screen as Screen)
@@ -165,6 +167,7 @@ export class GameApp {
                 )
                 this.transitionTo('game')
               },
+              this.metaState,
             )
           }
           this.transitionTo(screen as Screen)

@@ -227,8 +227,9 @@ interface CampState {
 export function createCamp(
   transitionTo: (screen: string) => void,
   onStartRun: (metaState: MetaState) => void,
+  initialMetaState?: MetaState,
 ): ScreenController {
-  const meta = loadMetaState()
+  const meta = initialMetaState ?? loadMetaState()
   const state: CampState = {
     metaState: meta,
     menuModal: createMenuModal('home', transitionTo),
