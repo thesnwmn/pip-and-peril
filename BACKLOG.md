@@ -108,17 +108,6 @@ See `docs/features/095-trickster-visitor.md` for the full spec.
 > + 054 (Destination Board), **not** on the deferred service types in 092. (086 · Larder unlocks via
 > the Wounded Traveller, already shipped in 051.)
 
-### 092 · Additional Visitor Types (tracking item)
-
-Two of the four deferred concept types are now specced and promoted: Scholar → **094**,
-Trickster → **095**. The remaining two stay blocked:
-- **Trader** — buys an in-run item Pip carried out, or offers a bulk scraps deal. *Blocked on:*
-  cross-run item persistence (items are cleared at run end today; no system owns this yet).
-- **Scout** — sells run information (floor bias, boss hint, item density). *Blocked on:* run-gen
-  exposing those signals at camp time (post-058; boss is drawn at run start); must beat what the
-  Notice Board (053) already gives free.
-**Depends on:** 051 (visitor framework, relationship loop) + the per-type blockers above.
-
 ### 093 · Named Dice & Die Collection
 
 Transforms Pip's dice from a fixed statistical pool into a **personal collection of named objects
@@ -281,6 +270,17 @@ Fox. Rare unlock: the **Shortbow** (Yellow dice, bypasses some Guard). Unlock vi
 **Depends on:** 058, 029, 051, 052, 085 (Wildwood boss kill — Marks gate).
 *(See `docs/concept/biomes.md` — Winter Fields section. Cold status mechanic may warrant a
 sub-spec; see also Idea 057.)*
+
+### 092 · Additional Visitor Types (tracking item)
+
+Two of the four deferred concept types are now specced and promoted: Scholar → **094**,
+Trickster → **095**. The remaining two stay blocked with no current plan to unblock them:
+- **Trader** — buys an in-run item Pip carried out, or offers a bulk scraps deal. *Blocked on:*
+  cross-run item persistence (items are cleared at run end today; no system owns this yet).
+- **Scout** — sells run information (floor bias, boss hint, item density). *Blocked on:* run-gen
+  exposing those signals at camp time (post-058; boss is drawn at run start); must beat what the
+  Notice Board (053) already gives free.
+**Depends on:** 051 (visitor framework, relationship loop) + the per-type blockers above.
 
 ---
 
