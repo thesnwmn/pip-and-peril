@@ -56,6 +56,17 @@ weapon card pools, and run-time pool preview. Ships as visual refactor with no m
 **Depends on:** 029 (camp screen), 088 (workbench upgrades — unlocks larger pools).
 See `docs/features/089-scalable-dice-pool-display.md` for the full spec.
 
+### 051 · Visitor System
+
+Procedurally generated visitors arrive at Pip's camp between runs (0–2, rarely 3), assembled from
+**type** × **condition** × **offer**, resolved in one tap-and-confirm. A relationship counter turns
+recurring faces into **named regulars** — Hades-style story texture with no authored dialogue. Ships
+the framework + relationship loop + two buildable types (**Tinker**, **Wounded Traveller**); the
+four concept types that need unbuilt systems (Scholar/Trader/Scout/Trickster) are deferred behind
+named blockers.
+**Depends on:** 029 (camp hub, MetaState), 090 (Visitor activity button + stool), 053 (sibling pattern).
+See `docs/features/051-visitor-system.md` for the full spec.
+
 ---
 
 ## NEEDS SPEC
@@ -70,14 +81,15 @@ See `docs/features/089-scalable-dice-pool-display.md` for the full spec.
 > enemies, boss motif) only lands when the floor is pre-authored. Building biome content on the
 > current drafting model would require full rework.
 
-### 051 · Visitor System
-
-Procedurally generated visitors arrive at Pip's camp between runs (0–2, rarely 3), assembled from
-**type** (Tinker, Scout, Scholar, Trader, Wounded Traveller, Trickster) × **condition** (flavour
-line) × **offer**. One tap-and-confirm interaction. Relationship counters on recurring visitors
-produce named regulars over time — Hades-style story texture without authored dialogue.
-**Depends on:** 029 (camp hub).
-**Related:** `docs/concept/meta-progression.md`.
+> **Planner note (2026-06-11):** Feature 051 shipped only two of the six concept visitor types.
+> The cut four are captured as **092 · Additional Visitor Types**, each gated by its own blocker
+> (Designer splits per-type as blockers clear). The Scholar's skill-teaching needs a real **skills
+> system** — feature 029 wrongly deferred skills to 051; captured here as **091 · Skills System &
+> Scroll Wall**, a foundational meta item, *not* a visitor type. **Biome-unlock visitors are not
+> 092:** where 084/085/087 say "unlock via Scholar/Scout visitor," that is a Mark-gated *biome-unlock
+> offer kind* layered on the 051 framework and wrapped in a themed visitor — it depends on 051 + 052
+> + 054 (Destination Board), **not** on the deferred service types in 092. (086 · Larder unlocks via
+> the Wounded Traveller, already shipped in 051.)
 
 ### 052 · Marks of Descent
 
@@ -88,6 +100,35 @@ are visible but unrevealing; a light "show unlock condition" affordance addresse
 without spoiling discovery.
 **Depends on:** 029 (camp hub), 024 (run summary — marks awarded at run end).
 **Related:** `docs/concept/meta-progression.md`.
+
+### 091 · Skills System & Scroll Wall
+
+Make the camp's **scroll wall** functional: a library of **skills** (examples in
+`docs/concept/combat-system.md` — *Counter-Strike*, *Careful Eye*, *Desperate Swing*, *Battle Cry*,
+*Stout Heart*) that change what decisions are interesting in combat rather than adding flat numbers.
+Skills are unlocked through Marks and NPC gifts (never bought with scraps) and equipped via a
+**loadout** chosen before each run — 1 slot early, a 2nd around run 5–6. Corrects feature 029's scope
+line that mis-deferred skills to 051: skills are their own system, and they **gate the Scholar
+visitor** (092). Foundational meta work.
+**Depends on:** 029 (camp, scroll-wall element).
+**Related:** 052 (Marks unlock scrolls), 037/046 (combat actions skills modify),
+`docs/concept/meta-progression.md` (Skills section), `docs/concept/combat-system.md` (skill library).
+
+### 092 · Additional Visitor Types
+
+Extend the visitor framework (051) with the four concept types deferred from it. The framework was
+built to take each as a data entry + one effect; the Designer should **split per-type** and spec each
+as its blocker clears, not build all four at once:
+- **Scholar** — teaches a skill cheaply. *Blocked on:* 091 (Skills System).
+- **Trader** — buys an in-run item Pip carried out, or offers a bulk scraps deal. *Blocked on:*
+  cross-run item persistence (items are cleared at run end today; no system owns this yet).
+- **Scout** — sells run information (floor bias, boss hint, item density). *Blocked on:* run-gen
+  exposing those signals at camp time (post-058; boss is drawn at run start); must beat what the
+  Notice Board (053) already gives free.
+- **Trickster / Gambler** — great deals with hidden costs; a push-your-luck flutter. *Blocked on:* a
+  gamble-safety rule (the permadeath economy must never let a player gamble their build into a hole)
+  + the unified check panel (028). *Source:* Idea 074.
+**Depends on:** 051 (visitor framework, relationship loop) + the per-type blockers above.
 
 ### 041 · Rattled / Emboldened Combat States
 
