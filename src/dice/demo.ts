@@ -189,9 +189,30 @@ function drawCompactSection(ctx: CanvasRenderingContext2D, y: number): void {
   }
 
   const compact = pool.map(d => ({ colour: d.color, faces: d.sides }))
+  const sorted = [...compact].sort((a, b) => COMPACT_COLOR_IDX[a.colour]! - COMPACT_COLOR_IDX[b.colour]!)
   const totalW = compactRowWidth(compact)
-  const startX = (CANVAS_W - totalW) / 2
-  drawCompactDiceRow(ctx, startX, y + 26, compact)
+
+  if (totalW <= CANVAS_W) {
+    drawCompactDiceRow(ctx, (CANVAS_W - totalW) / 2, y + 26, compact)
+  } else {
+    // Find the split closest to midpoint where both rows fit within the canvas.
+    const n = sorted.length
+    let splitIdx = -1
+    let bestDist = Infinity
+    for (let b = 1; b < n; b++) {
+      const w1 = compactRowWidth(sorted.slice(0, b))
+      const w2 = compactRowWidth(sorted.slice(b))
+      if (w1 <= CANVAS_W && w2 <= CANVAS_W) {
+        const dist = Math.abs(b - n / 2)
+        if (dist < bestDist) { bestDist = dist; splitIdx = b }
+      }
+    }
+    if (splitIdx === -1) splitIdx = Math.ceil(n / 2)
+    const r1 = sorted.slice(0, splitIdx)
+    const r2 = sorted.slice(splitIdx)
+    drawCompactDiceRow(ctx, (CANVAS_W - compactRowWidth(r1)) / 2, y + 26, r1)
+    drawCompactDiceRow(ctx, (CANVAS_W - compactRowWidth(r2)) / 2, y + 26 + COMPACT_SIZE + 4, r2)
+  }
 }
 
 function render(ctx: CanvasRenderingContext2D): void {

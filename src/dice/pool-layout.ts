@@ -55,24 +55,32 @@ export function computePoolLayout(dice: Die[], containerWidth: number): PoolLayo
   }
 
   // No single-row fit at 44 px — wrap to two rows at 44 px.
-  // Split at the colour-group boundary nearest n/2, first row >= n/2 dice.
+  // Pass 0: colour-group boundaries with row1 ≥ ceil(n/2), both rows fit.
+  // Pass 1: any position with row1 ≥ ceil(n/2), both rows fit (handles single-colour pools).
+  // Pass 2: any position, both rows fit (last resort for extreme compositions).
   const n = sorted.length
-  const half = n / 2
 
-  const boundaries: number[] = []
-  for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i - 1]!.color !== sorted[i]!.color) boundaries.push(i)
+  const colorBoundaries = new Set<number>()
+  for (let i = 1; i < n; i++) {
+    if (sorted[i - 1]!.color !== sorted[i]!.color) colorBoundaries.add(i)
   }
 
-  let bestSplit = n
-  let bestDist = Infinity
-  for (const b of boundaries) {
-    if (b >= half) {
-      const dist = Math.abs(b - half)
-      if (dist < bestDist) { bestDist = dist; bestSplit = b }
+  let bestSplit = -1
+  for (let pass = 0; pass < 3 && bestSplit === -1; pass++) {
+    let bestDist = Infinity
+    for (let b = 1; b < n; b++) {
+      if (pass < 2 && b * 2 < n) continue             // prefer row1 ≥ ceil(n/2)
+      if (pass === 0 && !colorBoundaries.has(b)) continue  // first pass: boundaries only
+      const row1 = sorted.slice(0, b)
+      const row2 = sorted.slice(b)
+      if (rowTotalWidth(row1, SIZE_MIN) <= containerWidth && rowTotalWidth(row2, SIZE_MIN) <= containerWidth) {
+        const dist = Math.abs(b - n / 2)
+        if (dist < bestDist) { bestDist = dist; bestSplit = b }
+      }
     }
   }
 
+  if (bestSplit === -1) bestSplit = n  // fallback: single row (overflows only beyond demo cap)
   const row1 = sorted.slice(0, bestSplit)
   const row2 = sorted.slice(bestSplit)
   return { size: SIZE_MIN, rows: row2.length > 0 ? [row1, row2] : [row1] }
