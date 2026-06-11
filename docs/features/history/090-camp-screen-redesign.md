@@ -355,10 +355,48 @@ Post-ship tuning notes:
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-10 · **PR:** (pending)
 
 ### What was built
 
+- **Zone split**: camp canvas permanently divided at `SCENE_BOTTOM` (≈523 px, 62% of logical height) into scene zone (top) and activity bar (bottom). A 1 px `--camp-border` line separates them.
+- **Scene zone**: all elements redrawn as pure decorative geometry — campfire (animated), Pip (geometric mouse, static, facing fire), weapon silhouettes (3 shapes leaning against right wall), workbench with permanent dice, visitor stool (empty), dungeon arch with cool glow, scroll wall cylinders, ambient warm radial gradient pulsing with fire height.
+- **Campfire animation**: 3 overlapping flame shapes (teardrop bezier curves) with random heights [12–22 px] re-randomised every 150–250 ms. Ambient glow radius tracks tallest flame. Runs via `fireNextFrameTime` and `fireFlameHeights` in state.
+- **Pip**: geometric mouse — oval body, circular head, triangular ears, bezier tail, warm brown `#a07048` with lighter belly patch. Faces the fire.
+- **Activity bar**: 4 equally-wide buttons (Weapons, Workbench, Notices, Visitor) each ≥44 px tall, geometric canvas icons, 12 px labels. Visitor button dimmed at 40% opacity, non-interactive. Descend strip full-width ≥56 px at canvas bottom, `--camp-accent` text.
+- **Sub-panel model**: all sub-panels (weapons, workbench stub, notices) rise from screen bottom with ease-out 400 ms / sink 300 ms animation. Animation is `panelClosing`-flag-driven so the correct panel content stays visible during the close animation. Re-opening during a close resumes animation from current progress (no snap/jump).
+- **✕ button**: 44×44 px tap target top-right of every sub-panel. Notices panel retains tap-outside-to-dismiss as secondary gesture.
+- **Notices trigger**: wired to activity bar Notices button; old notice-board tap target removed.
+- **All old scene tap targets removed**: weapon rack, workbench stub, scroll wall, descent record, notice board, Descend scene button.
+- **Stale spec updated**: `docs/features/088-workbench-dice-upgrades.md` updated to replace `← Back` affordance with ✕ button per criterion 17.
+- **New test file**: `src/screens/camp.test.ts` — 26 tests covering layout invariants, sub-panel animation geometry, close button sizing, and inRect correctness.
+
 ### Evidence
 
+```
+Test Files  27 passed (27)
+Tests       515 passed (515)
+```
+
+`npm run typecheck` — clean. `npm run build` — clean, ~151 kB bundle.
+
+Bugs found and fixed by inline Reviewer before PR:
+1. Wrong panel rendered during close animation — `panelClosing` flag keeps `activeSubPanel` set until `panelProgress` reaches 0.
+2. Snap/jump on re-open during mid-close — `panelAnimStart` offset by current progress.
+3. `ctx.fillStyle = 'transparent'` no-op — replaced with guarded `if (hovered)` block.
+4. Dead `fillRoundRect` closure — deleted.
+5. Unused `timestamp` param in `drawNoticesPanel` — removed.
+6. Redundant double `return` — simplified.
+
 ### Play-test
+
+1. **Open the game** at the dev server or PR preview URL. Camp screen appears immediately.
+2. **Scene zone**: campfire flickers continuously; Pip seated right of fire; weapon silhouettes lean on right wall; workbench with dice lower-left; empty stool left of fire; dungeon arch behind fire; scroll cylinders along top; warm amber glow pulses with fire.
+3. **Zone dividing line**: single horizontal line separates scene from activity bar; does not move during any interaction.
+4. **Activity bar**: four buttons (Weapons, Workbench, Notices, Visitor) plus "Descend" strip at bottom. Visitor button is visibly dimmed and unresponsive.
+5. **Weapons button**: tap → weapon selection panel rises (~400 ms). ✕ top-right. Select a weapon. Tap ✕ → panel sinks (~300 ms); weapons panel visible throughout close animation.
+6. **Workbench button**: tap → stub panel rises with placeholder text. Tap ✕ to close.
+7. **Notices button**: tap → notices panel rises with two notice cards. After ~2 s "tap outside to dismiss" fades in. Tap ✕ OR tap above panel to dismiss. Notices panel (not weapons) visible throughout close animation.
+8. **Descend strip**: tap → weapon selection panel opens; select weapon; tap "Descend into the Dark" → run starts.
+9. **No old tap targets**: tapping fire, workbench area, arch, scroll wall, notice board does nothing.
+10. **Close mid-animation**: open a panel, immediately tap ✕ before it finishes rising — reverses smoothly without snapping.

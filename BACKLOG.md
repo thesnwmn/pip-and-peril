@@ -22,19 +22,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-### 090 · Camp Screen Redesign — Scene & Activity Bar
-
-The camp screen is restructured into a permanent split: a warm animated **scene zone** (Pip seated
-by a flickering campfire, weapon rack, workbench, dungeon arch visible) above an **activity bar**
-(four labelled buttons — Weapons, Workbench, Notices, Visitor — plus a persistent Descend CTA).
-Scene objects lose their tap targets; all navigation flows through the activity bar. Sub-screens
-rise from the bottom as full-canvas panels, dismissed with an ✕ button in the top-right. The
-campfire gains a continuous geometric flicker animation; Pip is drawn as a small geometric mouse
-character.
-**Depends on:** 029 (camp screen, camp palette), 053 (notice board — trigger relocation).
-**Note:** Should be sequenced before 088 (Workbench) to avoid a trigger rework.
-See `docs/features/090-camp-screen-redesign.md` for the full spec.
-
 ### 088 · Workbench — Dice Upgrades
 
 The second half of the meta-progression foundation: Pip sits at his workbench and spends shiny
