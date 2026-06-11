@@ -411,10 +411,82 @@ Calibration questions to watch during playtesting:
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-11 · **PR:** pending
 
 ### What was built
 
+**MetaState schema extension** (`src/meta/state.ts`):
+- `PermanentDie` gains optional `minFloor?: number` field
+- Additive, backwards-compatible — existing saves remain valid (pip-meta-v1 unchanged)
+- `loadMetaState` clamps loaded minFloor to valid range `[2, floor(faces/2)]` on every load
+
+**Dice rolling update** (`src/dice/pool.ts`, `src/screens/game.ts`):
+- `Die` interface gains `minFloor?: number`; `rollPool` applies `Math.max(raw, minFloor ?? 1)` for all dice
+- `createRunPool` in game.ts spreads `minFloor` onto Die objects when `> 1`
+
+**Workbench helpers** (`src/camp/workbench.ts`):
+- `getNextFaces`: d4→d6→d8→d10→d12 upgrade path; null at d12
+- `getSwapCost`: 20/30/45/60 scraps by step
+- `getEngraveValues`: returns integers 2..floor(faces/2)
+- `makeNewDieId`: generates stable sequential IDs (e.g. `r2` for second red die)
+
+**Workbench panel** (`src/screens/camp.ts`):
+- Full `WorkbenchMode` state machine: idle → die-selected → swap-confirm / engrave-picker → engrave-confirm / add-picker → add-confirm
+- Die row displays permanent pool with selection ring, engrave notch marker, tap targets ≥52px
+- Swap operation: confirm flow, deducts scraps, updates die.faces, preserves minFloor through swap
+- Engrave operation: value picker (2..floor(faces/2)), confirm flow, sets die.minFloor
+- Add Die operation: colour picker (Blue gated on pool having ≥1 Blue), confirm flow, appends d4
+- All mutations persist immediately via `saveMetaState`; scraps counter updates live
+- `getWbDieRect`, `getWbOpsTop`, `getWbDoneRect`, `getWbAddBtnRect` exported for geometry tests
+- Engrave notch marker reused in weapon-selection pool preview (criterion 23)
+
 ### Evidence
 
+- 551 tests passing (28 test files) including:
+  - `src/camp/workbench.test.ts`: helper functions (getNextFaces, getSwapCost, getEngraveValues, makeNewDieId, costs)
+  - `src/dice/pool.test.ts`: 5 minFloor tests (clamp below floor, no-clamp above, marker preserved, no-floor baseline, totals accuracy)
+  - `src/screens/camp.test.ts`: workbench geometry tests (WB_DIE_SIZE ≥44, die rect sizing, ops top, done rect, add button)
+- `npm run typecheck` clean, `npm run build` clean
+
 ### Play-test
+
+**Opening the workbench**
+1. Load game, arrive at camp screen
+2. Tap the **Workbench** button in the activity bar → panel rises from bottom; camp dims behind scrim
+3. Panel header shows "Pip's Dice" centred; scraps count (◈ N) right-aligned in gold; ✕ top-right
+4. Permanent dice displayed as coloured squares with face counts (default: d6🔴, d6🟢, d4🟡)
+5. "+ Add Die" button visible below dice row; "Done" strip at bottom
+
+**Swap a die**
+1. Tap the d6🔴 (Red die) → gold selection ring appears; "Swap → d8 · 30 sc" and "Engrave minimum face · 15 sc" appear below die row (requires ≥30 scraps for Swap)
+2. With insufficient scraps: Swap row is dimmed and non-interactive; tap does nothing
+3. With sufficient scraps: tap Swap row → confirm: "Swap to d8 for 30 scraps?" + Confirm button + Cancel
+4. Tap Confirm → die updates to d8🔴; scraps counter decreases by 30; back to idle
+
+**Engrave a die**
+1. Select a d6🟢 die; tap "Engrave minimum face" → value picker shows [2] [3]; Cancel below
+2. Tap [2] → confirm: "Lock minimum face to 2 for 15 scraps?" + Confirm + Cancel
+3. Tap Confirm → die shows engrave notch marker; scraps decreases by 15; idle
+4. Re-select same die → shows "Engraved: min 2" (no Engrave option); Swap still available
+
+**Engrave preserves through Swap**
+1. Engrave d6🟢 to min 2; then Swap it to d8
+2. Re-select d8🟢 → shows "Engraved: min 2"; engrave notch marker still present
+
+**Add Die**
+1. With ≥50 scraps, tap "+ Add Die" → colour picker shows d4🔴, d4🟢, d4🟡 (no d4🔵 since no Blue in pool)
+2. Tap d4🔴 → confirm "Add d4 red for 50 scraps?"; tap Confirm → new d4🔴 appears in die row; scraps −50
+3. Verify pool now has 4 dice
+
+**Done / Close**
+1. Tap Done → panel sinks; camp returns to normal
+2. Tap ✕ or scene area above panel → same result; state resets
+
+**Persistence**
+1. After upgrading a die, reload page (F5) → upgraded die persists with correct faces and minFloor
+2. Engrave notch visible on reloaded engraved die
+
+**Edge cases**
+- 0 scraps: all operations dimmed; panel is browsable; tap dimmed option does nothing
+- d12 die: "Max size" shown (non-interactive) instead of Swap; Engrave available if unengraved
+- After Add Die with ≥7 dice: die row wraps to second row

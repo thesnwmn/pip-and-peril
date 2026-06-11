@@ -45,6 +45,7 @@ export function createGame(
     const permanent = meta.permanentPool.map(p => ({
       color: p.colour as any,
       sides: p.faces,
+      ...(p.minFloor && p.minFloor > 1 ? { minFloor: p.minFloor } : {}),
     }))
     const weapon = WEAPON_SPECS[meta.activeWeaponId]
     if (!weapon) return starterPool()

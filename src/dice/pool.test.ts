@@ -165,6 +165,74 @@ describe('spendPips', () => {
   })
 })
 
+describe('rollPool minFloor', () => {
+  afterEach(() => { vi.restoreAllMocks() })
+
+  it('clamps roll to minFloor when raw roll is below it', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0) // raw roll = 1
+    const pool: DicePool = {
+      dice: [{ color: 'red', sides: 6, minFloor: 4 }],
+      rolls: [],
+      totals: { red: 0, blue: 0, green: 0, yellow: 0 },
+      state: 'idle',
+    }
+    const rolled = rollPool(pool)
+    expect(rolled.rolls[0].value).toBe(4)
+    expect(rolled.totals.red).toBe(4)
+  })
+
+  it('does not clamp when raw roll is above minFloor', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.9) // raw roll = 6
+    const pool: DicePool = {
+      dice: [{ color: 'red', sides: 6, minFloor: 3 }],
+      rolls: [],
+      totals: { red: 0, blue: 0, green: 0, yellow: 0 },
+      state: 'idle',
+    }
+    const rolled = rollPool(pool)
+    expect(rolled.rolls[0].value).toBe(6)
+  })
+
+  it('preserves minFloor on the rolled die', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    const pool: DicePool = {
+      dice: [{ color: 'green', sides: 8, minFloor: 2 }],
+      rolls: [],
+      totals: { red: 0, blue: 0, green: 0, yellow: 0 },
+      state: 'idle',
+    }
+    const rolled = rollPool(pool)
+    expect(rolled.rolls[0].minFloor).toBe(2)
+  })
+
+  it('without minFloor behaves identically to original (floor=1)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0) // raw roll = 1
+    const pool: DicePool = {
+      dice: [{ color: 'blue', sides: 6 }],
+      rolls: [],
+      totals: { red: 0, blue: 0, green: 0, yellow: 0 },
+      state: 'idle',
+    }
+    const rolled = rollPool(pool)
+    expect(rolled.rolls[0].value).toBe(1)
+  })
+
+  it('totals reflect clamped values across multiple dice', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0) // raw roll = 1 for all
+    const pool: DicePool = {
+      dice: [
+        { color: 'red', sides: 6, minFloor: 3 },
+        { color: 'red', sides: 6 },
+      ],
+      rolls: [],
+      totals: { red: 0, blue: 0, green: 0, yellow: 0 },
+      state: 'idle',
+    }
+    const rolled = rollPool(pool)
+    expect(rolled.totals.red).toBe(4) // 3 (clamped) + 1 (unclamped)
+  })
+})
+
 describe('resetPool', () => {
   it('transitions to idle', () => {
     const pool: DicePool = { ...starterPool(), state: 'rolled' }

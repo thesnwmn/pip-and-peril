@@ -5,6 +5,7 @@ export type PoolState = 'idle' | 'rolling' | 'rolled'
 export interface Die {
   color: DieColor
   sides: number
+  minFloor?: number  // when set, roll results are clamped: Math.max(raw, minFloor)
 }
 
 export interface RolledDie extends Die {
@@ -37,7 +38,7 @@ export function starterPool(): DicePool {
 export function rollPool(pool: DicePool): DicePool {
   const rolls: RolledDie[] = pool.dice.map(die => ({
     ...die,
-    value: Math.floor(Math.random() * die.sides) + 1,
+    value: Math.max(Math.floor(Math.random() * die.sides) + 1, die.minFloor ?? 1),
   }))
   const totals: Record<DieColor, number> = { ...ZERO_TOTALS }
   for (const r of rolls) totals[r.color] += r.value
