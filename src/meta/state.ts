@@ -8,6 +8,33 @@ export interface PermanentDie {
   minFloor?: number   // absent = 1; present = 2..Math.floor(faces/2)
 }
 
+// ── Visitor system types (feature 051) ────────────────────────────────────────
+
+export interface BoonDie {
+  colour: DiceColour
+  faces: DiceFaces
+}
+
+export type VisitorType = 'tinker' | 'wounded-traveller'
+export type VisitorOfferKind = 'tinker-boon' | 'traveller-help' | 'traveller-gift'
+
+export interface VisitorOffer {
+  kind: VisitorOfferKind
+  costScraps: number
+  boonDie?: BoonDie
+  rewardScraps?: number
+  offerLine: string
+  acceptLine: string
+}
+
+export interface VisitorInstance {
+  individualId: string
+  type: VisitorType
+  condition: string
+  offer: VisitorOffer
+  resolved: boolean
+}
+
 export interface MetaState {
   version: 1
   scraps: number
@@ -15,6 +42,10 @@ export interface MetaState {
   activeWeaponId: string
   unlockedWeaponIds: string[]
   runCount: number
+  visitorRelationships: Record<string, number>
+  currentVisitors: VisitorInstance[]
+  visitorEpoch: number
+  pendingRunBoons: BoonDie[]
 }
 
 const DEFAULT_META_STATE: MetaState = {
@@ -28,6 +59,10 @@ const DEFAULT_META_STATE: MetaState = {
   activeWeaponId: 'shortsword',
   unlockedWeaponIds: ['dagger', 'shortsword', 'broadsword', 'whiskerStaff'],
   runCount: 0,
+  visitorRelationships: {},
+  currentVisitors: [],
+  visitorEpoch: -1,
+  pendingRunBoons: [],
 }
 
 export function loadMetaState(): MetaState {

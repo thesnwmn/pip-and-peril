@@ -1,11 +1,18 @@
 import { colors } from '../colors'
 import type { ScreenController } from './main-menu'
-import type { MetaState, DiceColour, DiceFaces } from '../meta/state'
+import type { MetaState, DiceColour, DiceFaces, VisitorInstance } from '../meta/state'
 import { loadMetaState, saveMetaState } from '../meta/state'
 import { WEAPON_SPECS } from '../meta/weapons'
 import type { Die } from '../dice/pool'
 import { generateNotices } from '../camp/notices'
 import type { NoticeState } from '../camp/notices'
+import {
+  generateVisitors,
+  getDisplayName,
+  getVisitorTint,
+  tierFor,
+  VISITOR_TYPE_LABELS,
+} from '../camp/visitors'
 import {
   getNextFaces,
   getSwapCost,
@@ -145,6 +152,23 @@ const DIE_COLOR_MAP: Record<string, string> = {
   yellow: '#eab308',
 }
 
+// ── Visitor panel ──────────────────────────────────────────────────────────────
+const VP_BTN_H = 48
+const VP_BTN_GAP = 12
+const VP_BTN_W = Math.floor((LOGICAL_W - 32 - VP_BTN_GAP) / 2)
+const VP_ACCEPT_X = 16
+const VP_SENDAWAY_X = 16 + VP_BTN_W + VP_BTN_GAP
+const VP_BTN_Y = LOGICAL_H - VP_BTN_H - 28    // thumb zone, absolute
+const VP_ACCEPT_FEEDBACK_MS = 1500
+
+export function getVpAcceptRect(): { x: number; y: number; w: number; h: number } {
+  return { x: VP_ACCEPT_X, y: VP_BTN_Y, w: VP_BTN_W, h: VP_BTN_H }
+}
+
+export function getVpSendAwayRect(): { x: number; y: number; w: number; h: number } {
+  return { x: VP_SENDAWAY_X, y: VP_BTN_Y, w: VP_BTN_W, h: VP_BTN_H }
+}
+
 // ── Notice panel ───────────────────────────────────────────────────────────────
 const NOTICE_CARD_W = LOGICAL_W - 32
 const NOTICE_CARD_H = 82
@@ -222,6 +246,18 @@ interface CampState {
   // Hover feedback (mouse devices)
   hoveredElement: string | null
   isMouseDevice: boolean
+  // Visitor panel transient state
+  visitorFeedback: string | null
+  visitorFeedbackEnd: number
+  visitorFeedbackSubject: VisitorInstance | null  // snapshot of the accepted visitor for feedback display
+}
+
+function initVisitorState(base: MetaState): MetaState {
+  if (base.visitorEpoch === base.runCount) return base
+  const currentVisitors = generateVisitors(base)
+  const updated: MetaState = { ...base, currentVisitors, visitorEpoch: base.runCount }
+  saveMetaState(updated)
+  return updated
 }
 
 export function createCamp(
@@ -229,7 +265,7 @@ export function createCamp(
   onStartRun: (metaState: MetaState) => void,
   initialMetaState?: MetaState,
 ): ScreenController {
-  const meta = initialMetaState ?? loadMetaState()
+  const meta = initVisitorState(initialMetaState ?? loadMetaState())
   const state: CampState = {
     metaState: meta,
     menuModal: createMenuModal('home', transitionTo),
@@ -250,6 +286,19 @@ export function createCamp(
     workbenchAddColour: null,
     hoveredElement: null,
     isMouseDevice: false,
+    visitorFeedback: null,
+    visitorFeedbackEnd: 0,
+    visitorFeedbackSubject: null,
+  }
+
+  // ── Visitor helpers ──────────────────────────────────────────────────────────
+
+  function getActiveVisitor(): VisitorInstance | null {
+    return state.metaState.currentVisitors.find(v => !v.resolved) ?? null
+  }
+
+  function getUnresolvedCount(): number {
+    return state.metaState.currentVisitors.filter(v => !v.resolved).length
   }
 
   // ── Geometry helpers ─────────────────────────────────────────────────────────
@@ -290,7 +339,12 @@ export function createCamp(
       ...(p.minFloor && p.minFloor > 1 ? { minFloor: p.minFloor } : {}),
     }))
     const weapon = WEAPON_SPECS[state.selectedWeaponId]
-    return weapon ? [...permanent, ...weapon.addedDice] : permanent
+    const boons: Die[] = (state.metaState.pendingRunBoons ?? []).map(b => ({
+      color: b.colour as Die['color'],
+      sides: b.faces,
+    }))
+    const base = weapon ? [...permanent, ...weapon.addedDice] : permanent
+    return boons.length > 0 ? [...base, ...boons] : base
   }
 
   function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
@@ -510,6 +564,23 @@ export function createCamp(
       ctx.lineTo(legX, legY + 14)
       ctx.stroke()
     }
+
+    // Seated visitor figure when there's an unresolved visitor
+    const active = getActiveVisitor()
+    if (active) {
+      const tint = getVisitorTint(active.type)
+      ctx.globalAlpha = 0.85
+      ctx.fillStyle = tint
+      // Body seated on stool
+      ctx.beginPath()
+      ctx.ellipse(STOOL_CX, STOOL_CY - 14, 6, 10, 0, 0, Math.PI * 2)
+      ctx.fill()
+      // Head
+      ctx.beginPath()
+      ctx.arc(STOOL_CX, STOOL_CY - 28, 7, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.globalAlpha = 1
+    }
   }
 
   function drawCampfire(ctx: CanvasRenderingContext2D): void {
@@ -667,14 +738,17 @@ export function createCamp(
       { name: 'visitor', label: 'Visitor' },
     ]
 
+    const unresolvedCount = getUnresolvedCount()
+
     for (let i = 0; i < buttons.length; i++) {
       const btn = buttons[i]
       const r = getActivityButtonRect(i)
       const isVisitor = btn.name === 'visitor'
-      const alpha = isVisitor ? 0.4 : 1
+      const visitorActive = isVisitor && unresolvedCount > 0
+      const alpha = isVisitor && !visitorActive ? 0.4 : 1
       const hovered = state.isMouseDevice && state.hoveredElement === `activity-${btn.name}`
 
-      if (hovered && !isVisitor) {
+      if (hovered && (!isVisitor || visitorActive)) {
         ctx.fillStyle = 'rgba(90, 61, 26, 0.4)'
         ctx.fillRect(r.x, r.y, r.w, r.h)
       }
@@ -694,11 +768,27 @@ export function createCamp(
 
       ctx.globalAlpha = alpha
       ctx.font = '12px system-ui, -apple-system, sans-serif'
-      ctx.fillStyle = isVisitor ? colors.textMuted : colors.textPrimary
+      ctx.fillStyle = isVisitor && !visitorActive ? colors.textMuted : colors.textPrimary
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
       ctx.fillText(btn.label, cx, r.y + 44)
       ctx.globalAlpha = 1
+
+      // Count badge on visitor button when unresolved visitors exist
+      if (visitorActive) {
+        const badgeR = 9
+        const badgeCX = r.x + r.w - badgeR - 2
+        const badgeCY = r.y + badgeR + 2
+        ctx.fillStyle = colors.gold
+        ctx.beginPath()
+        ctx.arc(badgeCX, badgeCY, badgeR, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.font = 'bold 11px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = '#2e1d0d'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(String(unresolvedCount), badgeCX, badgeCY)
+      }
     }
 
     // Descend strip
@@ -1245,6 +1335,143 @@ export function createCamp(
     ctx.fillText('Done', cx, doneRect.y + doneRect.h / 2)
   }
 
+  // ── Visitor panel ────────────────────────────────────────────────────────────
+
+  function drawVisitorPanel(ctx: CanvasRenderingContext2D, panelY: number): void {
+    // During accept feedback, show the accepted visitor's identity; otherwise the next unresolved
+    const visitor = state.visitorFeedbackSubject ?? getActiveVisitor()
+    if (!visitor) return
+
+    const meta    = state.metaState
+    const rel     = meta.visitorRelationships[visitor.individualId] ?? 0
+    const tier    = tierFor(rel)
+    const name    = getDisplayName(visitor.individualId, tier)
+    const typeLabel = VISITOR_TYPE_LABELS[visitor.type]
+    const tint    = getVisitorTint(visitor.type)
+    const canAfford = meta.scraps >= visitor.offer.costScraps
+
+    // Scrim
+    ctx.globalAlpha = 0.40
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, STATUS_BAR_H, LOGICAL_W, panelY - STATUS_BAR_H)
+    ctx.globalAlpha = 1
+
+    // Panel surface
+    ctx.fillStyle = '#2e1d0d'
+    ctx.fillRect(0, panelY, LOGICAL_W, LOGICAL_H - panelY)
+    ctx.strokeStyle = '#5a3d1a'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(0, panelY)
+    ctx.lineTo(LOGICAL_W, panelY)
+    ctx.stroke()
+
+    drawCloseButton(ctx, panelY)
+
+    // Portrait silhouette: straddles top edge (head above, body below)
+    const pCX = LOGICAL_W / 2
+    const pCY = panelY
+    ctx.fillStyle = tint
+    ctx.globalAlpha = 0.9
+    ctx.beginPath()
+    ctx.arc(pCX, pCY - 10, 12, 0, Math.PI * 2)  // head
+    ctx.fill()
+    ctx.beginPath()
+    ctx.ellipse(pCX, pCY + 12, 10, 14, 0, 0, Math.PI * 2)  // body
+    ctx.fill()
+    ctx.globalAlpha = 1
+
+    let y = panelY + 38
+
+    // Name
+    ctx.font = 'bold 15px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.textPrimary
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(name, LOGICAL_W / 2, y)
+    y += 20
+
+    // "regular" warmth marker
+    if (tier === 'regular') {
+      ctx.font = '11px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = WB_CAMP_ACCENT
+      ctx.fillText('⋆ regular', LOGICAL_W / 2, y)
+      y += 16
+    }
+
+    // Type label
+    ctx.font = '12px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.textMuted
+    ctx.fillText(typeLabel, LOGICAL_W / 2, y)
+    y += 28
+
+    // Condition blurb
+    ctx.font = 'italic 13px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.textMuted
+    const condLines = wrapText(ctx, `"${visitor.condition}"`, LOGICAL_W - 48)
+    for (const line of condLines) {
+      ctx.fillText(line, LOGICAL_W / 2, y)
+      y += 20
+    }
+    y += 16
+
+    // Accept feedback (1.5 s post-accept) replaces offer + buttons
+    if (state.visitorFeedback !== null) {
+      ctx.font = 'italic 14px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = WB_CAMP_ACCENT
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      const feedLines = wrapText(ctx, state.visitorFeedback, LOGICAL_W - 48)
+      for (const line of feedLines) {
+        ctx.fillText(line, LOGICAL_W / 2, y)
+        y += 22
+      }
+      return
+    }
+
+    // Offer line
+    ctx.font = '14px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.textPrimary
+    const offerLines = wrapText(ctx, visitor.offer.offerLine, LOGICAL_W - 48)
+    for (const line of offerLines) {
+      ctx.fillText(line, LOGICAL_W / 2, y)
+      y += 22
+    }
+
+    // Not-enough-scraps note
+    if (visitor.offer.costScraps > 0 && !canAfford) {
+      y += 6
+      ctx.font = '12px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = '#8b3a3a'
+      ctx.fillText('Not enough scraps.', LOGICAL_W / 2, y)
+    }
+
+    // Accept button
+    const acceptRect = getVpAcceptRect()
+    const acceptHovered = state.isMouseDevice && state.hoveredElement === 'vp-accept'
+    ctx.globalAlpha = !canAfford ? 0.4 : acceptHovered ? 1 : 0.9
+    ctx.fillStyle = WB_CAMP_ACCENT
+    ctx.fillRect(acceptRect.x, acceptRect.y, acceptRect.w, acceptRect.h)
+    ctx.globalAlpha = 1
+    ctx.font = 'bold 16px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = !canAfford ? colors.textMuted : '#1a1208'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('Accept', acceptRect.x + acceptRect.w / 2, acceptRect.y + acceptRect.h / 2)
+
+    // Send Away button
+    const sendRect = getVpSendAwayRect()
+    const sendHovered = state.isMouseDevice && state.hoveredElement === 'vp-send'
+    ctx.strokeStyle = sendHovered ? colors.textPrimary : '#5a3d1a'
+    ctx.lineWidth = 1
+    ctx.strokeRect(sendRect.x, sendRect.y, sendRect.w, sendRect.h)
+    ctx.font = 'bold 16px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = sendHovered ? colors.textPrimary : WB_CAMP_ACCENT
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('Send Away', sendRect.x + sendRect.w / 2, sendRect.y + sendRect.h / 2)
+  }
+
   // ── Panel open/close helpers ─────────────────────────────────────────────────
 
   function resetWorkbenchState(): void {
@@ -1270,9 +1497,11 @@ export function createCamp(
 
   function closePanel(): void {
     state.panelClosing = true
-    // Continue from current progress rather than snapping to top
     state.panelAnimStart = performance.now() - (1 - state.panelProgress) * SUB_PANEL_SINK_MS
     state.noticeDismissVisible = false
+    state.visitorFeedback = null
+    state.visitorFeedbackEnd = 0
+    state.visitorFeedbackSubject = null
     resetWorkbenchState()
     // activeSubPanel stays set until panelProgress reaches 0 (draw loop clears it)
   }
@@ -1312,6 +1541,14 @@ export function createCamp(
       }
     }
 
+    // Advance visitor accept feedback timer
+    if (state.visitorFeedback !== null && timestamp >= state.visitorFeedbackEnd) {
+      state.visitorFeedback = null
+      state.visitorFeedbackEnd = 0
+      state.visitorFeedbackSubject = null
+      if (getUnresolvedCount() === 0) closePanel()
+    }
+
     // Advance notice dismiss label fade
     if (state.noticeDismissVisible && state.panelProgress >= 1) {
       const elapsed = timestamp - state.noticeDismissStart
@@ -1330,6 +1567,7 @@ export function createCamp(
       if (state.activeSubPanel === 'weapons') drawWeaponPanel(ctx, panelY)
       else if (state.activeSubPanel === 'notices') drawNoticesPanel(ctx, panelY)
       else if (state.activeSubPanel === 'workbench') drawWorkbenchPanel(ctx, panelY)
+      else if (state.activeSubPanel === 'visitor') drawVisitorPanel(ctx, panelY)
     }
 
     // Status bar always on top of scene and panels
@@ -1340,6 +1578,50 @@ export function createCamp(
   }
 
   // ── Input ────────────────────────────────────────────────────────────────────
+
+  function handleVisitorAccept(visitor: VisitorInstance): void {
+    const meta  = state.metaState
+    const offer = visitor.offer
+    let scraps  = meta.scraps - offer.costScraps
+    const pendingRunBoons = [...(meta.pendingRunBoons ?? [])]
+
+    if (offer.kind === 'tinker-boon' && offer.boonDie) {
+      pendingRunBoons.push(offer.boonDie)
+    } else if (offer.kind === 'traveller-gift' && offer.rewardScraps !== undefined) {
+      scraps += offer.rewardScraps
+    }
+
+    const relationships = { ...meta.visitorRelationships }
+    relationships[visitor.individualId] = (relationships[visitor.individualId] ?? 0) + 1
+
+    const currentVisitors = meta.currentVisitors.map(v =>
+      v.individualId === visitor.individualId ? { ...v, resolved: true } : v
+    )
+
+    const newMeta: MetaState = {
+      ...meta,
+      scraps,
+      pendingRunBoons,
+      visitorRelationships: relationships,
+      currentVisitors,
+    }
+    saveMetaState(newMeta)
+    state.metaState = newMeta
+
+    state.visitorFeedback = offer.acceptLine
+    state.visitorFeedbackEnd = performance.now() + VP_ACCEPT_FEEDBACK_MS
+    state.visitorFeedbackSubject = visitor   // snapshot so feedback renders under the right identity
+  }
+
+  function handleVisitorResolve(visitor: VisitorInstance): void {
+    const currentVisitors = state.metaState.currentVisitors.map(v =>
+      v.individualId === visitor.individualId ? { ...v, resolved: true } : v
+    )
+    const newMeta: MetaState = { ...state.metaState, currentVisitors }
+    saveMetaState(newMeta)
+    state.metaState = newMeta
+    if (getUnresolvedCount() === 0) closePanel()
+  }
 
   function handleWorkbenchClick(x: number, y: number, panelY: number): void {
     const meta = state.metaState
@@ -1650,9 +1932,13 @@ export function createCamp(
           return
         }
         if (inRect(getDescendPanelBtnRect(panelY), x, y)) {
-          const newState: MetaState = { ...state.metaState, activeWeaponId: state.selectedWeaponId }
-          saveMetaState(newState)
-          onStartRun(newState)
+          const stateForRun: MetaState = {
+            ...state.metaState,
+            activeWeaponId: state.selectedWeaponId,
+          }
+          // Persist with boons cleared (consumed on run start); game receives them via stateForRun
+          saveMetaState({ ...stateForRun, pendingRunBoons: [] })
+          onStartRun(stateForRun)
           return
         }
       }
@@ -1660,6 +1946,24 @@ export function createCamp(
       if (state.activeSubPanel === 'workbench' && !state.panelClosing) {
         handleWorkbenchClick(x, y, panelY)
         return
+      }
+
+      if (state.activeSubPanel === 'visitor' && !state.panelClosing && state.panelProgress >= 1) {
+        // While showing accept feedback, ignore all taps
+        if (state.visitorFeedback !== null) return
+
+        const visitor = getActiveVisitor()
+        if (visitor) {
+          const canAfford = state.metaState.scraps >= visitor.offer.costScraps
+          if (inRect(getVpAcceptRect(), x, y) && canAfford) {
+            handleVisitorAccept(visitor)
+            return
+          }
+          if (inRect(getVpSendAwayRect(), x, y)) {
+            handleVisitorResolve(visitor)
+            return
+          }
+        }
       }
 
       // Tap in the scene zone (above the panel) closes any open panel
@@ -1676,7 +1980,10 @@ export function createCamp(
     for (let i = 0; i < buttons.length; i++) {
       const r = getActivityButtonRect(i)
       if (inRect(r, x, y)) {
-        if (buttons[i] === 'visitor') return
+        if (buttons[i] === 'visitor') {
+          if (getUnresolvedCount() > 0) openPanel('visitor')
+          return
+        }
         openPanel(buttons[i])
         return
       }
@@ -1714,6 +2021,20 @@ export function createCamp(
         state.hoveredElement = w
       } else if (state.activeSubPanel === 'workbench' && !state.panelClosing) {
         state.hoveredElement = getWorkbenchHoverTarget(x, y, panelY)
+      } else if (state.activeSubPanel === 'visitor' && !state.panelClosing && state.visitorFeedback === null) {
+        const visitor = getActiveVisitor()
+        if (visitor) {
+          const canAfford = state.metaState.scraps >= visitor.offer.costScraps
+          if (canAfford && inRect(getVpAcceptRect(), x, y)) {
+            state.hoveredElement = 'vp-accept'
+          } else if (inRect(getVpSendAwayRect(), x, y)) {
+            state.hoveredElement = 'vp-send'
+          } else {
+            state.hoveredElement = null
+          }
+        } else {
+          state.hoveredElement = null
+        }
       } else {
         state.hoveredElement = null
       }
@@ -1724,7 +2045,8 @@ export function createCamp(
     for (let i = 0; i < buttons.length; i++) {
       const r = getActivityButtonRect(i)
       if (inRect(r, x, y)) {
-        state.hoveredElement = buttons[i] === 'visitor' ? null : `activity-${buttons[i]}`
+        const isVisitorActive = buttons[i] === 'visitor' && getUnresolvedCount() > 0
+        state.hoveredElement = (buttons[i] === 'visitor' && !isVisitorActive) ? null : `activity-${buttons[i]}`
         return
       }
     }
