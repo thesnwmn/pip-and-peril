@@ -57,7 +57,11 @@ The contract. Each criterion is concrete and testable.
     traversal rules, no `TileCell` behaviour beyond the stored archetype.
 11. The new run mode is documented (a line in `README.md` and/or `CLAUDE.md` Commands) so the manager
     knows how to open it.
-12. `npm run typecheck`, `npm run test`, and `npm run build` all pass. A unit test covers
+12. The throwaway POC (`public/poc/tiles/`) is **retired**: the directory is deleted, its card is
+    removed from `public/poc/index.html`, and the forward-pointer at the bottom of
+    `docs/concept/tiles-and-props.md` is repointed from "POC 6" to the live Tile Gallery. The live
+    gallery is now the single source of truth for tile art.
+13. `npm run typecheck`, `npm run test`, and `npm run build` all pass. A unit test covers
     `variantFor` (determinism + distribution) and archetype assignment/weighting.
 
 ## Scope / non-goals
@@ -71,9 +75,11 @@ The contract. Each criterion is concrete and testable.
 - **Not biome art.** Archetypes are tinted by the existing `DUNGEON` palette; biome-specific
   archetypes (Flooded Chamber, Jar Room, etc.) belong to 084–087. New palette tokens are added in a
   forward-compatible way so biomes can re-tint them.
-- **The POC (`public/poc/tiles/`) is not the deliverable.** It was the visual exploration; this
-  feature productionises the archetype layer into the real renderer. Retiring or keeping the POC is
-  the Engineer's call — it is out of scope here.
+- **The POC (`public/poc/tiles/`) is retired by this feature, not kept.** It was the visual
+  exploration; once the live, code-backed gallery exists, a parallel canvas implementation is a
+  liability that will drift. Port its interior renderers into `src/map/renderer.ts`, then delete it
+  (criterion 12). A re-implementation of tile art *only* for the gallery is out of scope — the
+  gallery must draw from the real renderer.
 - Variant *counts* are a dial: shipping the minimums in criterion 3 satisfies the spec; richer
   variant sets are welcome but not required.
 
