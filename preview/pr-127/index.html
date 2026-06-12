@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pip & Peril</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0d0d1a 0%, #1a1208 100%);
+      color: #e5e5e5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    h1 {
+      font-size: 48px;
+      color: #c8941e;
+      margin-bottom: 10px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    .tagline {
+      font-size: 14px;
+      color: #999;
+      font-style: italic;
+      margin-bottom: 30px;
+    }
+
+    .content {
+      background: rgba(46, 29, 13, 0.8);
+      border: 2px solid #5a3d1a;
+      border-radius: 8px;
+      padding: 40px 30px;
+      backdrop-filter: blur(10px);
+    }
+
+    .intro {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #ccc;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .modes {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .mode-card {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .mode-label {
+      font-size: 12px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .mode-link {
+      display: block;
+      padding: 16px 24px;
+      background: #2e1d0d;
+      border: 2px solid #c8941e;
+      border-radius: 6px;
+      color: #c8941e;
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .mode-link:hover {
+      background: #3a2818;
+      color: #e8b43e;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(200, 148, 30, 0.3);
+    }
+
+    .mode-description {
+      font-size: 13px;
+      color: #aaa;
+      line-height: 1.5;
+    }
+
+    .divider {
+      height: 1px;
+      background: rgba(200, 148, 30, 0.2);
+      margin: 30px 0;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    footer a {
+      color: #c8941e;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 36px;
+      }
+
+      .content {
+        padding: 30px 20px;
+      }
+
+      .mode-link {
+        padding: 14px 20px;
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>PIP & PERIL</h1>
+      <p class="tagline">Fortune Favors the Small</p>
+    </header>
+
+    <div class="content">
+      <p class="intro">
+        A dice-driven roguelike dungeon crawler. Explore, fight, and upgrade your permanent dice pool.
+      </p>
+
+      <div class="modes">
+        <div class="mode-card">
+          <div class="mode-label">🎮 Normal Game</div>
+          <a href="game.html" class="mode-link">Play the Game</a>
+          <div class="mode-description">
+            Start fresh or continue your adventure. Return to camp between runs to choose weapons and collect scraps.
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="mode-card">
+          <div class="mode-label">🧪 Test Mode</div>
+          <a href="game.html?testMode=camp&testScraps=100" class="mode-link">Test Camp Screen</a>
+          <div class="mode-description">
+            Jump straight to the camp with 100 scraps. Perfect for testing weapon selection, pool preview, and mechanics without playing a run.
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="mode-card">
+          <div class="mode-label">🎨 Dev Tool</div>
+          <a href="gallery.html" class="mode-link">Tile Gallery</a>
+          <div class="mode-description">
+            Browse the full archetype catalogue — every interior shape and variant rendered by the real tile renderer. Used to review art and verify new archetypes or biome palettes.
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="mode-card">
+          <div class="mode-label">🎲 Dev Tool</div>
+          <a href="dice-pool-demo.html" class="mode-link">Dice Pool Demo</a>
+          <div class="mode-description">
+            Interactive renderer for variable dice pools. Add or remove dice by colour and type, roll to see values, and observe dynamic sizing and two-row wrapping in real time.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>
+        Built with <span style="color: #c8941e;">♦</span>
+        <a href="https://github.com/thesnwmn/pip-and-peril" target="_blank">GitHub</a>
+      </p>
+    </footer>
+  </div>
+</body>
+</html>

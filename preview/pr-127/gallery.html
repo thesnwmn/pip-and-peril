@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390, initial-scale=1.0, user-scalable=no">
+  <title>Pip &amp; Peril — Tile Gallery</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d0d1a;
+      color: #e8d5b0;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 12px 12px 48px;
+      gap: 16px;
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 366px;
+    }
+    header h1 { font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: #e8d5b0; }
+    header .tag { color: #c8941e; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.7; }
+
+    section { width: 366px; }
+    .sec-head {
+      display: flex; align-items: baseline; gap: 8px;
+      border-bottom: 1px solid #1a1a38; padding-bottom: 4px; margin-bottom: 10px;
+    }
+    .sec-head h2 { font-size: 12px; color: #c8941e; letter-spacing: 1px; text-transform: uppercase; }
+    .sec-head .sub { font-size: 10px; color: #4a3a28; }
+
+    .grid { display: flex; flex-wrap: wrap; gap: 10px 10px; }
+    .cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .cell canvas { border-radius: 3px; display: block; }
+    .cap { font-size: 9px; color: #8b7355; text-align: center; line-height: 1.3; min-height: 20px; max-width: 80px; }
+    .cap b { color: #c8941e; }
+
+    .placeholder {
+      padding: 14px 16px;
+      border: 1px dashed #2a1f40;
+      border-radius: 6px;
+      font-size: 10px;
+      color: #4a3a60;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+  </style>
+  <script type="module" crossorigin src="./assets/gallery-4Ow8nTtV.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/colors-BQ3oZbvY.js">
+  <link rel="modulepreload" crossorigin href="./assets/renderer-BLkOVas1.js">
+</head>
+<body>
+  <header>
+    <h1>Pip &amp; Peril — Tile Gallery</h1>
+    <span class="tag">dev</span>
+  </header>
+
+  <section id="sec-arch"></section>
+  <section id="sec-types"></section>
+  <section id="sec-exits"></section>
+  <section id="sec-props"></section>
+
+</body>
+</html>
