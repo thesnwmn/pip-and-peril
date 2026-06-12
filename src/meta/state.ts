@@ -15,8 +15,8 @@ export interface BoonDie {
   faces: DiceFaces
 }
 
-export type VisitorType = 'tinker' | 'wounded-traveller'
-export type VisitorOfferKind = 'tinker-boon' | 'traveller-help' | 'traveller-gift'
+export type VisitorType = 'tinker' | 'wounded-traveller' | 'trickster'
+export type VisitorOfferKind = 'tinker-boon' | 'traveller-help' | 'traveller-gift' | 'trickster-wager'
 
 export interface VisitorOffer {
   kind: VisitorOfferKind
@@ -25,6 +25,13 @@ export interface VisitorOffer {
   rewardScraps?: number
   offerLine: string
   acceptLine: string
+  // trickster-wager fields
+  checkColour?: 'yellow'
+  rewardCritical?: number
+  rewardSuccess?: number
+  rewardPartial?: number
+  penaltyFailure?: number
+  tier?: 'stranger' | 'familiar' | 'regular'
 }
 
 export interface VisitorInstance {

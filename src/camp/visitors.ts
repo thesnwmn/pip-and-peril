@@ -8,6 +8,8 @@ import type {
   VisitorType,
 } from '../meta/state'
 
+export type TricksterBand = 'critical' | 'success' | 'cost' | 'failure'
+
 export type RelationshipTier = 'stranger' | 'familiar' | 'regular'
 
 // ── Tuning constants (weights live here per spec) ─────────────────────────────
@@ -31,6 +33,30 @@ export const TRAVELLER_GIFT_REWARD = 5
 
 export const VISITOR_TINKER_TINT = '#b0763a'
 export const VISITOR_TRAVELLER_TINT = '#6a7a6a'
+export const VISITOR_TRICKSTER_TINT = '#8a6a3a'
+
+// ── Trickster tuning ──────────────────────────────────────────────────────────
+
+export const TRICKSTER_YELLOW_CRITICAL = 4
+export const TRICKSTER_YELLOW_SUCCESS = 2
+export const TRICKSTER_YELLOW_PARTIAL = 1
+
+export const TRICKSTER_WAGER: Record<RelationshipTier, {
+  penaltyFailure: number
+  rewardCritical: number
+  rewardSuccess: number
+  rewardPartial: number
+}> = {
+  stranger: { penaltyFailure: 4, rewardCritical: 9, rewardSuccess: 4, rewardPartial: 1 },
+  familiar: { penaltyFailure: 4, rewardCritical: 9, rewardSuccess: 4, rewardPartial: 1 },
+  regular:  { penaltyFailure: 2, rewardCritical: 9, rewardSuccess: 4, rewardPartial: 1 },
+}
+
+export const TRICKSTER_OFFER_LINES: Record<RelationshipTier, string> = {
+  stranger: "Barely any risk — roll your luck against mine. Mostly you'll come out ahead. Mostly.",
+  familiar: "You've seen enough of me to know there's a catch. There is. Failure costs a few scraps. Worth it most days.",
+  regular:  "You know the deal. I've shaved the edge off a little — call it professional respect. Roll.",
+}
 
 // ── Roster ────────────────────────────────────────────────────────────────────
 
@@ -41,10 +67,12 @@ interface RosterEntry {
 }
 
 const ROSTER: RosterEntry[] = [
-  { individualId: 'tinker-tussock',  type: 'tinker',             name: 'Tussock' },
-  { individualId: 'tinker-pellam',   type: 'tinker',             name: 'Pellam'  },
-  { individualId: 'traveller-marl',  type: 'wounded-traveller',  name: 'Marl'    },
-  { individualId: 'traveller-finch', type: 'wounded-traveller',  name: 'Finch'   },
+  { individualId: 'tinker-tussock',    type: 'tinker',             name: 'Tussock' },
+  { individualId: 'tinker-pellam',     type: 'tinker',             name: 'Pellam'  },
+  { individualId: 'traveller-marl',    type: 'wounded-traveller',  name: 'Marl'    },
+  { individualId: 'traveller-finch',   type: 'wounded-traveller',  name: 'Finch'   },
+  { individualId: 'trickster-sloke',   type: 'trickster',          name: 'Sloke'   },
+  { individualId: 'trickster-fenwick', type: 'trickster',          name: 'Fenwick' },
 ]
 
 export const VISITOR_NAMES: Record<string, string> = Object.fromEntries(
@@ -58,6 +86,7 @@ export const VISITOR_TYPES_BY_ID: Record<string, VisitorType> = Object.fromEntri
 export const VISITOR_TYPE_LABELS: Record<VisitorType, string> = {
   tinker: 'Tinker',
   'wounded-traveller': 'Wounded Traveller',
+  trickster: 'Trickster',
 }
 
 // ── Condition bank ────────────────────────────────────────────────────────────
@@ -82,14 +111,18 @@ export function tierFor(count: number): RelationshipTier {
 }
 
 export function getVisitorTint(type: VisitorType): string {
-  return type === 'tinker' ? VISITOR_TINKER_TINT : VISITOR_TRAVELLER_TINT
+  if (type === 'tinker') return VISITOR_TINKER_TINT
+  if (type === 'trickster') return VISITOR_TRICKSTER_TINT
+  return VISITOR_TRAVELLER_TINT
 }
 
 export function getDisplayName(individualId: string, tier: RelationshipTier): string {
   if (tier === 'stranger') {
     const type = VISITOR_TYPES_BY_ID[individualId]
     if (!type) return 'A visitor'
-    return type === 'tinker' ? 'A wandering tinker' : 'A wounded traveller'
+    if (type === 'tinker') return 'A wandering tinker'
+    if (type === 'trickster') return 'A shady traveller'
+    return 'A wounded traveller'
   }
   return VISITOR_NAMES[individualId] ?? individualId
 }
@@ -114,6 +147,33 @@ function drawVisitorCount(): number {
   return 0
 }
 
+// ── Trickster helpers ─────────────────────────────────────────────────────────
+
+export function evaluateTricksterBand(yellowPips: number): TricksterBand {
+  if (yellowPips >= TRICKSTER_YELLOW_CRITICAL) return 'critical'
+  if (yellowPips >= TRICKSTER_YELLOW_SUCCESS)  return 'success'
+  if (yellowPips >= TRICKSTER_YELLOW_PARTIAL)  return 'cost'
+  return 'failure'
+}
+
+export function canAffordTricksterWager(scraps: number, penaltyFailure: number): boolean {
+  return scraps >= penaltyFailure
+}
+
+export function applyTricksterWager(currentScraps: number, band: TricksterBand, offer: VisitorOffer): number {
+  if (band === 'critical') return currentScraps + (offer.rewardCritical ?? 0)
+  if (band === 'success')  return currentScraps + (offer.rewardSuccess ?? 0)
+  if (band === 'cost')     return currentScraps + (offer.rewardPartial ?? 0)
+  return Math.max(0, currentScraps - (offer.penaltyFailure ?? 0))
+}
+
+export function getTricksterAcceptLine(band: TricksterBand, name: string): string {
+  if (band === 'critical') return `${name} counts out the scraps with a grin that doesn't quite reach their eyes.`
+  if (band === 'success')  return `${name} nods. Fair result. You played it straight.`
+  if (band === 'cost')     return `'Nearly,' says ${name}, as if that helps.`
+  return `${name} pockets the scraps without ceremony. 'Better luck below.'`
+}
+
 // ── Offer resolution ──────────────────────────────────────────────────────────
 
 export function resolveVisitorOffer(
@@ -123,6 +183,22 @@ export function resolveVisitorOffer(
   relationships: Record<string, number>,
 ): VisitorOffer {
   const name = getDisplayName(individualId, tier)
+
+  if (type === 'trickster') {
+    const values = TRICKSTER_WAGER[tier]
+    return {
+      kind: 'trickster-wager',
+      costScraps: 0,
+      checkColour: 'yellow',
+      rewardCritical: values.rewardCritical,
+      rewardSuccess: values.rewardSuccess,
+      rewardPartial: values.rewardPartial,
+      penaltyFailure: values.penaltyFailure,
+      tier,
+      offerLine: TRICKSTER_OFFER_LINES[tier],
+      acceptLine: '',  // set dynamically at check-resolve time
+    }
+  }
 
   if (type === 'tinker') {
     const faces   = TINKER_FACES[tier]
@@ -168,7 +244,7 @@ export function generateVisitors(metaState: MetaState): VisitorInstance[] {
 
   const usedIds = new Set<string>()
   const result: VisitorInstance[] = []
-  const types: VisitorType[] = ['tinker', 'wounded-traveller']
+  const types: VisitorType[] = ['tinker', 'wounded-traveller', 'trickster']
 
   for (let i = 0; i < count; i++) {
     const type = types[Math.floor(Math.random() * types.length)]

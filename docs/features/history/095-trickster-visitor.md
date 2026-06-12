@@ -1,6 +1,6 @@
 # 095 · Trickster Visitor
 
-**Status:** READY
+**Status:** SHIPPED
 **Source idea:** Backlog item 092 (deferred from feature 051); Idea 074 (The Gambler) — both
 originated in `docs/concept/meta-progression.md` — "The Visitor System"
 **Depends on:** 051 (visitor framework, relationship loop, generation logic), 028 (check panel —
@@ -293,10 +293,55 @@ Decisions made that the manager may redirect:
 
 ## Shipped
 
-**Date:** YYYY-MM-DD · **PR:** #NN
+**Date:** 2026-06-12 · **PR:** (pending)
 
 ### What was built
 
+Three files changed, all new surface in `src/camp/visitors.ts` and `src/screens/camp.ts`:
+
+- **`src/meta/state.ts`** — `trickster` added to `VisitorType`; `trickster-wager` added to
+  `VisitorOfferKind`; `VisitorOffer` extended with optional trickster-wager fields
+  (`checkColour`, `rewardCritical`, `rewardSuccess`, `rewardPartial`, `penaltyFailure`, `tier`).
+
+- **`src/camp/visitors.ts`** — `TricksterBand` type (`critical | success | cost | failure`);
+  tuning constants `TRICKSTER_YELLOW_CRITICAL/SUCCESS/PARTIAL`, `TRICKSTER_WAGER` (per-tier
+  reward/penalty table), `TRICKSTER_OFFER_LINES`; roster entries `trickster-sloke` (Sloke) and
+  `trickster-fenwick` (Fenwick); helpers `evaluateTricksterBand`, `canAffordTricksterWager`,
+  `applyTricksterWager`, `getTricksterAcceptLine`; trickster branch in `resolveVisitorOffer`;
+  trickster added to the generation type pool.
+
+- **`src/screens/camp.ts`** — In-panel check flow (`roll → rolling 600 ms → outcome 1500 ms →
+  completeTricksterCheck`); `drawTricksterOutcomeTable` helper renders the two-line stakes table
+  in both the pre-accept offer view and the rolling phase; `completeTricksterCheck` applies the
+  wager, increments the relationship, and feeds the outcome-appropriate `acceptLine` into the
+  existing feedback banner; Accept affordability guard uses `canAffordTricksterWager`; "Not enough
+  scraps to cover the risk." note shown when disabled.
+
+- **`src/camp/visitors.test.ts`** — test suites covering AC 12.1 (EV ≥ 0, penaltyFailure ≤ 4,
+  required fields), AC 12.2 (failure floor — penalty cannot take scraps below 0), AC 12.3 (Accept
+  disabled when `scraps < penaltyFailure`), AC 12.4 (check not triggered when disabled),
+  `evaluateTricksterBand` boundary table, `getDisplayName` for trickster stranger.
+
+In-panel check was used instead of the full `createCheckPanel` module (028): the camp visitor panel
+runs in a coordinate system incompatible with the game-screen check panel, and the spec explicitly
+permits a lightweight in-panel implementation using the same visual language. The result is a
+self-contained animation loop driven by `tricksterCheckPhase` state, consistent with the camp
+screen's existing animation patterns.
+
 ### Evidence
 
+- `npm run typecheck` — passes (no errors)
+- `npm run test` — 687 tests, 32 files, all pass
+- `npm run build` — builds cleanly
+
 ### Play-test
+
+1. Start camp. Spend scraps to get below 4 if needed to test the disabled state.
+2. Tap **Visitor** activity button. If a Trickster is in the visitor queue, their panel appears.
+3. Verify the offer line matches the tier (Stranger: breezy dismissal; Regular: frank).
+4. Verify the outcome table (Critical +9 · Win +4 / Partial +1 · Fail −3/−2) is visible.
+5. With scraps < penaltyFailure: Accept is greyed and "Not enough scraps to cover the risk." appears.
+6. With scraps ≥ penaltyFailure: tap Accept → "Rolling…" button for 600 ms → outcome card for
+   1.5 s (band label + scraps delta + pip count) → acceptLine feedback banner → panel advances or
+   sinks if no visitors remain.
+7. Confirm scraps were updated correctly per the outcome band.

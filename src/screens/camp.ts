@@ -1,6 +1,6 @@
 import { colors } from '../colors'
 import type { ScreenController } from './main-menu'
-import type { MetaState, DiceColour, DiceFaces, VisitorInstance } from '../meta/state'
+import type { MetaState, DiceColour, DiceFaces, VisitorInstance, VisitorOffer } from '../meta/state'
 import { loadMetaState, saveMetaState } from '../meta/state'
 import { WEAPON_SPECS } from '../meta/weapons'
 import type { Die } from '../dice/pool'
@@ -12,6 +12,11 @@ import {
   getVisitorTint,
   tierFor,
   VISITOR_TYPE_LABELS,
+  evaluateTricksterBand,
+  applyTricksterWager,
+  canAffordTricksterWager,
+  getTricksterAcceptLine,
+  type TricksterBand,
 } from '../camp/visitors'
 import {
   getNextFaces,
@@ -154,6 +159,9 @@ const DIE_COLOR_MAP: Record<string, string> = {
 }
 
 // ── Visitor panel ──────────────────────────────────────────────────────────────
+const TRICKSTER_OUTCOME_PENALTY = '#9a4a2a'
+const TRICKSTER_ROLL_ANIM_MS = 600
+const TRICKSTER_OUTCOME_HOLD_MS = 1500
 const VP_BTN_H = 48
 const VP_BTN_GAP = 12
 const VP_BTN_W = Math.floor((LOGICAL_W - 32 - VP_BTN_GAP) / 2)
@@ -168,6 +176,10 @@ export function getVpAcceptRect(): { x: number; y: number; w: number; h: number 
 
 export function getVpSendAwayRect(): { x: number; y: number; w: number; h: number } {
   return { x: VP_SENDAWAY_X, y: VP_BTN_Y, w: VP_BTN_W, h: VP_BTN_H }
+}
+
+export function getVpRollRect(): { x: number; y: number; w: number; h: number } {
+  return { x: VP_ACCEPT_X, y: VP_BTN_Y, w: 2 * VP_BTN_W + VP_BTN_GAP, h: VP_BTN_H }
 }
 
 // ── Notice panel ───────────────────────────────────────────────────────────────
@@ -251,6 +263,13 @@ interface CampState {
   visitorFeedback: string | null
   visitorFeedbackEnd: number
   visitorFeedbackSubject: VisitorInstance | null  // snapshot of the accepted visitor for feedback display
+  // Trickster check phase state
+  tricksterCheckPhase: 'roll' | 'rolling' | 'outcome' | null
+  tricksterCheckVisitor: VisitorInstance | null
+  tricksterCheckPips: number | null
+  tricksterCheckBand: TricksterBand | null
+  tricksterCheckRollStart: number
+  tricksterCheckOutcomeStart: number
   // Marks panel session state
   marksRevealedIds: Set<string>    // locked marks whose conditions have been revealed this session
 }
@@ -292,6 +311,12 @@ export function createCamp(
     visitorFeedback: null,
     visitorFeedbackEnd: 0,
     visitorFeedbackSubject: null,
+    tricksterCheckPhase: null,
+    tricksterCheckVisitor: null,
+    tricksterCheckPips: null,
+    tricksterCheckBand: null,
+    tricksterCheckRollStart: 0,
+    tricksterCheckOutcomeStart: 0,
     marksRevealedIds: new Set(),
   }
 
@@ -1353,6 +1378,20 @@ export function createCamp(
 
   // ── Visitor panel ────────────────────────────────────────────────────────────
 
+  function drawTricksterOutcomeTable(ctx: CanvasRenderingContext2D, offer: VisitorOffer, y: number): number {
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.font = '12px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.gold
+    ctx.fillText(`🟡  Critical +${offer.rewardCritical}  ·  Win +${offer.rewardSuccess}`, LOGICAL_W / 2, y)
+    y += 20
+    ctx.fillStyle = colors.gold
+    ctx.fillText(`Partial +${offer.rewardPartial}`, LOGICAL_W / 2 - 50, y)
+    ctx.fillStyle = TRICKSTER_OUTCOME_PENALTY
+    ctx.fillText(`Fail −${offer.penaltyFailure}`, LOGICAL_W / 2 + 50, y)
+    return y
+  }
+
   function drawVisitorPanel(ctx: CanvasRenderingContext2D, panelY: number): void {
     // During accept feedback, show the accepted visitor's identity; otherwise the next unresolved
     const visitor = state.visitorFeedbackSubject ?? getActiveVisitor()
@@ -1364,7 +1403,10 @@ export function createCamp(
     const name    = getDisplayName(visitor.individualId, tier)
     const typeLabel = VISITOR_TYPE_LABELS[visitor.type]
     const tint    = getVisitorTint(visitor.type)
-    const canAfford = meta.scraps >= visitor.offer.costScraps
+    const offer   = visitor.offer
+    const canAfford = offer.kind === 'trickster-wager'
+      ? canAffordTricksterWager(meta.scraps, offer.penaltyFailure ?? 0)
+      : meta.scraps >= offer.costScraps
 
     // Scrim
     ctx.globalAlpha = 0.40
@@ -1445,21 +1487,83 @@ export function createCamp(
       return
     }
 
+    // Trickster check phase: replace offer/buttons with check UI
+    if (state.tricksterCheckPhase !== null && offer.kind === 'trickster-wager') {
+      const phase = state.tricksterCheckPhase
+
+      if (phase === 'outcome') {
+        const band = state.tricksterCheckBand!
+        const bandLabels: Record<TricksterBand, string> = {
+          critical: 'Critical!', success: 'Success', cost: 'Partial', failure: 'Fail',
+        }
+        const isGain = band !== 'failure'
+        const deltaAmt = band === 'critical' ? offer.rewardCritical!
+          : band === 'success' ? offer.rewardSuccess!
+          : band === 'cost'    ? offer.rewardPartial!
+          : offer.penaltyFailure!
+        const deltaStr = isGain ? `+${deltaAmt} scraps` : `−${deltaAmt} scraps`
+
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.font = 'bold 20px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = isGain ? colors.gold : TRICKSTER_OUTCOME_PENALTY
+        ctx.fillText(bandLabels[band], LOGICAL_W / 2, y + 8)
+        y += 32
+
+        ctx.font = 'bold 15px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = isGain ? colors.gold : TRICKSTER_OUTCOME_PENALTY
+        ctx.fillText(deltaStr, LOGICAL_W / 2, y)
+        y += 24
+
+        ctx.font = '12px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = colors.textMuted
+        ctx.fillText(`🟡 ${state.tricksterCheckPips} pip${state.tricksterCheckPips !== 1 ? 's' : ''}`, LOGICAL_W / 2, y)
+      } else {
+        // roll / rolling phase
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+
+        // Compact outcome table
+        y = drawTricksterOutcomeTable(ctx, offer, y)
+
+        // Roll button (reuses VP_BTN_Y area, full-width)
+        const rollRect = getVpRollRect()
+        const isRolling = phase === 'rolling'
+        ctx.globalAlpha = isRolling ? 0.4 : (state.isMouseDevice && state.hoveredElement === 'vp-roll') ? 1 : 0.9
+        ctx.fillStyle = WB_CAMP_ACCENT
+        ctx.fillRect(rollRect.x, rollRect.y, rollRect.w, rollRect.h)
+        ctx.globalAlpha = 1
+        ctx.font = 'bold 16px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = isRolling ? colors.textMuted : '#1a1208'
+        ctx.fillText(isRolling ? 'Rolling…' : 'Roll', rollRect.x + rollRect.w / 2, rollRect.y + rollRect.h / 2)
+      }
+      return
+    }
+
     // Offer line
     ctx.font = '14px system-ui, -apple-system, sans-serif'
     ctx.fillStyle = colors.textPrimary
-    const offerLines = wrapText(ctx, visitor.offer.offerLine, LOGICAL_W - 48)
+    const offerLines = wrapText(ctx, offer.offerLine, LOGICAL_W - 48)
     for (const line of offerLines) {
       ctx.fillText(line, LOGICAL_W / 2, y)
       y += 22
     }
 
-    // Not-enough-scraps note
-    if (visitor.offer.costScraps > 0 && !canAfford) {
-      y += 6
+    // Trickster-wager outcome table (shown before accept)
+    if (offer.kind === 'trickster-wager') {
+      y += 8
+      y = drawTricksterOutcomeTable(ctx, offer, y)
+    }
+
+    // Not-enough-scraps / not-enough-to-cover note
+    if (!canAfford) {
+      y += 14
       ctx.font = '12px system-ui, -apple-system, sans-serif'
       ctx.fillStyle = '#8b3a3a'
-      ctx.fillText('Not enough scraps.', LOGICAL_W / 2, y)
+      ctx.fillText(
+        offer.kind === 'trickster-wager' ? 'Not enough scraps to cover the risk.' : 'Not enough scraps.',
+        LOGICAL_W / 2, y,
+      )
     }
 
     // Accept button
@@ -1619,6 +1723,10 @@ export function createCamp(
     state.visitorFeedback = null
     state.visitorFeedbackEnd = 0
     state.visitorFeedbackSubject = null
+    state.tricksterCheckPhase = null
+    state.tricksterCheckVisitor = null
+    state.tricksterCheckPips = null
+    state.tricksterCheckBand = null
     resetWorkbenchState()
     // activeSubPanel stays set until panelProgress reaches 0 (draw loop clears it)
   }
@@ -1655,6 +1763,18 @@ export function createCamp(
       if (state.panelProgress <= 0) {
         state.activeSubPanel = null
         state.panelClosing = false
+      }
+    }
+
+    // Advance trickster check animation
+    if (state.tricksterCheckPhase === 'rolling') {
+      if (timestamp - state.tricksterCheckRollStart >= TRICKSTER_ROLL_ANIM_MS) {
+        state.tricksterCheckPhase = 'outcome'
+        state.tricksterCheckOutcomeStart = timestamp
+      }
+    } else if (state.tricksterCheckPhase === 'outcome') {
+      if (timestamp - state.tricksterCheckOutcomeStart >= TRICKSTER_OUTCOME_HOLD_MS) {
+        completeTricksterCheck(timestamp)
       }
     }
 
@@ -1729,6 +1849,41 @@ export function createCamp(
     state.visitorFeedback = offer.acceptLine
     state.visitorFeedbackEnd = performance.now() + VP_ACCEPT_FEEDBACK_MS
     state.visitorFeedbackSubject = visitor   // snapshot so feedback renders under the right identity
+  }
+
+  function completeTricksterCheck(timestamp: DOMHighResTimeStamp): void {
+    const visitor = state.tricksterCheckVisitor
+    const band    = state.tricksterCheckBand
+    if (!visitor || !band) return
+
+    const offer = visitor.offer
+    const meta  = state.metaState
+    const scraps = applyTricksterWager(meta.scraps, band, offer)
+
+    const relationships = { ...meta.visitorRelationships }
+    relationships[visitor.individualId] = (relationships[visitor.individualId] ?? 0) + 1
+
+    const currentVisitors = meta.currentVisitors.map(v =>
+      v.individualId === visitor.individualId ? { ...v, resolved: true } : v
+    )
+
+    const newMeta: MetaState = { ...meta, scraps, visitorRelationships: relationships, currentVisitors }
+    saveMetaState(newMeta)
+    state.metaState = newMeta
+
+    // Read from pre-update meta so the display name reflects the tier shown during the offer
+    const relCount = meta.visitorRelationships[visitor.individualId] ?? 0
+    const name = getDisplayName(visitor.individualId, tierFor(relCount))
+    const acceptLine = getTricksterAcceptLine(band, name)
+
+    state.tricksterCheckPhase   = null
+    state.tricksterCheckVisitor = null
+    state.tricksterCheckPips    = null
+    state.tricksterCheckBand    = null
+
+    state.visitorFeedback        = acceptLine
+    state.visitorFeedbackEnd     = timestamp + VP_ACCEPT_FEEDBACK_MS
+    state.visitorFeedbackSubject = visitor
   }
 
   function handleVisitorResolve(visitor: VisitorInstance): void {
@@ -2070,11 +2225,42 @@ export function createCamp(
         // While showing accept feedback, ignore all taps
         if (state.visitorFeedback !== null) return
 
+        // Trickster check phase handles its own input
+        if (state.tricksterCheckPhase !== null) {
+          if (state.tricksterCheckPhase === 'roll' && inRect(getVpRollRect(), x, y)) {
+            const pool = state.metaState.permanentPool
+            let yellowPips = 0
+            for (const die of pool) {
+              if (die.colour === 'yellow') {
+                yellowPips += Math.max(
+                  Math.floor(Math.random() * die.faces) + 1,
+                  die.minFloor ?? 1,
+                )
+              }
+            }
+            state.tricksterCheckPips = yellowPips
+            state.tricksterCheckBand = evaluateTricksterBand(yellowPips)
+            state.tricksterCheckPhase = 'rolling'
+            state.tricksterCheckRollStart = performance.now()
+          }
+          return
+        }
+
         const visitor = getActiveVisitor()
         if (visitor) {
-          const canAfford = state.metaState.scraps >= visitor.offer.costScraps
+          const offer = visitor.offer
+          const canAfford = offer.kind === 'trickster-wager'
+            ? canAffordTricksterWager(state.metaState.scraps, offer.penaltyFailure ?? 0)
+            : state.metaState.scraps >= offer.costScraps
           if (inRect(getVpAcceptRect(), x, y) && canAfford) {
-            handleVisitorAccept(visitor)
+            if (offer.kind === 'trickster-wager') {
+              state.tricksterCheckPhase   = 'roll'
+              state.tricksterCheckVisitor = visitor
+              state.tricksterCheckPips    = null
+              state.tricksterCheckBand    = null
+            } else {
+              handleVisitorAccept(visitor)
+            }
             return
           }
           if (inRect(getVpSendAwayRect(), x, y)) {
@@ -2151,8 +2337,15 @@ export function createCamp(
       } else if (state.activeSubPanel === 'visitor' && !state.panelClosing && state.visitorFeedback === null) {
         const visitor = getActiveVisitor()
         if (visitor) {
-          const canAfford = state.metaState.scraps >= visitor.offer.costScraps
-          if (canAfford && inRect(getVpAcceptRect(), x, y)) {
+          const offer = visitor.offer
+          const canAfford = offer.kind === 'trickster-wager'
+            ? canAffordTricksterWager(state.metaState.scraps, offer.penaltyFailure ?? 0)
+            : state.metaState.scraps >= offer.costScraps
+          if (state.tricksterCheckPhase === 'roll' && inRect(getVpRollRect(), x, y)) {
+            state.hoveredElement = 'vp-roll'
+          } else if (state.tricksterCheckPhase !== null) {
+            state.hoveredElement = null
+          } else if (canAfford && inRect(getVpAcceptRect(), x, y)) {
             state.hoveredElement = 'vp-accept'
           } else if (inRect(getVpSendAwayRect(), x, y)) {
             state.hoveredElement = 'vp-send'

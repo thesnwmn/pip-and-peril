@@ -16,6 +16,17 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 095 · Trickster Visitor
+
+**Shipped:** 2026-06-12 · **PR:** (pending) · **Spec:** [docs/features/history/095-trickster-visitor.md](docs/features/history/095-trickster-visitor.md)
+
+Extends the visitor framework (051) with the **Trickster** type: a push-your-luck camp visitor who
+offers scraps wagers resolved by a 🟡 dice check. All stakes are scraps-only (max downside 4 scraps;
+net-positive expected value). Offer text downplays failure at Stranger tier and becomes honest at
+Regular tier, where the penalty is also shaved.
+
+---
+
 ### 052 · Marks of Descent
 
 **Shipped:** 2026-06-11 · **PR:** (pending) · **Spec:** [docs/features/history/052-marks-of-descent.md](docs/features/history/052-marks-of-descent.md)
