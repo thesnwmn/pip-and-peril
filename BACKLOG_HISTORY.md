@@ -16,6 +16,18 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 091 · Skills System & Scroll Wall
+
+**Shipped:** 2026-06-12 · **PR:** (pending) · **Spec:** [docs/features/history/091-skills-system-scroll-wall.md](docs/features/history/091-skills-system-scroll-wall.md)
+
+Make the camp's **scroll wall** functional: five skills that change what decisions are interesting in
+combat (*Careful Eye*, *Counter-Strike* fully wired; *Desperate Swing*, *Battle Cry*, *Stout Heart*
+stubbed until 041). MetaState gains `unlockedSkillIds` + `activeLoadout`; loadout sub-panel in
+activity bar; `unlockSkill()` API for the Scholar (094). `mark-no-healing` stub wired to *Stout
+Heart*. Second slot auto-unlocks at `runCount ≥ 5`.
+
+---
+
 ### 052 · Marks of Descent
 
 **Shipped:** 2026-06-11 · **PR:** (pending) · **Spec:** [docs/features/history/052-marks-of-descent.md](docs/features/history/052-marks-of-descent.md)

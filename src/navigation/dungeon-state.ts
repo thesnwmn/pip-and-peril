@@ -41,6 +41,8 @@ export interface DungeonState {
   healingItemsUsed: number
   rattledKillingBlow: boolean
   weaponId: string
+  // Skills active for this run, captured at descent (feature 091)
+  activeSkills: string[]
 }
 
 const GRID_W = 13
@@ -86,6 +88,7 @@ export function initDungeon(): DungeonState {
     healingItemsUsed: 0,
     rattledKillingBlow: false,
     weaponId: '',
+    activeSkills: [],
   }
 }
 

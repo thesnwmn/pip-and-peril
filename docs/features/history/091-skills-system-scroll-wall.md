@@ -379,10 +379,38 @@ Neither question blocks this spec. **Status: READY.**
 
 ## Shipped
 
-**Date:** — · **PR:** —
+**Date:** 2026-06-12 · **PR:** (pending)
 
 ### What was built
 
+- `src/meta/skills.ts` — `SKILL_LIBRARY` (5 skills), `getSkill`, `skillSlotCount`, `unlockSkill`, `sanitiseLoadout`
+- `src/meta/state.ts` — `MetaState` extended with `unlockedSkillIds` and `activeLoadout` (both default `[]`)
+- `src/meta/marks.ts` — `MarkUnlock` gains `{ kind: 'skill' }` variant; `mark-no-healing` wired to `stout-heart`; `applyMarkUnlocks` handles skill unlocks
+- `src/navigation/dungeon-state.ts` — `DungeonState` gains `activeSkills: string[]`, captured at descent
+- `src/screens/camp.ts` — 6th "Skills" activity button; Scroll Wall sub-panel with slot tiles, skill cards, locked count; equip/unequip interactions; `sanitiseLoadout` called at camp init
+- `src/screens/game.ts` — `state.activeSkills` initialised from `metaState.activeLoadout`; passed to both combat factories
+- `src/combat/combat-panel.ts` — `CombatOptions.activeSkills`; Careful Eye initialises and refreshes `nextIntent` each turn; Counter-Strike fires on full-dodge (2G) for attack/lunge intents, bypassing Guard
+- New tests: `src/meta/skills.test.ts` (32 tests); `src/meta/marks.test.ts` extended (+3 skill-unlock tests); `src/screens/camp.test.ts` updated for 6-button geometry
+
 ### Evidence
 
+- `npm run typecheck` — clean (0 errors)
+- `npm run test` — 673 tests, 33 test files, all passing
+- `npm run build` — `dist/assets/game-*.js` ~173 kB, no warnings
+
+**Known limitations (deferred):**
+- AC 19: Panel scroll not implemented. With a 5-skill library and ≤2 slots the content never exceeds panel height in practice.
+- AC 21: "?" indicator when enemy has only one intent remaining in its cycle is not rendered. No current enemy triggers this scenario.
+
 ### Play-test
+
+1. Start the game. From the home screen open a new run, descend to any room. Return to camp.
+2. **Skills button greyed:** In the activity bar (bottom strip), the **Skills** button should appear at position 6 (rightmost). It should be visually greyed (dimmed) — confirm it is not fully opaque.
+3. **Earn a skill via mark:** Play to floor 2 without using any healing item. Return to camp after the run. Open the Marks panel — *Steady Paw* should now show as earned. The Skills button should now be fully opaque.
+4. **Scroll Wall opens:** Tap the Skills button. A sub-panel should rise from the bottom with the title "Scroll Wall", a "Before the descent" italic subtitle, and one empty slot labeled "Empty".
+5. **Skill in pool:** The *Stout Heart* skill card should appear under "Your Scrolls" with its name and effect line. A "4 scrolls still sealed." line should appear below.
+6. **Equip skill:** Tap the Stout Heart card. It moves into slot 0 (parchment background, shows "Stout Heart"). "Your Scrolls" section body disappears; "4 scrolls still sealed." remains.
+7. **Persist on dismiss:** Close the panel (✕ or tap scene). Reopen Skills panel — slot 0 still shows "Stout Heart".
+8. **Unequip:** Tap the filled slot. It returns to "Empty". Stout Heart reappears in "Your Scrolls".
+9. **Careful Eye** (requires earning via Scholar visitor or future mark): If "careful-eye" is in `activeLoadout` at run start, enter combat. Two intents should display from turn 1 — current at full opacity, next in a secondary faded rendering above it — with no pip expenditure required.
+10. **Counter-Strike** (requires equipping "counter-strike"): Enter combat with ≥2 Green dice. Assign 2G to Defence for an incoming attack intent. After the enemy turn resolves and the full dodge lands, check the battle log — it should contain "Counter-Strike — 1 damage." and the enemy HP should have dropped by 1.
