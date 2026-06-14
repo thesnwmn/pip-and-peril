@@ -39,7 +39,11 @@ export function createGame(
   transitionTo: (screen: string, summary?: RunSummary) => void,
   metaState: MetaState,
 ): ScreenController {
-  let state: DungeonState = { ...initDungeon(), weaponId: metaState.activeWeaponId }
+  let state: DungeonState = {
+    ...initDungeon(),
+    weaponId: metaState.activeWeaponId,
+    activeSkills: metaState.activeLoadout ?? [],
+  }
   let hoveredElement: string | null = null
   let isMouseDevice = false
 
@@ -476,7 +480,7 @@ export function createGame(
           setDungeonState: (s) => { state = s },
         },
         combatEntryFrom,
-        { strikeAction },
+        { strikeAction, activeSkills: state.activeSkills },
       )
     },
     handlers: {
@@ -528,6 +532,7 @@ export function createGame(
             ? { titleCard: bossSpec.bossTitleCard, wideZoom: 0.75 }
             : undefined,
           strikeAction,
+          activeSkills: state.activeSkills,
         },
       )
     },

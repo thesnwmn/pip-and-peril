@@ -1,4 +1,5 @@
 import type { DiceColour, DiceFaces, MetaState } from './state'
+import { unlockSkill } from './skills'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -11,6 +12,7 @@ export type MarkCondition =
 
 export type MarkUnlock =
   | { kind: 'die'; colour: DiceColour; size: DiceFaces }
+  | { kind: 'skill'; skillId: string }
   | { kind: 'stub'; hint: string }
 
 export interface MarkSpec {
@@ -63,7 +65,7 @@ export const MARK_SPECS: MarkSpec[] = [
     flavourLine: 'The herbs sat untouched.',
     conditionText: 'Complete a run past floor 1 without using a healing item.',
     condition: { kind: 'floor-no-healing', floor: 2 },
-    unlock: { kind: 'stub', hint: 'A skill scroll will appear when the skill system ships.' },
+    unlock: { kind: 'skill', skillId: 'stout-heart' },
   },
   {
     id: 'mark-whisker-run',
@@ -130,6 +132,8 @@ export function applyMarkUnlocks(markIds: string[], meta: MetaState): MetaState 
           { id: newDieId, colour, faces: size },
         ],
       }
+    } else if (spec.unlock.kind === 'skill') {
+      updated = unlockSkill(updated, spec.unlock.skillId)
     }
   }
   return {

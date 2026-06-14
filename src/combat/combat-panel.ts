@@ -2,7 +2,7 @@ import type { EncounterPanel, MapViewConfig } from '../encounter/panel'
 import type { DicePool } from '../dice/pool'
 import { canAfford, resetPool, rollPool, spendPips } from '../dice/pool'
 import type { CombatState } from './types'
-import { selectIntent } from './intents'
+import { selectIntent, peekNextIntent } from './intents'
 import { getEnemySpec, spawnEnemy } from './roster'
 import {
   applyStrike,
@@ -48,6 +48,8 @@ export interface CombatOptions {
   }
   // Strike action from the active weapon (null if weapon has no strike)
   strikeAction?: { damage: number } | null
+  // Active skill IDs captured from MetaState.activeLoadout at run start (feature 091)
+  activeSkills?: string[]
 }
 
 export function createCombatEncounterPanel(
@@ -59,6 +61,7 @@ export function createCombatEncounterPanel(
   const victoryOutcome = options.victoryOutcome ?? 'victory'
   const intro = options.intro ?? null
   const strikeAction = options.strikeAction ?? { damage: 2 }
+  const activeSkills = options.activeSkills ?? []
 
   // ── Combat state ─────────────────────────────────────────────────────────
 
@@ -87,6 +90,11 @@ export function createCombatEncounterPanel(
     berserkTurnsLeft: 0,
     bonusPipsRemaining: 0,
     strikeAction,
+  }
+
+  // Careful Eye: reveal the next intent at the start of every combat
+  if (activeSkills.includes('careful-eye')) {
+    combat = { ...combat, nextIntent: peekNextIntent(enemy) }
   }
 
   let lastEnemyHeadline = ''
@@ -221,6 +229,29 @@ export function createCombatEncounterPanel(
       combat = { ...result.combat, phase: defeat ? 'defeat' : 'awaiting-roll', itemUsedThisTurn: false, pipsSpentThisTurn: false, analysedThisTurn: false, bonusPipsRemaining: 0 }
       openCategory = null
       fleePending = false
+
+      // Counter-Strike: full dodge (2G reserved) deals 1 damage back, bypassing Guard
+      if (!defeat &&
+          activeSkills.includes('counter-strike') &&
+          (firedIntent.kind === 'attack' || firedIntent.kind === 'lunge') &&
+          modifiedCombat.reservedGreen >= 2) {
+        const newEnemyHp = Math.max(0, combat.enemy.hp - 1)
+        const csVictory = newEnemyHp <= 0
+        combat = { ...combat, enemy: { ...combat.enemy, hp: newEnemyHp } }
+        lastEnemyDetail = lastEnemyDetail ? `${lastEnemyDetail}  Counter-Strike — 1 damage.` : 'Counter-Strike — 1 damage.'
+        if (csVictory) {
+          const goldEarned = rollGoldReward(combat.enemy)
+          ctx.setInventory({ ...ctx.getInventory(), gold: ctx.getInventory().gold + goldEarned })
+          combat = { ...combat, phase: 'victory', goldAwarded: goldEarned }
+          markRoomCleared()
+          bannerStartTime = performance.now()
+        }
+      }
+
+      // Careful Eye: re-reveal next intent each turn
+      if (!defeat && combat.phase !== 'victory' && activeSkills.includes('careful-eye')) {
+        combat = { ...combat, nextIntent: peekNextIntent(combat.enemy) }
+      }
 
       if (defeat) {
         // Record defeat information before transition
