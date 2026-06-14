@@ -27,6 +27,7 @@ import {
   ENGRAVE_COST,
 } from '../camp/workbench'
 import { MARK_SPECS } from '../meta/marks'
+import { SKILL_LIBRARY, skillSlotCount, sanitiseLoadout, unlockSkill } from '../meta/skills'
 import { easeOut } from '../animation/easing'
 import { STATUS_BAR_H } from './game-layout'
 import { createMenuModal, drawMenuButton, isInMenuButton } from '../menu/modal'
@@ -52,7 +53,7 @@ export const SCENE_BOTTOM = Math.round(0.56 * LOGICAL_H)  // ≈ 473
 const ACTIVITY_BAR_PAD_TOP = 20
 export const ACTIVITY_BTN_H = 68   // icon(28)+gap(8)+label(14)+padding(18) → always ≥44
 export const ACTIVITY_BTN_Y = SCENE_BOTTOM + ACTIVITY_BAR_PAD_TOP
-const ACTIVITY_BTN_W = Math.floor(LOGICAL_W / 5)  // 78
+const ACTIVITY_BTN_W = Math.floor(LOGICAL_W / 6)  // 65
 export const DESCEND_H = 64                        // always ≥56
 export const DESCEND_Y = LOGICAL_H - DESCEND_H
 
@@ -222,7 +223,7 @@ const WEAPON_SILS = [
 
 // ── State ──────────────────────────────────────────────────────────────────────
 
-export type SubPanelName = 'weapons' | 'workbench' | 'notices' | 'visitor' | 'marks'
+export type SubPanelName = 'weapons' | 'workbench' | 'notices' | 'visitor' | 'marks' | 'skills'
 
 type WorkbenchMode =
   | 'idle'
@@ -287,7 +288,7 @@ export function createCamp(
   onStartRun: (metaState: MetaState) => void,
   initialMetaState?: MetaState,
 ): ScreenController {
-  const meta = initVisitorState(initialMetaState ?? loadMetaState())
+  const meta = initVisitorState(sanitiseLoadout(initialMetaState ?? loadMetaState()))
   const state: CampState = {
     metaState: meta,
     menuModal: createMenuModal('home', transitionTo),
@@ -754,6 +755,21 @@ export function createCamp(
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('✦', cx, cy)
+    } else if (name === 'skills') {
+      // Rolled scroll outline: rectangle with rolled ends
+      const scrollW = s * 1.4
+      const scrollH = s * 0.9
+      ctx.strokeRect(cx - scrollW / 2, cy - scrollH / 2, scrollW, scrollH)
+      // Rolled ends (small ellipses at left and right)
+      ctx.beginPath()
+      ctx.ellipse(cx - scrollW / 2, cy, 3, scrollH / 2, 0, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.ellipse(cx + scrollW / 2, cy, 3, scrollH / 2, 0, 0, Math.PI * 2)
+      ctx.stroke()
+      // Text lines suggesting writing
+      ctx.fillRect(cx - scrollW / 2 + 5, cy - 3, scrollW - 10, 2)
+      ctx.fillRect(cx - scrollW / 2 + 5, cy + 3, (scrollW - 10) * 0.6, 2)
     }
 
     ctx.globalAlpha = 1
@@ -772,13 +788,15 @@ export function createCamp(
 
     const buttons: Array<{ name: SubPanelName; label: string }> = [
       { name: 'weapons', label: 'Weapons' },
-      { name: 'workbench', label: 'Workbench' },
+      { name: 'workbench', label: 'Bench' },
       { name: 'notices', label: 'Notices' },
       { name: 'visitor', label: 'Visitor' },
       { name: 'marks', label: 'Marks' },
+      { name: 'skills', label: 'Skills' },
     ]
 
     const unresolvedCount = getUnresolvedCount()
+    const hasSkills = (state.metaState.unlockedSkillIds ?? []).length > 0
 
     for (let i = 0; i < buttons.length; i++) {
       const btn = buttons[i]
@@ -786,10 +804,11 @@ export function createCamp(
       const isVisitor = btn.name === 'visitor'
       const visitorActive = isVisitor && unresolvedCount > 0
       const isMarks = btn.name === 'marks'
-      const alpha = isVisitor && !visitorActive ? 0.4 : 1
+      const isSkills = btn.name === 'skills'
+      const alpha = (isVisitor && !visitorActive) || (isSkills && !hasSkills) ? 0.4 : 1
       const hovered = state.isMouseDevice && state.hoveredElement === `activity-${btn.name}`
 
-      if (hovered && (!isVisitor || visitorActive || isMarks)) {
+      if (hovered && (!isVisitor || visitorActive || isMarks || isSkills)) {
         ctx.fillStyle = 'rgba(90, 61, 26, 0.4)'
         ctx.fillRect(r.x, r.y, r.w, r.h)
       }
@@ -809,7 +828,7 @@ export function createCamp(
 
       ctx.globalAlpha = alpha
       ctx.font = '11px system-ui, -apple-system, sans-serif'
-      ctx.fillStyle = isVisitor && !visitorActive ? colors.textMuted : colors.textPrimary
+      ctx.fillStyle = (isVisitor && !visitorActive) || (isSkills && !hasSkills) ? colors.textMuted : colors.textPrimary
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
       ctx.fillText(btn.label, cx, r.y + 44)
@@ -1592,6 +1611,148 @@ export function createCamp(
     ctx.fillText('Send Away', sendRect.x + sendRect.w / 2, sendRect.y + sendRect.h / 2)
   }
 
+  // ── Skills panel ─────────────────────────────────────────────────────────
+
+  const SP_SLOT_H = 44
+  const SP_SLOT_GAP = 6
+  const SP_CARD_H = 52
+  const SP_CARD_GAP = 6
+  const SP_SIDE_PAD = 16
+  const SP_SLOT_FILLED_BG = '#e8dcc8'
+  const SP_SLOT_EMPTY_BORDER = '#a8997e'
+  const SP_CARD_BG = '#f0e8d6'
+  const SP_LOCKED_TEXT = '#7a6e5e'
+
+  function getSkillsSlotRects(panelY: number, slotCount: number): Rect[] {
+    const rects: Rect[] = []
+    let y = panelY + 76  // 52px header + 24px subtitle
+    for (let i = 0; i < slotCount; i++) {
+      rects.push({ x: SP_SIDE_PAD, y, w: LOGICAL_W - SP_SIDE_PAD * 2, h: SP_SLOT_H })
+      y += SP_SLOT_H + (i < slotCount - 1 ? SP_SLOT_GAP : 0)
+    }
+    return rects
+  }
+
+  function getSkillsCardRects(panelY: number, meta: MetaState): Array<{ skillId: string; rect: Rect }> {
+    const slotCount = skillSlotCount(meta.runCount)
+    const slotRects = getSkillsSlotRects(panelY, slotCount)
+    const lastSlot = slotRects[slotRects.length - 1]!
+    let y = lastSlot.y + lastSlot.h + 14 + 22  // section gap + label height
+    const available = (meta.unlockedSkillIds ?? []).filter(id => !(meta.activeLoadout ?? []).includes(id))
+    return available.map(skillId => {
+      const rect: Rect = { x: SP_SIDE_PAD, y, w: LOGICAL_W - SP_SIDE_PAD * 2, h: SP_CARD_H }
+      y += SP_CARD_H + SP_CARD_GAP
+      return { skillId, rect }
+    })
+  }
+
+  function drawSkillsPanel(ctx: CanvasRenderingContext2D, panelY: number): void {
+    drawSubPanelBase(ctx, panelY, 'Scroll Wall')
+
+    const meta = state.metaState
+    const slotCount = skillSlotCount(meta.runCount)
+    const loadout = meta.activeLoadout ?? []
+    const unlocked = meta.unlockedSkillIds ?? []
+    const available = unlocked.filter(id => !loadout.includes(id))
+    const lockedCount = SKILL_LIBRARY.length - unlocked.length
+
+    // "Before the descent" subtitle
+    ctx.font = 'italic 12px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.textMuted
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('Before the descent', LOGICAL_W / 2, panelY + 64)
+
+    // Slot tiles
+    const slotRects = getSkillsSlotRects(panelY, slotCount)
+    for (let i = 0; i < slotCount; i++) {
+      const r = slotRects[i]!
+      const skillId = loadout[i]
+      const spec = skillId ? SKILL_LIBRARY.find(s => s.id === skillId) : null
+      const hovered = state.isMouseDevice && state.hoveredElement === `skills-slot-${i}`
+
+      if (spec) {
+        ctx.fillStyle = SP_SLOT_FILLED_BG
+        ctx.fillRect(r.x, r.y, r.w, r.h)
+        ctx.strokeStyle = hovered ? colors.gold : '#a8997e'
+        ctx.lineWidth = hovered ? 2 : 1
+        ctx.strokeRect(r.x, r.y, r.w, r.h)
+        ctx.font = 'bold 13px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = '#2e1d0d'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(spec.name, r.x + r.w / 2, r.y + r.h / 2)
+      } else {
+        ctx.strokeStyle = SP_SLOT_EMPTY_BORDER
+        ctx.lineWidth = 1
+        ctx.setLineDash([4, 4])
+        ctx.strokeRect(r.x, r.y, r.w, r.h)
+        ctx.setLineDash([])
+        ctx.font = '12px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = SP_SLOT_EMPTY_BORDER
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('Empty', r.x + r.w / 2, r.y + r.h / 2)
+      }
+    }
+
+    // "Your Scrolls" section
+    const lastSlot = slotRects[slotRects.length - 1]!
+    const scrollsSectionY = lastSlot.y + lastSlot.h + 14
+    ctx.font = 'bold 12px system-ui, -apple-system, sans-serif'
+    ctx.fillStyle = colors.textMuted
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    ctx.fillText('Your Scrolls', SP_SIDE_PAD, scrollsSectionY)
+
+    if (available.length > 0) {
+      const cardRects = getSkillsCardRects(panelY, meta)
+      for (const { skillId, rect } of cardRects) {
+        const spec = SKILL_LIBRARY.find(s => s.id === skillId)
+        if (!spec) continue
+        const hovered = state.isMouseDevice && state.hoveredElement === `skills-card-${skillId}`
+
+        ctx.fillStyle = SP_CARD_BG
+        ctx.fillRect(rect.x, rect.y, rect.w, rect.h)
+        ctx.strokeStyle = hovered ? colors.gold : '#c8b89a'
+        ctx.lineWidth = hovered ? 2 : 1
+        ctx.strokeRect(rect.x, rect.y, rect.w, rect.h)
+
+        ctx.font = 'bold 13px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = '#2e1d0d'
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'top'
+        ctx.fillText(spec.name, rect.x + 10, rect.y + 9)
+
+        ctx.font = 'italic 11px system-ui, -apple-system, sans-serif'
+        ctx.fillStyle = '#5c4a36'
+        const effectLines = wrapText(ctx, spec.effectLine, rect.w - 20)
+        let ey = rect.y + 27
+        for (const line of effectLines) {
+          ctx.fillText(line, rect.x + 10, ey)
+          ey += 14
+        }
+      }
+    }
+
+    // Locked count line
+    if (lockedCount > 0) {
+      const cardRects = getSkillsCardRects(panelY, meta)
+      const lockedY = cardRects.length > 0
+        ? cardRects[cardRects.length - 1]!.rect.y + SP_CARD_H + SP_CARD_GAP
+        : scrollsSectionY + 22 + (available.length === 0 ? 4 : 0)
+      ctx.font = '12px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = SP_LOCKED_TEXT
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      ctx.fillText(
+        `${lockedCount} scroll${lockedCount === 1 ? '' : 's'} still sealed.`,
+        SP_SIDE_PAD,
+        lockedY,
+      )
+    }
+  }
+
   // ── Marks panel ──────────────────────────────────────────────────────────────
 
   const MARK_STAMP_EARNED = '#c8a96e'
@@ -1806,6 +1967,7 @@ export function createCamp(
       else if (state.activeSubPanel === 'workbench') drawWorkbenchPanel(ctx, panelY)
       else if (state.activeSubPanel === 'visitor') drawVisitorPanel(ctx, panelY)
       else if (state.activeSubPanel === 'marks') drawMarksPanel(ctx, panelY)
+      else if (state.activeSubPanel === 'skills') drawSkillsPanel(ctx, panelY)
     }
 
     // Status bar always on top of scene and panels
@@ -2279,6 +2441,46 @@ export function createCamp(
         }
       }
 
+      if (state.activeSubPanel === 'skills' && !state.panelClosing && state.panelProgress >= 1) {
+        const meta = state.metaState
+        const slotCount = skillSlotCount(meta.runCount)
+        const slotRects = getSkillsSlotRects(panelY, slotCount)
+        const loadout = [...(meta.activeLoadout ?? [])]
+        const unlocked = meta.unlockedSkillIds ?? []
+
+        // Tap on a filled slot → unequip
+        for (let i = 0; i < slotRects.length; i++) {
+          if (inRect(slotRects[i]!, x, y)) {
+            if (loadout[i]) {
+              loadout.splice(i, 1)
+              const newMeta: MetaState = { ...meta, activeLoadout: loadout }
+              saveMetaState(newMeta)
+              state.metaState = newMeta
+            }
+            return
+          }
+        }
+
+        // Tap on a skill card → equip
+        const cardRects = getSkillsCardRects(panelY, meta)
+        for (const { skillId, rect } of cardRects) {
+          if (inRect(rect, x, y)) {
+            const emptySlot = loadout.length < slotCount ? loadout.length : -1
+            if (emptySlot >= 0) {
+              loadout.push(skillId)
+            } else {
+              // Displace slot 0
+              loadout[0] = skillId
+            }
+            const newMeta: MetaState = { ...meta, activeLoadout: loadout }
+            saveMetaState(newMeta)
+            state.metaState = newMeta
+            return
+          }
+        }
+        return
+      }
+
       // Tap in the scene zone (above the panel) closes any open panel
       if (!state.panelClosing && y < panelY) {
         closePanel()
@@ -2289,7 +2491,7 @@ export function createCamp(
     }
 
     // Activity bar buttons
-    const buttons: SubPanelName[] = ['weapons', 'workbench', 'notices', 'visitor', 'marks']
+    const buttons: SubPanelName[] = ['weapons', 'workbench', 'notices', 'visitor', 'marks', 'skills']
     for (let i = 0; i < buttons.length; i++) {
       const r = getActivityButtonRect(i)
       if (inRect(r, x, y)) {
@@ -2355,13 +2557,28 @@ export function createCamp(
         } else {
           state.hoveredElement = null
         }
+      } else if (state.activeSubPanel === 'skills' && !state.panelClosing) {
+        const meta = state.metaState
+        const slotCount = skillSlotCount(meta.runCount)
+        const slotRects = getSkillsSlotRects(panelY, slotCount)
+        const cardRects = getSkillsCardRects(panelY, meta)
+        let found: string | null = null
+        for (let i = 0; i < slotRects.length; i++) {
+          if (inRect(slotRects[i]!, x, y)) { found = `skills-slot-${i}`; break }
+        }
+        if (!found) {
+          for (const { skillId, rect } of cardRects) {
+            if (inRect(rect, x, y)) { found = `skills-card-${skillId}`; break }
+          }
+        }
+        state.hoveredElement = found
       } else {
         state.hoveredElement = null
       }
       return
     }
 
-    const buttons: SubPanelName[] = ['weapons', 'workbench', 'notices', 'visitor', 'marks']
+    const buttons: SubPanelName[] = ['weapons', 'workbench', 'notices', 'visitor', 'marks', 'skills']
     for (let i = 0; i < buttons.length; i++) {
       const r = getActivityButtonRect(i)
       if (inRect(r, x, y)) {

@@ -16,6 +16,8 @@ function baseMeta(overrides: Partial<MetaState> = {}): MetaState {
     visitorEpoch: -1,
     pendingRunBoons: [],
     marksEarned: [],
+    unlockedSkillIds: [],
+    activeLoadout: [],
     ...overrides,
   }
 }
@@ -274,5 +276,24 @@ describe('applyMarkUnlocks', () => {
     expect(ids).toContain('mark-no-healing')
     expect(ids).toContain('mark-whisker-run')
     expect(ids).toContain('mark-rattled-kill')
+  })
+
+  it('skill unlock variant: earning mark-no-healing adds stout-heart to unlockedSkillIds', () => {
+    const meta = baseMeta()
+    const result = applyMarkUnlocks(['mark-no-healing'], meta)
+    expect(result.unlockedSkillIds).toContain('stout-heart')
+  })
+
+  it('skill unlock variant: is idempotent — does not duplicate if already unlocked', () => {
+    const meta = baseMeta({ unlockedSkillIds: ['stout-heart'] })
+    const result = applyMarkUnlocks(['mark-no-healing'], meta)
+    expect(result.unlockedSkillIds.filter(id => id === 'stout-heart')).toHaveLength(1)
+  })
+
+  it('skill unlock variant: does not affect permanentPool', () => {
+    const meta = baseMeta()
+    const before = meta.permanentPool.length
+    const result = applyMarkUnlocks(['mark-no-healing'], meta)
+    expect(result.permanentPool).toHaveLength(before)
   })
 })

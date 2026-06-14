@@ -53,7 +53,9 @@ export interface MetaState {
   currentVisitors: VisitorInstance[]
   visitorEpoch: number
   pendingRunBoons: BoonDie[]
-  marksEarned: string[]  // list of earned mark IDs, in order of earning (feature 052)
+  marksEarned: string[]       // list of earned mark IDs, in order of earning (feature 052)
+  unlockedSkillIds: string[]  // IDs of skills Pip has earned, in earn order (feature 091)
+  activeLoadout: string[]     // IDs of skills chosen for the next run (feature 091)
 }
 
 const DEFAULT_META_STATE: MetaState = {
@@ -72,6 +74,8 @@ const DEFAULT_META_STATE: MetaState = {
   visitorEpoch: -1,
   pendingRunBoons: [],
   marksEarned: [],
+  unlockedSkillIds: [],
+  activeLoadout: [],
 }
 
 export function loadMetaState(): MetaState {

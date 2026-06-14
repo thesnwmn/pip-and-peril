@@ -28,17 +28,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-### 091 · Skills System & Scroll Wall
-
-Make the camp's **scroll wall** functional: five skills that change what decisions are interesting in
-combat (*Careful Eye*, *Counter-Strike* fully wired; *Desperate Swing*, *Battle Cry*, *Stout Heart*
-stubbed until 041). MetaState gains `unlockedSkillIds` + `activeLoadout`; loadout sub-panel in
-activity bar; `unlockSkill()` API for the Scholar (094). `mark-no-healing` stub wired to *Stout
-Heart*. Second slot auto-unlocks at `runCount ≥ 5`.
-**Depends on:** 029 (camp, scroll-wall element), 052 (mark-no-healing unlock wiring).
-**Related:** 037/046 (combat hooks), 041 (Rattled/Emboldened — 3 stubs activate here), 094 (Scholar calls unlockSkill).
-See `docs/features/091-skills-system-scroll-wall.md` for the full spec.
-
 ### 094 · Scholar Visitor
 
 Extends the visitor framework (051) with the **Scholar** type: a camp visitor who teaches skills
