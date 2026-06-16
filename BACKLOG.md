@@ -22,6 +22,8 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## IN PROGRESS
 
+*(none)*
+
 ---
 
 ## READY
@@ -35,16 +37,6 @@ at Regular tier. Falls back to enemy lore flavour when Pip's teachable pool is e
 `scholarTeachable` flag to `SkillSpec` and calls `unlockSkill()` on Accept.
 **Depends on:** 051 (visitor framework), 091 (skills system — `unlockSkill()` API, `SkillSpec`).
 See `docs/features/094-scholar-visitor.md` for the full spec.
-
-### 095 · Trickster Visitor
-
-Extends the visitor framework (051) with the **Trickster** type: a push-your-luck camp visitor who
-offers scraps wagers resolved by a 🟡 dice check. All stakes are scraps-only (max downside 4 scraps;
-net-positive expected value) — the gamble-safety constraint that blocked this type. The offer text
-downplays failure at Stranger tier and becomes honest at Regular tier, where the penalty is also
-shaved. Uses the check panel (028) for the dice beat.
-**Depends on:** 051 (visitor framework), 028 (check panel).
-See `docs/features/095-trickster-visitor.md` for the full spec.
 
 ### 058 · Authored-Procedural Floors
 

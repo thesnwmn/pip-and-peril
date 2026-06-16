@@ -5,6 +5,9 @@ import {
   getVisitorTint,
   resolveVisitorOffer,
   generateVisitors,
+  evaluateTricksterBand,
+  applyTricksterWager,
+  canAffordTricksterWager,
   TIER_THRESHOLDS,
   TINKER_COSTS,
   TINKER_FACES,
@@ -12,6 +15,7 @@ import {
   TRAVELLER_GIFT_REWARD,
   VISITOR_TINKER_TINT,
   VISITOR_TRAVELLER_TINT,
+  VISITOR_TRICKSTER_TINT,
 } from './visitors'
 import type { MetaState } from '../meta/state'
 import { getDefaultMetaState } from '../meta/state'
@@ -67,6 +71,9 @@ describe('getVisitorTint', () => {
   })
   it('returns traveller tint for wounded-traveller type', () => {
     expect(getVisitorTint('wounded-traveller')).toBe(VISITOR_TRAVELLER_TINT)
+  })
+  it('returns trickster tint for trickster type', () => {
+    expect(getVisitorTint('trickster')).toBe(VISITOR_TRICKSTER_TINT)
   })
 })
 
@@ -194,12 +201,15 @@ describe('generateVisitors structure', () => {
       const visitors = generateVisitors(makeState())
       for (const v of visitors) {
         expect(v.individualId).toBeTruthy()
-        expect(v.type === 'tinker' || v.type === 'wounded-traveller').toBe(true)
+        expect(['tinker', 'wounded-traveller', 'trickster']).toContain(v.type)
         expect(v.condition.length).toBeGreaterThan(0)
         expect(v.offer).toBeDefined()
         expect(typeof v.offer.costScraps).toBe('number')
         expect(v.offer.offerLine.length).toBeGreaterThan(0)
-        expect(v.offer.acceptLine.length).toBeGreaterThan(0)
+        // trickster-wager sets acceptLine dynamically at resolve time; others must be non-empty
+        if (v.offer.kind !== 'trickster-wager') {
+          expect(v.offer.acceptLine.length).toBeGreaterThan(0)
+        }
         expect(typeof v.resolved).toBe('boolean')
       }
     }
@@ -289,5 +299,136 @@ describe('generateVisitors — epoch reuse (checked externally)', () => {
         }
       }
     }
+  })
+})
+
+// ── AC 12: Trickster tests ────────────────────────────────────────────────────
+
+describe('Trickster offer — resolveVisitorOffer (AC 12.1)', () => {
+  for (const tier of ['stranger', 'familiar', 'regular'] as const) {
+    describe(`tier: ${tier}`, () => {
+      const offer = resolveVisitorOffer('trickster', tier, 'trickster-sloke', {})
+
+      it('yields trickster-wager', () => {
+        expect(offer.kind).toBe('trickster-wager')
+      })
+      it('penaltyFailure ≤ 4', () => {
+        expect(offer.penaltyFailure).toBeLessThanOrEqual(4)
+      })
+      it('non-negative expected value across four equal-weight bands', () => {
+        const ev = (
+          (offer.rewardCritical ?? 0) +
+          (offer.rewardSuccess  ?? 0) +
+          (offer.rewardPartial  ?? 0) -
+          (offer.penaltyFailure ?? 0)
+        ) / 4
+        expect(ev).toBeGreaterThanOrEqual(0)
+      })
+      it('has all four reward/penalty fields defined', () => {
+        expect(offer.rewardCritical).toBeDefined()
+        expect(offer.rewardSuccess).toBeDefined()
+        expect(offer.rewardPartial).toBeDefined()
+        expect(offer.penaltyFailure).toBeDefined()
+      })
+      it('checkColour is yellow', () => {
+        expect(offer.checkColour).toBe('yellow')
+      })
+      it('has a non-empty offerLine', () => {
+        expect(offer.offerLine.length).toBeGreaterThan(0)
+      })
+    })
+  }
+
+  it('Regular tier has reduced penaltyFailure (2) vs Stranger (4)', () => {
+    const stranger = resolveVisitorOffer('trickster', 'stranger', 'trickster-sloke', {})
+    const regular  = resolveVisitorOffer('trickster', 'regular',  'trickster-sloke', {})
+    expect(regular.penaltyFailure).toBeLessThan(stranger.penaltyFailure!)
+  })
+})
+
+describe('Trickster wager — failure floor (AC 12.2)', () => {
+  const offer = resolveVisitorOffer('trickster', 'stranger', 'trickster-sloke', {})
+
+  it('penalty applied to scraps=1 does not produce negative balance', () => {
+    expect(applyTricksterWager(1, 'failure', offer)).toBeGreaterThanOrEqual(0)
+  })
+  it('penalty applied to scraps=0 yields 0', () => {
+    expect(applyTricksterWager(0, 'failure', offer)).toBe(0)
+  })
+  it('critical reward adds correctly', () => {
+    const result = applyTricksterWager(5, 'critical', offer)
+    expect(result).toBe(5 + (offer.rewardCritical ?? 0))
+  })
+  it('success reward adds correctly', () => {
+    const result = applyTricksterWager(5, 'success', offer)
+    expect(result).toBe(5 + (offer.rewardSuccess ?? 0))
+  })
+  it('partial (cost) reward adds correctly', () => {
+    const result = applyTricksterWager(5, 'cost', offer)
+    expect(result).toBe(5 + (offer.rewardPartial ?? 0))
+  })
+})
+
+describe('Trickster wager — accept-disabled condition (AC 12.3)', () => {
+  it('canAffordTricksterWager is false when scraps < penaltyFailure', () => {
+    expect(canAffordTricksterWager(3, 4)).toBe(false)
+  })
+  it('canAffordTricksterWager is true when scraps === penaltyFailure', () => {
+    expect(canAffordTricksterWager(4, 4)).toBe(true)
+  })
+  it('canAffordTricksterWager is true when scraps > penaltyFailure', () => {
+    expect(canAffordTricksterWager(10, 4)).toBe(true)
+  })
+  it('accepts at scraps=2 for Regular tier penalty (2)', () => {
+    const offer = resolveVisitorOffer('trickster', 'regular', 'trickster-sloke', {})
+    expect(canAffordTricksterWager(2, offer.penaltyFailure!)).toBe(true)
+  })
+  it('blocks at scraps=1 for Regular tier penalty (2)', () => {
+    const offer = resolveVisitorOffer('trickster', 'regular', 'trickster-sloke', {})
+    expect(canAffordTricksterWager(1, offer.penaltyFailure!)).toBe(false)
+  })
+})
+
+describe('Trickster wager — accept-disabled blocks check (AC 12.4)', () => {
+  it('canAffordTricksterWager returning false means no check fires', () => {
+    // The click handler in camp.ts only starts the check when canAffordTricksterWager is true.
+    // Verify the guard function correctly rejects insufficient scraps.
+    const offer = resolveVisitorOffer('trickster', 'stranger', 'trickster-sloke', {})
+    const penaltyFailure = offer.penaltyFailure!
+    // With 0 scraps, cannot afford
+    expect(canAffordTricksterWager(0, penaltyFailure)).toBe(false)
+    // With penaltyFailure - 1 scraps, cannot afford
+    expect(canAffordTricksterWager(penaltyFailure - 1, penaltyFailure)).toBe(false)
+  })
+})
+
+describe('evaluateTricksterBand', () => {
+  it('0 yellow pips → failure', () => {
+    expect(evaluateTricksterBand(0)).toBe('failure')
+  })
+  it('1 yellow pip → cost (partial)', () => {
+    expect(evaluateTricksterBand(1)).toBe('cost')
+  })
+  it('2 yellow pips → success', () => {
+    expect(evaluateTricksterBand(2)).toBe('success')
+  })
+  it('3 yellow pips → success', () => {
+    expect(evaluateTricksterBand(3)).toBe('success')
+  })
+  it('4 yellow pips → critical', () => {
+    expect(evaluateTricksterBand(4)).toBe('critical')
+  })
+  it('10 yellow pips → critical', () => {
+    expect(evaluateTricksterBand(10)).toBe('critical')
+  })
+})
+
+describe('getDisplayName — trickster', () => {
+  it('returns "A shady traveller" for stranger tier', () => {
+    expect(getDisplayName('trickster-sloke', 'stranger')).toBe('A shady traveller')
+  })
+  it('returns individual name at familiar tier', () => {
+    expect(getDisplayName('trickster-sloke', 'familiar')).toBe('Sloke')
+    expect(getDisplayName('trickster-fenwick', 'familiar')).toBe('Fenwick')
   })
 })
