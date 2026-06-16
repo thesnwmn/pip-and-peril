@@ -15,8 +15,8 @@ export interface BoonDie {
   faces: DiceFaces
 }
 
-export type VisitorType = 'tinker' | 'wounded-traveller' | 'trickster'
-export type VisitorOfferKind = 'tinker-boon' | 'traveller-help' | 'traveller-gift' | 'trickster-wager'
+export type VisitorType = 'tinker' | 'wounded-traveller' | 'trickster' | 'scholar'
+export type VisitorOfferKind = 'tinker-boon' | 'traveller-help' | 'traveller-gift' | 'trickster-wager' | 'scholar-lesson' | 'scholar-lore'
 
 export interface VisitorOffer {
   kind: VisitorOfferKind
@@ -32,6 +32,10 @@ export interface VisitorOffer {
   rewardPartial?: number
   penaltyFailure?: number
   tier?: 'stranger' | 'familiar' | 'regular'
+  // scholar-lesson fields
+  skillId?: string
+  // scholar-lore fields
+  loreLine?: string
 }
 
 export interface VisitorInstance {

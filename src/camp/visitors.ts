@@ -3,10 +3,12 @@ import type {
   DiceFaces,
   MetaState,
   BoonDie,
+  PermanentDie,
   VisitorInstance,
   VisitorOffer,
   VisitorType,
 } from '../meta/state'
+import { SKILL_LIBRARY } from '../meta/skills'
 
 export type TricksterBand = 'critical' | 'success' | 'cost' | 'failure'
 
@@ -34,6 +36,7 @@ export const TRAVELLER_GIFT_REWARD = 5
 export const VISITOR_TINKER_TINT = '#b0763a'
 export const VISITOR_TRAVELLER_TINT = '#6a7a6a'
 export const VISITOR_TRICKSTER_TINT = '#8a6a3a'
+export const VISITOR_SCHOLAR_TINT = '#4a6e82'
 
 // ── Trickster tuning ──────────────────────────────────────────────────────────
 
@@ -58,6 +61,30 @@ export const TRICKSTER_OFFER_LINES: Record<RelationshipTier, string> = {
   regular:  "You know the deal. I've shaved the edge off a little — call it professional respect. Roll.",
 }
 
+// ── Scholar tuning ─────────────────────────────────────────────────────────────
+
+export const SCHOLAR_COSTS: Record<RelationshipTier, number> = {
+  stranger: 4,
+  familiar: 2,
+  regular: 0,
+}
+
+export const SCHOLAR_SKILL_COLOURS: Record<string, DiceColour> = {
+  'careful-eye':    'blue',
+  'counter-strike': 'green',
+  'desperate-swing':'red',
+  'battle-cry':     'red',
+}
+
+export const SCHOLAR_LORE_BANK: readonly string[] = [
+  "The adder's venom is slower in the cold. It hesitates before striking.",
+  "Weasels freeze when they lose sight of their quarry. Stand still and they doubt themselves.",
+  "The deeper you go, the older the stone. Old stone moves oddly.",
+  "Whatever claims that den below — it is not new here.",
+  "A creature that cannot be heard is louder than one that can.",
+  "There are things down there that have not been looked at in a very long time.",
+]
+
 // ── Roster ────────────────────────────────────────────────────────────────────
 
 interface RosterEntry {
@@ -73,6 +100,8 @@ const ROSTER: RosterEntry[] = [
   { individualId: 'traveller-finch',   type: 'wounded-traveller',  name: 'Finch'   },
   { individualId: 'trickster-sloke',   type: 'trickster',          name: 'Sloke'   },
   { individualId: 'trickster-fenwick', type: 'trickster',          name: 'Fenwick' },
+  { individualId: 'scholar-nettle',    type: 'scholar',            name: 'Nettle'  },
+  { individualId: 'scholar-oswin',     type: 'scholar',            name: 'Oswin'   },
 ]
 
 export const VISITOR_NAMES: Record<string, string> = Object.fromEntries(
@@ -87,6 +116,7 @@ export const VISITOR_TYPE_LABELS: Record<VisitorType, string> = {
   tinker: 'Tinker',
   'wounded-traveller': 'Wounded Traveller',
   trickster: 'Trickster',
+  scholar: 'Scholar',
 }
 
 // ── Condition bank ────────────────────────────────────────────────────────────
@@ -113,6 +143,7 @@ export function tierFor(count: number): RelationshipTier {
 export function getVisitorTint(type: VisitorType): string {
   if (type === 'tinker') return VISITOR_TINKER_TINT
   if (type === 'trickster') return VISITOR_TRICKSTER_TINT
+  if (type === 'scholar') return VISITOR_SCHOLAR_TINT
   return VISITOR_TRAVELLER_TINT
 }
 
@@ -122,6 +153,7 @@ export function getDisplayName(individualId: string, tier: RelationshipTier): st
     if (!type) return 'A visitor'
     if (type === 'tinker') return 'A wandering tinker'
     if (type === 'trickster') return 'A shady traveller'
+    if (type === 'scholar') return 'A learned mouse'
     return 'A wounded traveller'
   }
   return VISITOR_NAMES[individualId] ?? individualId
@@ -174,6 +206,45 @@ export function getTricksterAcceptLine(band: TricksterBand, name: string): strin
   return `${name} pockets the scraps without ceremony. 'Better luck below.'`
 }
 
+// ── Scholar helpers ───────────────────────────────────────────────────────────
+
+function getDominantColour(pool: PermanentDie[]): DiceColour | null {
+  const counts: Partial<Record<DiceColour, number>> = {}
+  for (const die of pool) {
+    counts[die.colour] = (counts[die.colour] ?? 0) + 1
+  }
+  const canonical: DiceColour[] = ['red', 'green', 'blue', 'yellow']
+  let max = 0
+  let dominant: DiceColour | null = null
+  for (const colour of canonical) {
+    const n = counts[colour] ?? 0
+    if (n > max) { max = n; dominant = colour }
+  }
+  return dominant
+}
+
+function selectScholarSkill(
+  pool: Array<{ id: string; name: string }>,
+  dominant: DiceColour | null,
+): { id: string; name: string } {
+  const hasMatch = dominant !== null && pool.some(s => SCHOLAR_SKILL_COLOURS[s.id] === dominant)
+  if (!hasMatch) return pool[Math.floor(Math.random() * pool.length)]!
+
+  let total = 0
+  const weights: number[] = []
+  for (const skill of pool) {
+    const w = SCHOLAR_SKILL_COLOURS[skill.id] === dominant ? 3 : 1
+    weights.push(w)
+    total += w
+  }
+  let r = Math.random() * total
+  for (let i = 0; i < pool.length; i++) {
+    r -= weights[i]!
+    if (r <= 0) return pool[i]!
+  }
+  return pool[pool.length - 1]!
+}
+
 // ── Offer resolution ──────────────────────────────────────────────────────────
 
 export function resolveVisitorOffer(
@@ -181,8 +252,43 @@ export function resolveVisitorOffer(
   tier: RelationshipTier,
   individualId: string,
   relationships: Record<string, number>,
+  meta?: MetaState,
 ): VisitorOffer {
   const name = getDisplayName(individualId, tier)
+
+  if (type === 'scholar') {
+    const unlocked = new Set(meta?.unlockedSkillIds ?? [])
+    const teachablePool = SKILL_LIBRARY.filter(s => s.scholarTeachable && !unlocked.has(s.id))
+
+    if (teachablePool.length === 0) {
+      const loreLine = SCHOLAR_LORE_BANK[Math.floor(Math.random() * SCHOLAR_LORE_BANK.length)]!
+      return {
+        kind: 'scholar-lore',
+        costScraps: 0,
+        loreLine,
+        offerLine: "Nothing new to teach you. But I've been listening to what comes up from below...",
+        acceptLine: loreLine,
+      }
+    }
+
+    const dominant = tier === 'stranger' ? null : getDominantColour(meta?.permanentPool ?? [])
+    const skill = selectScholarSkill(teachablePool, dominant)
+    const cost = SCHOLAR_COSTS[tier]
+
+    const offerLines: Record<RelationshipTier, string> = {
+      stranger: `I could teach you ${skill.name} — worth knowing, for a mouse going where you go. ${SCHOLAR_COSTS.stranger} scraps for the lesson.`,
+      familiar: `${skill.name}. You'd get use from it. ${SCHOLAR_COSTS.familiar} scraps.`,
+      regular:  `${skill.name}. You've earned it — no charge.`,
+    }
+
+    return {
+      kind: 'scholar-lesson',
+      skillId: skill.id,
+      costScraps: cost,
+      offerLine: offerLines[tier],
+      acceptLine: `${name} unrolls the scroll, traces a line with one claw, and nods.`,
+    }
+  }
 
   if (type === 'trickster') {
     const values = TRICKSTER_WAGER[tier]
@@ -244,7 +350,7 @@ export function generateVisitors(metaState: MetaState): VisitorInstance[] {
 
   const usedIds = new Set<string>()
   const result: VisitorInstance[] = []
-  const types: VisitorType[] = ['tinker', 'wounded-traveller', 'trickster']
+  const types: VisitorType[] = ['tinker', 'wounded-traveller', 'trickster', 'scholar']
 
   for (let i = 0; i < count; i++) {
     const type = types[Math.floor(Math.random() * types.length)]
@@ -267,7 +373,7 @@ export function generateVisitors(metaState: MetaState): VisitorInstance[] {
     const rel       = relationships[id] ?? 0
     const tier      = tierFor(rel)
     const condition = CONDITION_BANK[Math.floor(Math.random() * CONDITION_BANK.length)]
-    const offer     = resolveVisitorOffer(entry.type, tier, id, relationships)
+    const offer     = resolveVisitorOffer(entry.type, tier, id, relationships, metaState)
 
     result.push({ individualId: id, type: entry.type, condition, offer, resolved: false })
   }

@@ -16,7 +16,11 @@ import {
   VISITOR_TINKER_TINT,
   VISITOR_TRAVELLER_TINT,
   VISITOR_TRICKSTER_TINT,
+  VISITOR_SCHOLAR_TINT,
+  SCHOLAR_COSTS,
+  SCHOLAR_LORE_BANK,
 } from './visitors'
+import { SKILL_LIBRARY, unlockSkill } from '../meta/skills'
 import type { MetaState } from '../meta/state'
 import { getDefaultMetaState } from '../meta/state'
 
@@ -201,7 +205,7 @@ describe('generateVisitors structure', () => {
       const visitors = generateVisitors(makeState())
       for (const v of visitors) {
         expect(v.individualId).toBeTruthy()
-        expect(['tinker', 'wounded-traveller', 'trickster']).toContain(v.type)
+        expect(['tinker', 'wounded-traveller', 'trickster', 'scholar']).toContain(v.type)
         expect(v.condition.length).toBeGreaterThan(0)
         expect(v.offer).toBeDefined()
         expect(typeof v.offer.costScraps).toBe('number')
@@ -430,5 +434,194 @@ describe('getDisplayName — trickster', () => {
   it('returns individual name at familiar tier', () => {
     expect(getDisplayName('trickster-sloke', 'familiar')).toBe('Sloke')
     expect(getDisplayName('trickster-fenwick', 'familiar')).toBe('Fenwick')
+  })
+})
+
+// ── AC 12: Scholar tests ──────────────────────────────────────────────────────
+
+describe('getVisitorTint — scholar', () => {
+  it('returns VISITOR_SCHOLAR_TINT for scholar type', () => {
+    expect(getVisitorTint('scholar')).toBe(VISITOR_SCHOLAR_TINT)
+  })
+})
+
+describe('getDisplayName — scholar', () => {
+  it('returns "A learned mouse" for stranger tier', () => {
+    expect(getDisplayName('scholar-nettle', 'stranger')).toBe('A learned mouse')
+  })
+  it('returns "Nettle" at familiar tier', () => {
+    expect(getDisplayName('scholar-nettle', 'familiar')).toBe('Nettle')
+  })
+  it('returns "Oswin" at familiar tier', () => {
+    expect(getDisplayName('scholar-oswin', 'familiar')).toBe('Oswin')
+  })
+})
+
+describe('Scholar resolveVisitorOffer — teachable pool (AC 12.1)', () => {
+  it('produces scholar-lesson when teachable skills remain', () => {
+    const meta = makeState({ unlockedSkillIds: [] })
+    const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+    expect(offer.kind).toBe('scholar-lesson')
+  })
+
+  it('offered skillId is always scholarTeachable', () => {
+    const meta = makeState({ unlockedSkillIds: [] })
+    for (let i = 0; i < 50; i++) {
+      const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+      if (offer.kind !== 'scholar-lesson' || !offer.skillId) continue
+      const spec = SKILL_LIBRARY.find(s => s.id === offer.skillId)
+      expect(spec?.scholarTeachable).toBe(true)
+    }
+  })
+
+  it('stout-heart (not scholarTeachable) is never offered', () => {
+    const meta = makeState({ unlockedSkillIds: [] })
+    for (let i = 0; i < 100; i++) {
+      const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+      expect(offer.skillId).not.toBe('stout-heart')
+    }
+  })
+
+  it('already-unlocked skills are excluded from the teachable pool', () => {
+    const meta = makeState({ unlockedSkillIds: ['careful-eye', 'counter-strike'] })
+    for (let i = 0; i < 100; i++) {
+      const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+      expect(offer.skillId).not.toBe('careful-eye')
+      expect(offer.skillId).not.toBe('counter-strike')
+    }
+  })
+
+  it('has non-empty offerLine and acceptLine', () => {
+    const meta = makeState({ unlockedSkillIds: [] })
+    const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+    expect(offer.offerLine.length).toBeGreaterThan(0)
+    expect(offer.acceptLine.length).toBeGreaterThan(0)
+  })
+})
+
+describe('Scholar resolveVisitorOffer — cost by tier (AC 12.1)', () => {
+  const meta = makeState({ unlockedSkillIds: [] })
+
+  it('stranger tier costs SCHOLAR_COSTS.stranger scraps', () => {
+    const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+    expect(offer.costScraps).toBe(SCHOLAR_COSTS.stranger)
+  })
+
+  it('familiar tier costs SCHOLAR_COSTS.familiar scraps', () => {
+    const offer = resolveVisitorOffer('scholar', 'familiar', 'scholar-nettle', {}, meta)
+    expect(offer.costScraps).toBe(SCHOLAR_COSTS.familiar)
+  })
+
+  it('regular tier is free', () => {
+    const offer = resolveVisitorOffer('scholar', 'regular', 'scholar-nettle', {}, meta)
+    expect(offer.costScraps).toBe(SCHOLAR_COSTS.regular)
+  })
+})
+
+describe('Scholar resolveVisitorOffer — lore fallback (AC 12.2)', () => {
+  it('produces scholar-lore when all scholarTeachable skills are unlocked', () => {
+    const allTeachable = SKILL_LIBRARY.filter(s => s.scholarTeachable).map(s => s.id)
+    const meta = makeState({ unlockedSkillIds: allTeachable })
+    const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+    expect(offer.kind).toBe('scholar-lore')
+  })
+
+  it('scholar-lore has costScraps 0', () => {
+    const allTeachable = SKILL_LIBRARY.filter(s => s.scholarTeachable).map(s => s.id)
+    const meta = makeState({ unlockedSkillIds: allTeachable })
+    const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+    expect(offer.costScraps).toBe(0)
+  })
+
+  it('scholar-lore loreLine is drawn from the lore bank', () => {
+    const allTeachable = SKILL_LIBRARY.filter(s => s.scholarTeachable).map(s => s.id)
+    const meta = makeState({ unlockedSkillIds: allTeachable })
+    for (let i = 0; i < 20; i++) {
+      const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+      expect(offer.loreLine).toBeDefined()
+      expect(SCHOLAR_LORE_BANK).toContain(offer.loreLine)
+    }
+  })
+
+  it('scholar-lore acceptLine equals the loreLine', () => {
+    const allTeachable = SKILL_LIBRARY.filter(s => s.scholarTeachable).map(s => s.id)
+    const meta = makeState({ unlockedSkillIds: allTeachable })
+    const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+    expect(offer.acceptLine).toBe(offer.loreLine)
+  })
+
+  it('scholar-lore has the expected static offerLine', () => {
+    const allTeachable = SKILL_LIBRARY.filter(s => s.scholarTeachable).map(s => s.id)
+    const meta = makeState({ unlockedSkillIds: allTeachable })
+    const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+    expect(offer.offerLine).toContain('Nothing new to teach you')
+  })
+})
+
+describe('Scholar accept — scholar-lesson (AC 12.3)', () => {
+  it('unlockSkill adds the offered skillId to unlockedSkillIds', () => {
+    const meta = makeState({ scraps: 10, unlockedSkillIds: [] })
+    const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+    expect(offer.kind).toBe('scholar-lesson')
+    if (offer.kind !== 'scholar-lesson' || !offer.skillId) return
+
+    const newMeta = unlockSkill({ ...meta, scraps: meta.scraps - offer.costScraps }, offer.skillId)
+    expect(newMeta.unlockedSkillIds).toContain(offer.skillId)
+  })
+
+  it('scraps are decremented by costScraps on accept', () => {
+    const meta = makeState({ scraps: 10, unlockedSkillIds: [] })
+    const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+    expect(offer.kind).toBe('scholar-lesson')
+    if (offer.kind !== 'scholar-lesson') return
+    expect(meta.scraps - offer.costScraps).toBe(10 - SCHOLAR_COSTS.stranger)
+  })
+
+  it('regular-tier lesson is free — scraps unchanged after accept', () => {
+    const meta = makeState({ scraps: 3, unlockedSkillIds: [] })
+    const offer = resolveVisitorOffer('scholar', 'regular', 'scholar-nettle', {}, meta)
+    expect(offer.costScraps).toBe(0)
+    if (!offer.skillId) return
+    const newMeta = unlockSkill({ ...meta, scraps: meta.scraps - offer.costScraps }, offer.skillId)
+    expect(newMeta.scraps).toBe(3)
+  })
+})
+
+describe('Scholar accept — scholar-lore (AC 12.4)', () => {
+  const allTeachable = SKILL_LIBRARY.filter(s => s.scholarTeachable).map(s => s.id)
+
+  it('lore offer has no skillId to unlock', () => {
+    const meta = makeState({ unlockedSkillIds: allTeachable })
+    const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+    expect(offer.kind).toBe('scholar-lore')
+    expect(offer.skillId).toBeUndefined()
+  })
+
+  it('scraps are unchanged for lore (costScraps = 0)', () => {
+    const meta = makeState({ scraps: 5, unlockedSkillIds: allTeachable })
+    const offer = resolveVisitorOffer('scholar', 'stranger', 'scholar-nettle', {}, meta)
+    expect(offer.costScraps).toBe(0)
+  })
+})
+
+describe('generateVisitors — scholar in pool', () => {
+  it('can produce scholar visitors', () => {
+    let foundScholar = false
+    for (let i = 0; i < 500; i++) {
+      const visitors = generateVisitors(makeState())
+      if (visitors.some(v => v.type === 'scholar')) { foundScholar = true; break }
+    }
+    expect(foundScholar).toBe(true)
+  })
+
+  it('scholar visitor has scholar-lesson or scholar-lore offer', () => {
+    for (let i = 0; i < 200; i++) {
+      const visitors = generateVisitors(makeState())
+      for (const v of visitors) {
+        if (v.type === 'scholar') {
+          expect(['scholar-lesson', 'scholar-lore']).toContain(v.offer.kind)
+        }
+      }
+    }
   })
 })

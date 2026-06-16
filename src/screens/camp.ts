@@ -1998,13 +1998,18 @@ export function createCamp(
       v.individualId === visitor.individualId ? { ...v, resolved: true } : v
     )
 
-    const newMeta: MetaState = {
+    let newMeta: MetaState = {
       ...meta,
       scraps,
       pendingRunBoons,
       visitorRelationships: relationships,
       currentVisitors,
     }
+
+    if (offer.kind === 'scholar-lesson' && offer.skillId) {
+      newMeta = unlockSkill(newMeta, offer.skillId)
+    }
+
     saveMetaState(newMeta)
     state.metaState = newMeta
 
