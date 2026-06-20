@@ -26,28 +26,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ---
 
-## READY
-
-### 058 · Authored-Procedural Floors
-
-Replace player tile-drafting (feature 004) with floors generated complete and hidden under fog
-before Pip enters — navigational agency moves from *conjuring tiles* to *choosing routes through a
-real place*. The renderer, fog, snapping invariant, camera, and multi-floor structure are unchanged;
-only the room-selection card UI and on-choice placement logic retire. Ships the **generator engine +
-navigation/fog migration + a validity contract**, two contrasting shapes (Gauntlet, Hub), and a new
-**four-tier fog knowledge model** (hidden → glimpsed → live → remembered): geometry is glimpsed, type
-and contents are earned by entering, departed rooms go stale-dimmed. The wider shape catalogue (059),
-living floors (060), Stirs (061), gates (064), and the boss motif (062) are deferred — 058 leaves
-each seam open. All biome architecture, floor objectives, and roaming enemies depend on this
-foundation.
-**Depends on:** 022 (multi-floor structure), 003 (renderer). Ratifies a new navigation-model decision (D33).
-See `docs/features/058-authored-procedural-floors.md` for the full spec.
-*(Promotes Idea 058; see `docs/concept/run-architecture.md` for full direction.)*
-**Planner note:** placed last in READY to honour the documented "meta first, authored floors after"
-sequence — repositioning within READY is the Planner's call.
-
----
-
 ## NEEDS SPEC
 
 > **Planner note (2026-06-07):** Three principles govern the sequence below.

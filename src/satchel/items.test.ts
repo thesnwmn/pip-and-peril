@@ -146,7 +146,7 @@ describe('applyItemEffect', () => {
       for (let r = 3; r <= 7; r++) {
         for (let c = 3; c <= 7; c++) {
           if (r >= 0 && r < dungeonState.fog.length && c >= 0 && c < dungeonState.fog[0].length) {
-            expect(result.dungeonStateAfter!.fog[r][c]).toBe('visible')
+            expect(result.dungeonStateAfter!.fog[r][c]).toBe('live')
           }
         }
       }
