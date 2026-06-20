@@ -709,6 +709,23 @@ function drawCell(
     return
   }
 
+  // Glimpsed: show exit corridors (doorway shell) with fog over interior — no accent, no type
+  if (fogState === 'glimpsed') {
+    ctx.fillStyle = biome.wallBase
+    ctx.fillRect(px, py, s, s)
+    ctx.fillStyle = biome.wallCourse
+    const co = Math.round((s - (2 * (s - Math.round(s / 6) * 2) / 4 + 2)) / 2)
+    const cw = 2 * ((s - Math.round(s / 6) * 2) / 4) + 2
+    const wt2 = Math.round(s / 6)
+    if (cell.exits & N) ctx.fillRect(px + co, py, cw, wt2)
+    if (cell.exits & S) ctx.fillRect(px + co, py + s - wt2, cw, wt2)
+    if (cell.exits & E) ctx.fillRect(px + s - wt2, py + co, wt2, cw)
+    if (cell.exits & W) ctx.fillRect(px, py + co, wt2, cw)
+    ctx.fillStyle = 'rgba(13,13,26,0.72)'
+    ctx.fillRect(px, py, s, s)
+    return
+  }
+
   // Step 1 — wall base
   ctx.fillStyle = biome.wallBase
   ctx.fillRect(px, py, s, s)
@@ -794,9 +811,9 @@ function drawCell(
     ctx.stroke()
   }
 
-  // Step 6 — fog overlay
-  if (fogState === 'seen') {
-    ctx.fillStyle = biome.fogOverlay
+  // Step 6 — fog overlay for remembered tiles (stale knowledge)
+  if (fogState === 'remembered') {
+    ctx.fillStyle = 'rgba(13,13,26,0.45)'
     ctx.fillRect(px, py, s, s)
   }
 
@@ -991,7 +1008,7 @@ export function drawMap(
   }
 
   const pipFog = fog[pip.row]?.[pip.col]
-  if (pipFog === 'visible') {
+  if (pipFog === 'live') {
     const vpCol = Math.floor(VIEWPORT_COLS / 2) + (pip.col - viewCenter.col)
     const vpRow = Math.floor(VIEWPORT_ROWS / 2) + (pip.row - viewCenter.row)
     const pipX = MAP_X + vpCol * TILE_SIZE + TILE_SIZE / 2

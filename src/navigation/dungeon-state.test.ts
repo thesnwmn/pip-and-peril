@@ -3,47 +3,40 @@ import { chebyshev, DIR_DELTA, initDungeon, OPP, updateCamera } from './dungeon-
 import { E, N, S, W } from '../map/types'
 
 describe('initDungeon', () => {
-  it('places Start tile at (6,6) with all four exits', () => {
+  it('generates a non-null start cell at startPos', () => {
     const state = initDungeon()
-    const cell = state.grid.cells[6][6]
+    const cell = state.grid.cells[state.startPos.row][state.startPos.col]
     expect(cell).not.toBeNull()
     expect(cell!.roomType).toBe('start')
-    expect(cell!.exits).toBe(N | E | S | W)
   })
 
-  it('leaves all other cells null', () => {
+  it('generates a multi-cell floor', () => {
     const state = initDungeon()
     let nonNull = 0
-    for (let r = 0; r < 13; r++) {
-      for (let c = 0; c < 13; c++) {
-        if (!(r === 6 && c === 6) && state.grid.cells[r][c] !== null) nonNull++
+    for (let r = 0; r < state.grid.height; r++) {
+      for (let c = 0; c < state.grid.width; c++) {
+        if (state.grid.cells[r][c] !== null) nonNull++
       }
     }
-    expect(nonNull).toBe(0)
+    expect(nonNull).toBeGreaterThan(1)
   })
 
-  it('sets pip at (6,6) and startPos at (6,6)', () => {
+  it('sets pip and startPos to the same position', () => {
     const state = initDungeon()
-    expect(state.pip).toEqual({ col: 6, row: 6 })
-    expect(state.startPos).toEqual({ col: 6, row: 6 })
+    expect(state.pip).toEqual(state.startPos)
   })
 
   it('sets camera equal to pip start position', () => {
     const state = initDungeon()
-    expect(state.camera).toEqual({ col: 6, row: 6 })
+    expect(state.camera).toEqual(state.pip)
   })
 
-  it('starts in idle state with no pending dir', () => {
+  it('initialises fog: pip cell is live, far cells are hidden', () => {
     const state = initDungeon()
-    expect(state.uiState).toBe('idle')
-    expect(state.pendingDir).toBeNull()
-    expect(state.offerings).toHaveLength(0)
-  })
-
-  it('initialises fog: start tile visible, outer tiles hidden', () => {
-    const state = initDungeon()
-    expect(state.fog[6][6]).toBe('visible')
-    expect(state.fog[0][0]).toBe('hidden')
+    expect(state.fog[state.pip.row][state.pip.col]).toBe('live')
+    const farRow = state.pip.row > 5 ? 0 : 12
+    const farCol = state.pip.col > 5 ? 0 : 12
+    expect(state.fog[farRow][farCol]).toBe('hidden')
   })
 
   it('has a 13×13 grid', () => {
@@ -64,6 +57,12 @@ describe('initDungeon', () => {
     expect(state.healingItemsUsed).toBe(0)
     expect(state.rattledKillingBlow).toBe(false)
     expect(state.weaponId).toBe('')
+  })
+
+  it('has a numeric runSeed', () => {
+    const state = initDungeon()
+    expect(typeof state.runSeed).toBe('number')
+    expect(state.runSeed).toBeGreaterThanOrEqual(0)
   })
 })
 

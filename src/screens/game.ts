@@ -2,9 +2,9 @@ import { colors } from '../colors'
 import { DUNGEON } from '../map/biome'
 import { drawMap, MAP_X, MAP_W, MAP_Y, TILE_SIZE } from '../map/renderer'
 import type { DungeonState } from '../navigation/dungeon-state'
-import { DIR_DELTA, initDungeon, OPP } from '../navigation/dungeon-state'
+import { DIR_DELTA, initDungeon } from '../navigation/dungeon-state'
 import { movePip } from '../navigation/movement'
-import { generateOfferings, placeRoom, descendFloor, CARD_TEASES } from '../navigation/room-selection'
+import { descendFloor } from '../navigation/room-selection'
 import { LOG_MESSAGES, pickRandom } from '../navigation/room-pool'
 import { createNavigationPanel } from '../navigation/panel'
 import type { ScreenController } from './main-menu'
@@ -125,7 +125,6 @@ export function createGame(
     dicePool = starterPool()
     pipHp = pipMaxHp
     inventory = { gold: 0, items: [] }
-    navPanel.clearTeases()
     navPanel.clearWhisper()
     satchelOverlay.close()
   }
@@ -178,54 +177,26 @@ export function createGame(
     () => state,
     () => registry.isActive(),
     {
-      onCardChosen: (idx) => {
-        const offering = state.offerings[idx]
-        const { dc, dr } = DIR_DELTA[state.pendingDir!]
-        const targetPos = { col: state.pip.col + dc, row: state.pip.row + dr }
+      onDirButton: (dir) => {
         combatEntryFrom = { col: state.pip.col, row: state.pip.row }
-
-        if (offering.roomType === 'stairwell') {
+        state = movePip(state, dir)
+        state = { ...state, roomsEntered: state.roomsEntered + 1 }
+        const cell = state.grid.cells[state.pip.row][state.pip.col]
+        if (cell?.roomType === 'stairwell') {
           floorTransitionStartTime = performance.now()
           state = descendFloor(state)
-          navPanel.clearTeases()
+          navPanel.clearWhisper()
           const stairwellMsg = state.floor === 2 ? 'Pip descends deeper…' : 'The third floor. The air is wrong.'
           navPanel.triggerWhisper(stairwellMsg)
-        } else {
-          state = placeRoom(state, offering, targetPos)
-          state = { ...state, roomsEntered: state.roomsEntered + 1 }
-          navPanel.clearTeases()
-          const cell = state.grid.cells[state.pip.row][state.pip.col]
-          // Stolen Idol gold bonus: +2 per room entered (not corridor)
-          if (cell && cell.roomType !== 'corridor' && inventory.items.some(i => i.id === 'stolen-idol')) {
+          return
+        }
+        if (cell) {
+          if (cell.roomType !== 'corridor' && inventory.items.some(i => i.id === 'stolen-idol')) {
             updateInventoryWithGoldTracking({ ...inventory, gold: inventory.gold + 2 })
           }
-          if (cell) triggerWhisper(cell.roomType)
-          checkEncounterTrigger()
+          triggerWhisper(cell.roomType)
         }
-      },
-      onDirButton: (dir, dirState) => {
-        if (dirState === 'fog') {
-          const { dc, dr } = DIR_DELTA[dir]
-          const nc = state.pip.col + dc
-          const nr = state.pip.row + dr
-          const offerings = generateOfferings(state, { col: nc, row: nr }, OPP[dir])
-          navPanel.setTeases(offerings.map(o => {
-            const teaseList = CARD_TEASES[o.roomType]
-            return teaseList ? pickRandom(teaseList) : ''
-          }))
-          state = { ...state, uiState: 'choosing', pendingDir: dir, offerings }
-        } else {
-          combatEntryFrom = { col: state.pip.col, row: state.pip.row }
-          state = movePip(state, dir)
-          state = { ...state, roomsEntered: state.roomsEntered + 1 }
-          const cell = state.grid.cells[state.pip.row][state.pip.col]
-          // Stolen Idol gold bonus: +2 per room entered (not corridor)
-          if (cell && cell.roomType !== 'corridor' && inventory.items.some(i => i.id === 'stolen-idol')) {
-            updateInventoryWithGoldTracking({ ...inventory, gold: inventory.gold + 2 })
-          }
-          if (cell) triggerWhisper(cell.roomType)
-          checkEncounterTrigger()
-        }
+        checkEncounterTrigger()
       },
       onWhisperEnd: () => {},
     },
@@ -485,7 +456,7 @@ export function createGame(
     },
     handlers: {
       victory: () => {
-        state = { ...state, enemiesDefeated: state.enemiesDefeated + 1, uiState: 'idle' }
+        state = { ...state, enemiesDefeated: state.enemiesDefeated + 1 }
         dicePool = resetPool(dicePool)
         navPanel.clearWhisper()
       },
@@ -497,7 +468,7 @@ export function createGame(
       fled: () => {
         // Retreat Pip to the tile she entered from.
         const { col, row } = combatEntryFrom
-        state = { ...state, pip: { col, row }, camera: { col, row }, uiState: 'idle' }
+        state = { ...state, pip: { col, row }, camera: { col, row } }
         dicePool = resetPool(dicePool)
         navPanel.clearWhisper()
       },

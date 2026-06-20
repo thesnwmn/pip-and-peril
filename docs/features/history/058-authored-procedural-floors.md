@@ -301,3 +301,40 @@ None blocking — the spec is `READY`. Residual tuning items, all safe to resolv
   contract.
 - **Shape weighting by floor.** Initial split between Gauntlet and Hub across floors 1–3 (e.g. Hub
   earlier for breathing room, Gauntlet for the floor-3 boss approach). A tuning-table choice.
+
+---
+
+## Shipped
+
+**Date:** 2026-06-20
+**Branch:** `claude/authored-procedural-floora-400hfc`
+**PR:** #TBD
+
+### What was built
+
+- **`src/dungeon/floor-generator.ts`** (new): seeded deterministic floor generator with two shapes (Gauntlet: linear spine + 2 spurs; Hub: center chamber + 4 spokes). Uses xorshift32 RNG keyed on `(runSeed * 1000 + floor * 7 + attempt * 13)`. `validate()` enforces BFS connectivity, snapping correctness, stairwell/boss presence, exactly 1 shop, ≥1 fork. 5 attempts per floor with gauntlet fallback.
+- **`src/map/types.ts`**: `FogState` changed from `'hidden' | 'seen' | 'visible'` to `'hidden' | 'glimpsed' | 'live' | 'remembered'`.
+- **`src/map/fog.ts`**: Rewritten for 4-tier monotonic model — `live→remembered`, radius sets `live` on non-null cells, glimpses open-exit neighbors of live cells.
+- **`src/map/renderer.ts`**: Added `'glimpsed'` rendering block (wall shell + exit corridors + 72% fog overlay, no archetype/accent). `'remembered'` uses `rgba(13,13,26,0.45)` dimming.
+- **`src/navigation/dungeon-state.ts`**: `initDungeon` now calls `generateFloor`; `DungeonState` gains `runSeed` and `skeleton`; retires `uiState`, `pendingDir`, `offerings`, `floorTilesPlaced`, `totalTilesPlaced`, `shopPlacedThisFloor`, `RoomOffering`.
+- **`src/navigation/room-selection.ts`**: `descendFloor` calls `generateFloor`; `generateOfferings` and `placeRoom` removed.
+- **`src/navigation/movement.ts`**: `exitState` now uses fog state (live/remembered → back; hidden/glimpsed → fog; null neighbor → none). `availableDirs` removed.
+- **`src/navigation/panel.ts`**: Card-drafting UI removed; always draws direction cross.
+- **`src/screens/game.ts`**: `onDirButton` simplified; stairwell descend triggered by stepping, not card choice.
+
+**Bug fixed during build:** `const W = 13` inside `buildGauntlet` shadowed the imported `W = 8` (West direction), causing `DELTA[13] = undefined` at runtime. Fixed by renaming to `GW/GH`.
+
+### Tests
+
+- All 706 tests pass (`npm run test`).
+- Typecheck clean (`npm run typecheck`).
+- Build clean (`npm run build`).
+- Updated: `fog.test.ts`, `renderer.test.ts`, `dungeon-state.test.ts`, `movement.test.ts`, `room-selection.test.ts`, `items.test.ts`.
+
+### Play-test steps
+
+1. Start a new run — the floor should be pre-generated (multiple rooms visible as glimpsed via exit corridors from start).
+2. Navigate in any valid direction — new rooms reveal as live on entry, departed rooms dim to remembered.
+3. Walk into a fog exit — the button should show as amber (fog state); enter it and the room reveals.
+4. Descend via stairwell — floor 2 generates immediately with Pip at its start room.
+5. Confirm fog panel: only the direction cross appears (no card tray), regardless of where Pip is.
