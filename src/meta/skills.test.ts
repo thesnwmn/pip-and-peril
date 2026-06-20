@@ -51,6 +51,30 @@ describe('SKILL_LIBRARY', () => {
       expect(skill.effectLine.length).toBeGreaterThan(0)
     }
   })
+
+  it('every skill has scholarTeachable defined as a boolean', () => {
+    for (const skill of SKILL_LIBRARY) {
+      expect(typeof skill.scholarTeachable).toBe('boolean')
+    }
+  })
+
+  it('stout-heart has scholarTeachable false', () => {
+    const stoutHeart = SKILL_LIBRARY.find(s => s.id === 'stout-heart')
+    expect(stoutHeart?.scholarTeachable).toBe(false)
+  })
+
+  it('four skills are scholarTeachable', () => {
+    const teachable = SKILL_LIBRARY.filter(s => s.scholarTeachable)
+    expect(teachable).toHaveLength(4)
+  })
+
+  it('careful-eye, counter-strike, desperate-swing, battle-cry are scholarTeachable', () => {
+    const teachableIds = SKILL_LIBRARY.filter(s => s.scholarTeachable).map(s => s.id)
+    expect(teachableIds).toContain('careful-eye')
+    expect(teachableIds).toContain('counter-strike')
+    expect(teachableIds).toContain('desperate-swing')
+    expect(teachableIds).toContain('battle-cry')
+  })
 })
 
 // ── getSkill ───────────────────────────────────────────────────────────────────

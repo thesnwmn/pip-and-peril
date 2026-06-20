@@ -4,6 +4,7 @@ export type SkillSpec = {
   id: string
   name: string
   effectLine: string
+  scholarTeachable: boolean
 }
 
 export const SKILL_LIBRARY: readonly SkillSpec[] = [
@@ -11,26 +12,31 @@ export const SKILL_LIBRARY: readonly SkillSpec[] = [
     id: 'careful-eye',
     name: 'Careful Eye',
     effectLine: "See the enemy's first two intents at the start of every fight.",
+    scholarTeachable: true,
   },
   {
     id: 'counter-strike',
     name: 'Counter-Strike',
     effectLine: 'A perfect dodge (2G) deals 1 damage back.',
+    scholarTeachable: true,
   },
   {
     id: 'desperate-swing',
     name: 'Desperate Swing',
     effectLine: 'While Rattled, Strike costs 1 Red less.',
+    scholarTeachable: true,
   },
   {
     id: 'battle-cry',
     name: 'Battle Cry',
     effectLine: 'Emboldened lasts two turns instead of one.',
+    scholarTeachable: true,
   },
   {
     id: 'stout-heart',
     name: 'Stout Heart',
     effectLine: 'Rattled takes three missed turns to trigger, not two.',
+    scholarTeachable: false,
   },
 ]
 

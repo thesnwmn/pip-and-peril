@@ -250,10 +250,26 @@ Decisions made that the manager may redirect:
 
 ## Shipped
 
-**Date:** YYYY-MM-DD · **PR:** #NN
+**Date:** 2026-06-16 · **PR:** #TBD
 
 ### What was built
 
+- `SkillSpec` in `src/meta/skills.ts` extended with `scholarTeachable: boolean`. Four skills (`careful-eye`, `counter-strike`, `desperate-swing`, `battle-cry`) set `true`; `stout-heart` set `false`.
+- `VisitorType` union in `src/meta/state.ts` gains `'scholar'`. `VisitorOfferKind` gains `'scholar-lesson'` and `'scholar-lore'`. `VisitorOffer` gains optional `skillId?: string` and `loreLine?: string`.
+- `src/camp/visitors.ts`: Scholar constants (`SCHOLAR_COSTS`, `VISITOR_SCHOLAR_TINT`, `SCHOLAR_SKILL_COLOURS`, `SCHOLAR_LORE_BANK`), two roster entries (`scholar-nettle`, `scholar-oswin`), `getVisitorTint`/`getDisplayName`/`VISITOR_TYPE_LABELS` updated for scholar, `getDominantColour` and `selectScholarSkill` helpers, `resolveVisitorOffer` extended with scholar branch (optional `meta?: MetaState` fifth param), `generateVisitors` adds `'scholar'` to type pool.
+- `src/screens/camp.ts`: `handleVisitorAccept` calls `unlockSkill(newMeta, offer.skillId)` when `offer.kind === 'scholar-lesson'`.
+
 ### Evidence
 
+740 tests pass (28 new). TypeScript typecheck clean. `bash init.sh` passes end-to-end.
+
+New tests cover: `scholarTeachable` flags; already-unlocked skills excluded from pool; `stout-heart` never offered; empty pool → `scholar-lore` with `loreLine` from bank; cost by tier (4/2/0); accept on `scholar-lesson` unlocks skill and deducts cost; accept on `scholar-lore` has no skillId and costScraps=0; `generateVisitors` produces scholar visitors.
+
 ### Play-test
+
+1. At camp, watch for the **Scholar** visitor (cool blue-grey portrait silhouette on the stool).
+2. Tap **Visitor**. Panel should show type label "Scholar" and a `scholar-lesson` offer naming one of the four teachable skills with a scraps cost (4 at Stranger, 2 at Familiar, 0 at Regular).
+3. Accept the lesson. Open **Skills** — the skill should appear in "Your Scrolls".
+4. After learning all four teachable skills, the next Scholar visit shows the lore fallback: offer line begins "Nothing new to teach you..." Accepting shows a flavour sentence; no skill is unlocked and no scraps are deducted.
+5. Verify `Stout Heart` never appears in any Scholar offer at any tier.
+6. At Regular tier (≥5 visits), confirm the lesson offer shows no scraps cost and no deduction on accept.

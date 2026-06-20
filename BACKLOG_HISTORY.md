@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 094 · Scholar Visitor
+
+**Shipped:** 2026-06-16 · **PR:** #TBD · **Spec:** [docs/features/history/094-scholar-visitor.md](docs/features/history/094-scholar-visitor.md)
+
+Extends the visitor framework (051) with the **Scholar** type: a camp visitor who teaches skills through the NPC-gift channel. Offers one unteachable skill per visit (four Scholar-teachable skills from the 091 library; Stout Heart remains mark-exclusive), with a scraps cost that reduces to zero at Regular tier. Falls back to enemy lore flavour when Pip's teachable pool is exhausted.
+
+---
+
 ### 095 · Trickster Visitor
 
 **Shipped:** 2026-06-12 · **PR:** (pending) · **Spec:** [docs/features/history/095-trickster-visitor.md](docs/features/history/095-trickster-visitor.md)

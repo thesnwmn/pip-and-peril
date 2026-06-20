@@ -28,16 +28,6 @@ See `docs/features/NNN-short-title.md` for the full spec.   ← only once specce
 
 ## READY
 
-### 094 · Scholar Visitor
-
-Extends the visitor framework (051) with the **Scholar** type: a camp visitor who teaches skills
-through the NPC-gift channel. Offers one unteachable skill per visit (four Scholar-teachable skills
-from the 091 library; Stout Heart remains mark-exclusive), with a scraps cost that reduces to zero
-at Regular tier. Falls back to enemy lore flavour when Pip's teachable pool is exhausted. Adds a
-`scholarTeachable` flag to `SkillSpec` and calls `unlockSkill()` on Accept.
-**Depends on:** 051 (visitor framework), 091 (skills system — `unlockSkill()` API, `SkillSpec`).
-See `docs/features/094-scholar-visitor.md` for the full spec.
-
 ### 058 · Authored-Procedural Floors
 
 Replace player tile-drafting (feature 004) with floors generated complete and hidden under fog
