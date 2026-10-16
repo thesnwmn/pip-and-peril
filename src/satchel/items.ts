@@ -117,7 +117,7 @@ export function applyItemEffect(context: ItemEffectContext, effect: ItemEffect):
       for (let c = 0; c < fog[0].length; c++) {
         const dist = chebyshev({ row: context.tileRow, col: context.tileCol }, { row: r, col: c })
         if (dist <= effect.radius) {
-          fog[r][c] = 'visible'
+          fog[r][c] = 'live'
         }
       }
     }

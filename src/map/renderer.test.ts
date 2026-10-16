@@ -40,7 +40,7 @@ describe('drawMap', () => {
   it('calls fillRect for every viewport slot', () => {
     const ctx = makeCtx()
     const map = makeMap()
-    const fog = makeFog('visible')
+    const fog = makeFog('live')
     drawMap(ctx, map, fog, { col: 2, row: 2 }, { col: 2, row: 2 }, DUNGEON)
     expect(ctx.fillRect).toHaveBeenCalled()
   })
@@ -61,10 +61,10 @@ describe('drawMap', () => {
     expect(setVoid || calls.length > 0).toBe(true)
   })
 
-  it('draws pip at viewport centre when pip equals camera and fog is visible', () => {
+  it('draws pip at viewport centre when pip equals camera and fog is live', () => {
     const ctx = makeCtx()
     const map = makeMap()
-    const fog = makeFog('visible')
+    const fog = makeFog('live')
     drawMap(ctx, map, fog, { col: 2, row: 2 }, { col: 2, row: 2 }, DUNGEON)
     // drawPip calls arc — verify it was called
     expect(ctx.arc).toHaveBeenCalled()
@@ -77,7 +77,7 @@ describe('drawMap', () => {
   it('draws pip at offset position when pip differs from camera', () => {
     const ctx = makeCtx()
     const map = makeMap()
-    const fog = makeFog('visible')
+    const fog = makeFog('live')
     // pip 1 tile east of camera → vpCol = 2 + (3-2) = 3
     drawMap(ctx, map, fog, { col: 2, row: 2 }, { col: 3, row: 2 }, DUNGEON)
     expect(ctx.arc).toHaveBeenCalled()
@@ -97,7 +97,7 @@ describe('drawMap', () => {
   it('renders tiles at correct canvas positions', () => {
     const ctx = makeCtx()
     const map = makeMap()
-    const fog = makeFog('visible')
+    const fog = makeFog('live')
     // With viewCenter (2,2), viewport column 0 = map col 0, row 0 = map row 0
     // First tile top-left: MAP_X + 0*TILE_SIZE, MAP_Y + 0*TILE_SIZE
     drawMap(ctx, map, fog, { col: 2, row: 2 }, { col: 2, row: 2 }, DUNGEON)

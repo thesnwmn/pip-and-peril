@@ -12,25 +12,13 @@ export function exitState(state: DungeonState, dir: ExitMask): 'none' | 'fog' | 
   const nr = state.pip.row + dr
   if (nc < 0 || nc >= state.grid.width || nr < 0 || nr >= state.grid.height) return 'none'
   const neighbour = state.grid.cells[nr][nc]
-  if (neighbour === null) return 'fog'
-  return isBacktrackable(state, dir) ? 'back' : 'none'
+  if (!neighbour || !(neighbour.exits & OPP[dir])) return 'none'
+  const neighbourFog = state.fog[nr][nc]
+  if (neighbourFog === 'live' || neighbourFog === 'remembered') return 'back'
+  return 'fog'
 }
 
 export const ALL_DIRS: ExitMask[] = [N, E, S, W]
-
-export function availableDirs(state: DungeonState): ExitMask[] {
-  const cell = state.grid.cells[state.pip.row][state.pip.col]
-  if (!cell) return []
-
-  return ALL_DIRS.filter(dir => {
-    if (!(cell.exits & dir)) return false
-    const { dc, dr } = DIR_DELTA[dir]
-    const nc = state.pip.col + dc
-    const nr = state.pip.row + dr
-    if (nc < 0 || nc >= state.grid.width || nr < 0 || nr >= state.grid.height) return false
-    return state.grid.cells[nr][nc] === null
-  })
-}
 
 export function isBacktrackable(state: DungeonState, dir: ExitMask): boolean {
   const cell = state.grid.cells[state.pip.row][state.pip.col]

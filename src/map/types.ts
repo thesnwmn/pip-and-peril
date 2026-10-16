@@ -8,7 +8,7 @@ export const E: ExitMask = 2
 export const S: ExitMask = 4
 export const W: ExitMask = 8
 
-export type FogState = 'hidden' | 'seen' | 'visible'
+export type FogState = 'hidden' | 'glimpsed' | 'live' | 'remembered'
 
 export interface GridPos {
   col: number

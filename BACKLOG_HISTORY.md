@@ -16,6 +16,14 @@ Original one- or two-sentence summary from the backlog.
 
 ---
 
+### 058 · Authored-Procedural Floors
+
+**Shipped:** 2026-06-20 · **PR:** #TBD · **Spec:** [docs/features/history/058-authored-procedural-floors.md](docs/features/history/058-authored-procedural-floors.md)
+
+Replace player tile-drafting with floors generated complete and hidden under fog before Pip enters. Ships a seeded floor generator (Gauntlet + Hub shapes), a validity contract, a four-tier fog model (hidden → glimpsed → live → remembered), and full retirement of the card-drafting UI.
+
+---
+
 ### 094 · Scholar Visitor
 
 **Shipped:** 2026-06-16 · **PR:** #TBD · **Spec:** [docs/features/history/094-scholar-visitor.md](docs/features/history/094-scholar-visitor.md)
